@@ -164,8 +164,8 @@ const validations = {
     }
 
     const trimmedCert = cert.trim()
-    if (!trimmedCert.includes('BEGIN CERTIFICATE') || !trimmedCert.includes('END CERTIFICATE')) {
-      throw new Error('Invalid SSL certificate format. Must be PEM format')
+    if (trimmedCert.length === 0) {
+      throw new Error('SSL certificate cannot be empty')
     }
 
     return trimmedCert
@@ -177,8 +177,8 @@ const validations = {
     }
 
     const trimmedKey = key.trim()
-    if (!trimmedKey.includes('BEGIN') || !trimmedKey.includes('END')) {
-      throw new Error('Invalid private key format. Must be PEM format')
+    if (trimmedKey.length === 0) {
+      throw new Error('Private key cannot be empty')
     }
 
     return trimmedKey
