@@ -125,6 +125,10 @@ const executeDeployScript = (repo, branch) => {
   child.unref()
 }
 
+app.get('/', (_, res) => {
+  res.status(200).send('Hello from JDeploy')
+})
+
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() })
 })
