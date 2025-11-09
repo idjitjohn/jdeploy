@@ -163,88 +163,117 @@ const main = async () => {
 
     console.log('\n--- Self-Hosting Configuration ---\n')
 
-    const domain = await question('Self-hosting domain (e.g., webhook.example.com): ')
-    let validatedDomain
-    try {
-      validatedDomain = validateDomainName(domain)
-    } catch (err) {
-      error(err.message)
-      rl.close()
-      process.exit(1)
-    }
+    // Check existing configuration
+    const hasExistingConfig = config.self && config.self.domain
+    let validatedDomain = config.self?.domain
+    let webhookSubdomain = config.self?.subdomain || 'webhook'
+    let webhookPort = config.self?.port || '50000'
+    let validatedCert = null
+    let validatedKey = null
 
-    console.log('\nPaste your SSL certificate (certificate.crt content):')
-    console.log('(Enter an empty line when done)\n')
-    let certificate = ''
-    while (true) {
-      const line = await question('')
-      if (line === '') break
-      certificate += (certificate ? '\n' : '') + line
-    }
-
-    let validatedCert
-    try {
-      validatedCert = validateSSLCertificate(certificate)
-    } catch (err) {
-      error(err.message)
-      rl.close()
-      process.exit(1)
-    }
-
-    console.log('\nPaste your private key (private.key content):')
-    console.log('(Enter an empty line when done)\n')
-    let privateKey = ''
-    while (true) {
-      const line = await question('')
-      if (line === '') break
-      privateKey += (privateKey ? '\n' : '') + line
-    }
-
-    let validatedKey
-    try {
-      validatedKey = validatePrivateKey(privateKey)
-    } catch (err) {
-      error(err.message)
-      rl.close()
-      process.exit(1)
-    }
-
-    const subdomain = await question('Subdomain for this service (default: webhook): ')
-    let webhookSubdomain = 'webhook'
-    if (subdomain.trim()) {
+    // Skip domain prompt if already configured
+    if (!hasExistingConfig) {
+      const domain = await question('Self-hosting domain (e.g., webhook.example.com): ')
       try {
-        webhookSubdomain = validateSubdomain(subdomain)
+        validatedDomain = validateDomainName(domain)
       } catch (err) {
         error(err.message)
         rl.close()
         process.exit(1)
       }
+    } else {
+      console.log(`✓ Using existing domain: ${validatedDomain}`)
     }
 
-    const port = await question('Port for webhook service (default: 50000): ')
-    let webhookPort = '50000'
-    if (port.trim()) {
-      try {
-        webhookPort = validatePort(port)
-      } catch (err) {
-        error(err.message)
-        rl.close()
-        process.exit(1)
-      }
-    }
-
+    // Check if certificates exist
     const certDir = path.join(config.paths.home, 'certificate', validatedDomain)
+    const certPath = path.join(certDir, 'certificate.crt')
+    const keyPath = path.join(certDir, 'private.key')
+    const certExists = fs.existsSync(certPath) && fs.existsSync(keyPath)
+
+    // Skip certificate prompt if already exist
+    if (!certExists) {
+      console.log('\nPaste your SSL certificate (certificate.crt content):')
+      console.log('(Enter an empty line when done)\n')
+      let certificate = ''
+      while (true) {
+        const line = await question('')
+        if (line === '') break
+        certificate += (certificate ? '\n' : '') + line
+      }
+
+      try {
+        validatedCert = validateSSLCertificate(certificate)
+      } catch (err) {
+        error(err.message)
+        rl.close()
+        process.exit(1)
+      }
+
+      console.log('\nPaste your private key (private.key content):')
+      console.log('(Enter an empty line when done)\n')
+      let privateKey = ''
+      while (true) {
+        const line = await question('')
+        if (line === '') break
+        privateKey += (privateKey ? '\n' : '') + line
+      }
+
+      try {
+        validatedKey = validatePrivateKey(privateKey)
+      } catch (err) {
+        error(err.message)
+        rl.close()
+        process.exit(1)
+      }
+    } else {
+      console.log(`✓ Using existing certificates from: ${certDir}`)
+    }
+
+    // Skip subdomain prompt if already configured
+    if (!hasExistingConfig) {
+      const subdomain = await question('Subdomain for this service (default: webhook): ')
+      if (subdomain.trim()) {
+        try {
+          webhookSubdomain = validateSubdomain(subdomain)
+        } catch (err) {
+          error(err.message)
+          rl.close()
+          process.exit(1)
+        }
+      }
+    } else {
+      console.log(`✓ Using existing subdomain: ${webhookSubdomain}`)
+    }
+
+    // Skip port prompt if already configured
+    if (!hasExistingConfig) {
+      const port = await question('Port for webhook service (default: 50000): ')
+      if (port.trim()) {
+        try {
+          webhookPort = validatePort(port)
+        } catch (err) {
+          error(err.message)
+          rl.close()
+          process.exit(1)
+        }
+      }
+    } else {
+      console.log(`✓ Using existing port: ${webhookPort}`)
+    }
+
+    // Create certificate directory if needed
     if (!fs.existsSync(certDir)) {
       fs.mkdirSync(certDir, { recursive: true })
       log(`Created certificate directory: ${certDir}`)
     }
 
-    const certPath = path.join(certDir, 'certificate.crt')
-    const keyPath = path.join(certDir, 'private.key')
-
-    fs.writeFileSync(certPath, validatedCert + '\n')
-    fs.writeFileSync(keyPath, validatedKey + '\n')
-    success(`Certificates saved`)
+    // Write certificates only if new ones were provided
+    if (validatedCert && validatedKey) {
+      fs.writeFileSync(certPath, validatedCert + '\n')
+      fs.writeFileSync(keyPath, validatedKey + '\n')
+      success(`Certificates saved`)
+    }
 
     config.self = {
       domain: validatedDomain,
