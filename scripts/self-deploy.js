@@ -22,17 +22,7 @@ const success = (msg) => console.log(`[${new Date().toISOString()}] SUCCESS: ${m
 
 const readConfig = () => {
   if (!fs.existsSync(configPath)) {
-    console.error('❌ Configuration not found: deploy.config.json')
-    console.error('Stopping all PM2 processes...')
-
-    try {
-      require('child_process').execSync('pm2 kill', { stdio: 'pipe' })
-      console.log('All PM2 processes stopped')
-    } catch (err) {
-      console.warn('⚠️  Could not stop PM2 processes')
-    }
-
-    throw new Error('Configuration not initialized. Please run: yarn self-deploy')
+    return null
   }
 
   try {
@@ -41,35 +31,26 @@ const readConfig = () => {
 
     if (!config.self || !config.paths) {
       console.error('❌ Invalid configuration: Missing required fields')
-      console.error('Stopping all PM2 processes...')
-
-      try {
-        require('child_process').execSync('pm2 kill', { stdio: 'pipe' })
-        console.log('All PM2 processes stopped')
-      } catch (err) {
-        console.warn('⚠️  Could not stop PM2 processes')
-      }
-
-      throw new Error('Configuration not initialized. Please run: yarn self-deploy')
+      throw new Error('Invalid configuration format')
     }
 
     return config
   } catch (err) {
-    if (err.message.includes('Configuration not initialized')) {
-      throw err
-    }
-
     console.error('❌ Failed to read configuration: ' + err.message)
-    console.error('Stopping all PM2 processes...')
+    throw new Error('Failed to read configuration')
+  }
+}
 
-    try {
-      require('child_process').execSync('pm2 kill', { stdio: 'pipe' })
-      console.log('All PM2 processes stopped')
-    } catch (killErr) {
-      console.warn('⚠️  Could not stop PM2 processes')
-    }
-
-    throw new Error('Configuration not initialized. Please run: yarn self-deploy')
+const createInitialConfig = (homeDir) => {
+  return {
+    paths: {
+      home: homeDir,
+      nginxAvailable: '/etc/nginx/sites-available/',
+      nginxEnabled: '/etc/nginx/sites-enabled/'
+    },
+    domains: [],
+    repositories: [],
+    self: null
   }
 }
 
@@ -160,13 +141,14 @@ const main = async () => {
   try {
     console.log('\n=== Webhook Deployer Self-Deploy Setup ===\n')
 
-    const config = readConfig()
-
     log('Checking dependencies...')
     checkDependencies()
 
     log('Initializing configuration...')
-    if (!fs.existsSync(configPath)) {
+    let config = readConfig()
+    if (!config) {
+      const homeDir = path.join(process.env.HOME || '/home/user', 'deployments')
+      config = createInitialConfig(homeDir)
       writeConfig(config)
       success(`Configuration file created: ${configPath}`)
     } else {
