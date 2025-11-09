@@ -15,7 +15,6 @@
   ],
   "postDeploy": [
     "pm2 delete $pm2Name$ || true",
-    "sleep 1",
     "pm2 serve $rf$ $port$ --name $pm2Name$ --namespace \"$port$\" --spa"
   ],
   "nginx": {

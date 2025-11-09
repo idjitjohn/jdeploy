@@ -79,6 +79,30 @@ webhook-deployer/
 
 ```json
 {
+  "templates": {
+    "react": {
+      "postDeploy": [
+        "pm2 delete $pm2Name$ || true",
+        "pm2 serve $rf$ $port$ --name $pm2Name$ --namespace \"$port$\" --spa"
+      ]
+    },
+    "nextjs": {
+      "postDeploy": [
+        "cd $rf$",
+        "yarn install --production",
+        "pm2 delete $pm2Name$ 2>/dev/null || true",
+        "pm2 start \"yarn start\" --name $pm2Name$ --namespace \"$port$\" --cwd $rf$"
+      ]
+    },
+    "nestjs": {
+      "postDeploy": [
+        "cd $rf$",
+        "yarn install --production",
+        "pm2 delete $pm2Name$ 2>/dev/null || true",
+        "pm2 start dist/main.js --name $pm2Name$ --namespace \"$port$\" --cwd $rf$"
+      ]
+    }
+  },
   "paths": {
     "home": "/path/to/deployment/root",
     "nginxAvailable": "/path/to/nginx/sites-available",
@@ -102,12 +126,15 @@ webhook-deployer/
         "git checkout $branch$",
         "git reset --hard origin/$branch$",
         "yarn install",
-        "yarn build"
+        "yarn build",
+        "rm -rf $rf$/.next $rf$/public $rf$/package.json $rf$/yarn.lock $rf$/.env*",
+        "cp -r $cf$/.next $rf$/",
+        "test -d $cf$/public && cp -r $cf$/public $rf$/ || true",
+        "cp $cf$/package.json $rf$/",
+        "cp $cf$/yarn.lock $rf$/ 2>/dev/null || cp $cf$/package-lock.json $rf$/ 2>/dev/null || true",
+        "cp $cf$/.env* $rf$/ 2>/dev/null || true"
       ],
       "preDeploy": [],
-      "postDeploy": [
-        "pm2 restart $pm2Name$"
-      ],
       "nginx": {
         "enabled": true,
         "template": [...]
@@ -162,9 +189,17 @@ Configure a new domain with:
 
 ### Listener Management
 
-View all configured listeners:
+View all configured listeners with status and ports:
 ```bash
 yarn listener list
+```
+
+Output shows configured repositories with their ports and current status:
+```
+  id │ name                     │ branch   │ type   │ port   │ status
+  ───┼──────────────────────────┼──────────┼────────┼────────┼─────────
+  0  │ todo:main                │ main     │ prod   │ 3000   │ ● online
+  1  │ izob:develop             │ develop  │ prod   │ 5509   │ ● online
 ```
 
 **Start a listener** (trigger deployment + enable nginx + start PM2):
@@ -245,11 +280,77 @@ curl http://localhost:50000/health
 
 ### Available Templates
 
-1. **React** - SPA with yarn build
+Each template in `templates/` defines:
+- **Build commands** - How to compile the application
+- **Artifact copying** - What to copy from clone to release folder
+- **Post-deploy hooks** - PM2 process management
+- **Nginx configuration** - Reverse proxy setup
+
+1. **React** - SPA with yarn build output (build/)
+   - Copies: build folder
+   - PM2: serves static files with --spa flag
+
 2. **Next.js** - React SSR/SSG framework
+   - Copies: .next/, public/, package.json, lock file, .env* files
+   - PM2: runs "yarn start" with production dependencies
+
 3. **NestJS** - Node.js backend API
+   - Copies: dist/, package.json, lock file, .env* files
+   - PM2: runs dist/main.js with production dependencies
+
 4. **Node.js** - Standard Node.js application
+   - Copies: dist/, package.json, lock file, .env* files
+   - PM2: runs dist/index.js with production dependencies
+
 5. **Static** - Pure HTML/CSS/JS website
+   - Copies: all files from code folder
+   - PM2: serves files as static content
+
+### Template Structure
+
+Each template.json contains:
+
+```json
+{
+  "name": "Template Name",
+  "description": "Template description",
+  "commands": [
+    "cd $cf$",
+    "git fetch origin $branch$",
+    "git checkout $branch$",
+    "git reset --hard origin/$branch$",
+    "yarn install",
+    "yarn build",
+    "rm -rf $rf$/dist",
+    "cp -r $cf$/dist $rf$/"
+  ],
+  "preDeploy": [],
+  "postDeploy": [
+    "pm2 delete $pm2Name$ || true",
+    "pm2 start dist/index.js --name $pm2Name$ --namespace \"$port$\""
+  ],
+  "nginx": {
+    "enabled": true,
+    "template": [...]
+  },
+  "env": {
+    "NODE_ENV": "$type$"
+  }
+}
+```
+
+### Artifact Copying
+
+Templates handle copying artifacts from clone folder (`$cf$`) to release folder (`$rf$`):
+
+- **Build artifacts** - dist/, .next/, build/
+- **Configuration** - package.json, yarn.lock, package-lock.json
+- **Environment files** - All .env* files (e.g., .env, .env.prod, .env.local)
+
+This ensures each deployed version has:
+1. Fresh build output
+2. Correct dependencies configuration
+3. Environment-specific settings
 
 ### Custom Templates
 
@@ -265,11 +366,14 @@ Create a custom template in `templates/custom.json`:
     "git checkout $branch$",
     "git reset --hard origin/$branch$",
     "yarn install",
-    "yarn build"
+    "yarn build",
+    "rm -rf $rf$/dist",
+    "cp -r $cf$/dist $rf$/"
   ],
   "preDeploy": [],
   "postDeploy": [
-    "pm2 restart $pm2Name$"
+    "pm2 delete $pm2Name$ || true",
+    "pm2 start dist/app.js --name $pm2Name$ --namespace \"$port$\""
   ],
   "nginx": {
     "enabled": true,
@@ -289,6 +393,17 @@ Create a custom template in `templates/custom.json`:
 }
 ```
 
+### PM2 Namespace for Port Tracking
+
+The `--namespace "$port$"` flag in postDeploy commands makes the port visible in PM2's process list without changing the process name. This allows you to quickly identify which port each process is using:
+
+```bash
+pm2 list
+# Shows port in the namespace column:
+# │ name        │ namespace │ status │
+# │ todo-prod   │ 3000      │ online │
+```
+
 ## Environment Variables
 
 Create `.env` file with:
@@ -305,14 +420,14 @@ GITHUB_TOKEN=ghp_your-github-token-here
 
 Use these variables in deploy commands:
 
-- `$cf$` - Code folder path
-- `$rf$` - Release folder path
+- `$cf$` - Code folder path (clone folder with source code)
+- `$rf$` - Release folder path (deployment folder for running app)
 - `$branch$` - Current branch name
 - `$pm2Name$` - PM2 process name
+- `$port$` - Application port (used in PM2 namespace for display)
 - `$home$` - Home directory (from config)
 - `$name$` - Repository name
 - `$domain$` - Domain name
-- `$port$` - Application port
 - `$type$` - Branch type (prod, staging, dev)
 
 ## GitHub Setup
