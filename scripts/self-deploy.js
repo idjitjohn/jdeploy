@@ -296,7 +296,7 @@ const main = async () => {
     if (setupWebhook.toLowerCase() === 'y') {
       const setupNginxPath = path.join(__dirname, 'setup-nginx.js')
       try {
-        execSync(`sudo node ${setupNginxPath} ${domain} ${webhookPort}`, {
+        execSync(`sudo node ${setupNginxPath}`, {
           stdio: 'inherit'
         })
       } catch (err) {
