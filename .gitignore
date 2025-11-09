@@ -1,0 +1,45 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+yarn.lock
+package-lock.json
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# PM2 configuration
+ecosystem.config.js
+
+# OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~
+
+# Deploy logs
+deploy-logs/
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Config files with sensitive data
+deploy.config.json
+certificate/
+text-env/

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash",
+      "Bash(__NEW_LINE__ ls -lh scripts/*.js scripts/*.sh)",
+      "Bash(__NEW_LINE__ rm deploy.config.yml)",
+      "Bash(__NEW_LINE__ echo \"✅ WEBHOOK DEPLOYER - REFACTORED TO JSON\" echo \"\" echo \"📍 PROJECT LOCATION:\" echo \"/Users/marson/projects/node/listener/\" echo \"\" echo \"📊 FILES CREATED/MODIFIED:\" ls -lh *.js *.sh *.json *.md)",
+      "Bash(cat:*)",
+      "Bash(chmod:*)",
+      "Bash(node scripts/check-config.js:*)",
+      "Bash(node scripts/start-wrapper.js:*)",
+      "Bash(node server.js:*)",
+      "Bash(node scripts/add-repo.js:*)",
+      "Bash(node /Users/marson/projects/node/listener/scripts/deploy.js:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
