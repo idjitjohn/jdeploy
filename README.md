@@ -285,14 +285,12 @@ NODE_ENV=production
 WEBHOOK_PORT=50000
 WEBHOOK_SECRET=your-very-long-secret-key-here
 WEBHOOK_BRANCH=main
-GITHUB_TOKEN=ghp_your-github-token-here
 ```
 
 Required variables:
 - `WEBHOOK_SECRET` - HMAC secret for GitHub/GitLab webhook verification
 - `WEBHOOK_PORT` - Port for webhook listener (default: 50000)
 - `WEBHOOK_BRANCH` - Which branch triggers deployments (or `*` for all)
-- `GITHUB_TOKEN` - Optional, for private repo access
 
 ## GitHub/GitLab Setup
 
@@ -304,11 +302,6 @@ Required variables:
 4. **Secret**: Your `WEBHOOK_SECRET` from `.env`
 5. **Events**: Select "Push events"
 6. Click "Add webhook"
-
-**Optional**: Create Personal Access Token for private repos:
-- Settings → Developer settings → Personal access tokens
-- Scopes: `repo`, `read:user`
-- Add to `.env` as `GITHUB_TOKEN`
 
 ### GitLab Webhook
 
@@ -421,8 +414,7 @@ yarn dev
 
 Run in production:
 ```bash
-yarn start
-pm2 start server.js
+yarn listener start self
 ```
 
 ## License
