@@ -87,9 +87,7 @@ The `deploy.config.json` stores:
   },
   "domains": [
     {
-      "name": "example.com",
-      "certificatePath": "/path/to/cert.crt",
-      "keyPath": "/path/to/key.key"
+      "name": "example.com"
     }
   ],
   "repositories": [
@@ -111,16 +109,11 @@ The `deploy.config.json` stores:
       "nginx": { "enabled": true },
       "env": { "NODE_ENV": "$type$" }
     }
-  ],
-  "templates": {
-    "react": {...},
-    "nextjs": {...},
-    "nestjs": {...},
-    "node": {...},
-    "static": {...}
-  }
+  ]
 }
 ```
+
+Templates are loaded from `templates/` directory, not stored in config.
 
 ## Usage
 
@@ -155,12 +148,12 @@ yarn listener list
 ```
 
 Example output:
-```
+
 id │ name                │ type   │ port │ status
 ────┼─────────────────────┼────────┼──────┼──────────
 0  │ my-app:main         │ prod   │ 3000 │ ● online
 1  │ my-app:develop      │ staging│ 3001 │ ● online
-```
+
 
 **Start** - Deploy, enable Nginx, and start PM2:
 ```bash
