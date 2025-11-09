@@ -1,4 +1,4 @@
-# Webhook Deployer
+# JDeploy - Webhook Deployer
 
 Automated webhook listener for Git deployment. Supports GitHub and GitLab webhooks with automatic deployment triggering, PM2 process management, and Nginx reverse proxy configuration.
 
