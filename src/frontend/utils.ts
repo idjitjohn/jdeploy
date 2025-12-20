@@ -1,4 +1,4 @@
-async function checkAuth(): Promise<void> {
+export async function checkAuth(): Promise<void> {
   try {
     await window.api.auth.me()
   } catch (error) {
@@ -10,13 +10,13 @@ async function checkAuth(): Promise<void> {
   }
 }
 
-function formatDate(dateString: string | null): string {
+export function formatDate(dateString: string | null): string {
   if (!dateString) return 'N/A'
   const date = new Date(dateString)
   return date.toLocaleString()
 }
 
-function formatBytes(bytes: number): string {
+export function formatBytes(bytes: number): string {
   if (!bytes) return '0 B'
   const k = 1024
   const sizes = ['B', 'KB', 'MB', 'GB']
@@ -24,7 +24,7 @@ function formatBytes(bytes: number): string {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
 }
 
-function showNotification(message: string, type: 'info' | 'success' | 'error' = 'info'): void {
+export function showNotification(message: string, type: 'info' | 'success' | 'error' = 'info'): void {
   const notification = document.createElement('div')
   notification.className = `notification ${type}`
   notification.textContent = message
@@ -49,7 +49,7 @@ function showNotification(message: string, type: 'info' | 'success' | 'error' = 
   }, 3000)
 }
 
-function createModal(title: string, content: string): HTMLElement {
+export function createModal(title: string, content: string): HTMLElement {
   const modal = document.createElement('div')
   modal.className = 'modal'
   modal.innerHTML = `
@@ -81,7 +81,7 @@ function createModal(title: string, content: string): HTMLElement {
   return modal
 }
 
-function escapeHtml(text: string): string {
+export function escapeHtml(text: string): string {
   const div = document.createElement('div')
   div.textContent = text
   return div.innerHTML

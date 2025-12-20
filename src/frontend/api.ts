@@ -30,7 +30,7 @@ async function apiRequest<T = any>(url: string, options: ApiRequestOptions = {})
   return response.json()
 }
 
-const api = {
+export const api = {
   auth: {
     login: (username: string, password: string) => apiRequest('/api/auth/login', {
       method: 'POST',
