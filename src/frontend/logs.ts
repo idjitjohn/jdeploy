@@ -78,7 +78,7 @@ async function loadLogs(): Promise<void> {
                 <td>${escapeHtml(log.triggeredBy)}</td>
                 <td>${duration}</td>
                 <td>
-                  <button class="btn btn-sm btn-info" onclick="viewLog('${log._id}')">View Details</button>
+                  <button class="btn btn-sm btn-primary" onclick="viewLog('${log._id}')">View Details</button>
                 </td>
               </tr>
             `
@@ -138,12 +138,12 @@ async function viewLog(logId: string): Promise<void> {
         ${log.errorMessage ? `
           <div class="detail-row">
             <label>Error:</label>
-            <span style="color: #e74c3c;">${escapeHtml(log.errorMessage)}</span>
+            <span class="error-text">${escapeHtml(log.errorMessage)}</span>
           </div>
         ` : ''}
         <div class="detail-row">
           <label>Log Output:</label>
-          <pre style="max-height: 20em; overflow-y: auto; background: #1e1e1e; color: #d4d4d4; padding: 1em;">${escapeHtml(content)}</pre>
+          <pre class="log-output">${escapeHtml(content)}</pre>
         </div>
       </div>
     `

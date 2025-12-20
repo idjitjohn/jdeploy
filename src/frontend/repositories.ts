@@ -35,8 +35,8 @@ async function loadRepositories(): Promise<void> {
               <td>${repo.branches ? Object.keys(repo.branches).length : 0}</td>
               <td>${formatDate(repo.createdAt)}</td>
               <td>
-                <button class="btn btn-sm btn-info" onclick="viewRepository('${repo._id}')">View</button>
-                <button class="btn btn-sm btn-warning" onclick="editRepository('${repo._id}')">Edit</button>
+                <button class="btn btn-sm btn-primary" onclick="viewRepository('${repo._id}')">View</button>
+                <button class="btn btn-sm btn-secondary" onclick="editRepository('${repo._id}')">Edit</button>
                 <button class="btn btn-sm btn-danger" onclick="deleteRepository('${repo._id}', '${repo.name}')">Delete</button>
               </td>
             </tr>

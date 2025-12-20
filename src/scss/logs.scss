@@ -150,6 +150,10 @@
         &.status {
           display: inline-block;
         }
+
+        &.error-text {
+          color: $color-danger;
+        }
       }
 
       pre {
@@ -163,6 +167,11 @@
         margin: $spacing-md 0 0 0;
         line-height: 1.4;
         border: 1px solid #333;
+
+        &.log-output {
+          max-height: 20em;
+          overflow-y: auto;
+        }
       }
     }
   }

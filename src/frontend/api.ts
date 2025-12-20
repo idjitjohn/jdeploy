@@ -30,7 +30,7 @@ async function apiRequest<T = any>(url: string, options: ApiRequestOptions = {})
   return response.json()
 }
 
-export const api = {
+const api = {
   auth: {
     login: (username: string, password: string) => apiRequest('/api/auth/login', {
       method: 'POST',
@@ -148,4 +148,6 @@ declare global {
   }
 }
 
-window.api = api
+if (typeof window !== 'undefined') {
+  window.api = api
+}

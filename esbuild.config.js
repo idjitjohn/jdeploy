@@ -15,6 +15,8 @@ const buildOptions = {
   sourcemap: true,
   target: 'ES2020',
   format: 'iife',
+  platform: 'browser',
+  keepNames: true,
 }
 
 esbuild.build(buildOptions).catch(() => process.exit(1))
