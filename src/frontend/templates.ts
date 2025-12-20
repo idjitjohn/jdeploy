@@ -14,29 +14,30 @@ async function loadTemplates(): Promise<void> {
       return
     }
 
-    const gridHtml = `
-      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(20em, 1fr)); gap: 1.5em;">
-        ${templates.map((template: any) => `
-          <div class="card" style="margin: 0;">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1em;">
-              <h3 style="margin: 0;">${escapeHtml(template.displayName)}</h3>
-              ${template.isSystem ? '<span class="badge" style="background: #667eea; color: white;">System</span>' : '<span class="badge">Custom</span>'}
-            </div>
-            <p style="color: #666; margin-bottom: 1em;">${escapeHtml(template.description)}</p>
-            <div style="margin-bottom: 1em;">
-              <strong>Commands:</strong> ${template.commands ? template.commands.length : 0}
-            </div>
-            <div style="display: flex; gap: 0.5em;">
-              <button class="btn btn-sm btn-info" onclick="viewTemplate('${template._id}')">View</button>
-              ${!template.isSystem ? `
-                <button class="btn btn-sm btn-warning" onclick="editTemplate('${template._id}')">Edit</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteTemplate('${template._id}', '${template.name}')">Delete</button>
-              ` : ''}
-            </div>
+    const gridHtml = templates.map((template: any) => `
+      <div class="template-card">
+        <div class="template-header">
+          <h3>${escapeHtml(template.displayName)}</h3>
+          <span class="badge ${template.isSystem ? 'system' : ''}">
+            ${template.isSystem ? 'System' : 'Custom'}
+          </span>
+        </div>
+        <div class="template-body">
+          <p class="template-description">${escapeHtml(template.description)}</p>
+          <div class="template-commands">
+            <div class="commands-label">Commands</div>
+            ${template.commands ? `<code>${template.commands.length} command${template.commands.length !== 1 ? 's' : ''}</code>` : '<code>No commands</code>'}
           </div>
-        `).join('')}
+        </div>
+        <div class="template-actions">
+          <button class="btn btn-primary btn-sm" onclick="viewTemplate('${template._id}')">View</button>
+          ${!template.isSystem ? `
+            <button class="btn btn-secondary btn-sm" onclick="editTemplate('${template._id}')">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTemplate('${template._id}', '${template.name}')">Delete</button>
+          ` : ''}
+        </div>
       </div>
-    `
+    `).join('')
 
     const grid = document.getElementById('templatesGrid')
     if (grid) {
@@ -53,30 +54,34 @@ async function viewTemplate(id: string): Promise<void> {
     const template = data.template
 
     const content = `
-      <div class="repo-details">
+      <div class="template-details">
         <div class="detail-row">
-          <label>Name:</label>
+          <span class="detail-label">Name</span>
           <span>${escapeHtml(template.displayName)}</span>
         </div>
         <div class="detail-row">
-          <label>Description:</label>
+          <span class="detail-label">Description</span>
           <span>${escapeHtml(template.description)}</span>
         </div>
         <div class="detail-row">
-          <label>Type:</label>
-          <span>${template.isSystem ? 'System' : 'Custom'}</span>
+          <span class="detail-label">Type</span>
+          <span>
+            <span class="badge ${template.isSystem ? 'system' : ''}">
+              ${template.isSystem ? 'System' : 'Custom'}
+            </span>
+          </span>
         </div>
         <div class="detail-row">
-          <label>Commands:</label>
-          <pre>${JSON.stringify(template.commands, null, 2)}</pre>
+          <span class="detail-label">Commands</span>
+          <pre><code>${escapeHtml(JSON.stringify(template.commands, null, 2))}</code></pre>
         </div>
         <div class="detail-row">
-          <label>Pre-Deploy:</label>
-          <pre>${JSON.stringify(template.preDeploy || [], null, 2)}</pre>
+          <span class="detail-label">Pre-Deploy</span>
+          <pre><code>${escapeHtml(JSON.stringify(template.preDeploy || [], null, 2))}</code></pre>
         </div>
         <div class="detail-row">
-          <label>Post-Deploy:</label>
-          <pre>${JSON.stringify(template.postDeploy || [], null, 2)}</pre>
+          <span class="detail-label">Post-Deploy</span>
+          <pre><code>${escapeHtml(JSON.stringify(template.postDeploy || [], null, 2))}</code></pre>
         </div>
       </div>
     `
