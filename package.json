@@ -2,21 +2,20 @@
   "name": "webhook-deployer",
   "version": "1.0.0",
   "description": "Automated webhook listener for Git deployment",
-  "main": "server.js",
   "scripts": {
-    "start": "node server/index.js",
-    "dev": "concurrently \"nodemon server/index.js\" \"yarn build:watch\"",
-    "dev:old": "nodemon server.js",
+    "start": "node dist/index.js",
+    "dev": "concurrently \"yarn build:watch\" \"nodemon dist/index.js\"",
     "listener": "node scripts/listener.js",
     "self-deploy": "node scripts/self-deploy.js",
     "setup-nginx": "sudo node scripts/setup-nginx.js",
     "repo": "node scripts/add-repo.js",
     "domain": "node scripts/add-domain.js",
     "mock": "node scripts/mock.js",
-    "build:ts": "tsc",
+    "build:ts": "tsc -p tsconfig.server.json",
+    "build:frontend": "node esbuild.config.js",
     "build:scss": "sass src/scss:public/css",
-    "build": "yarn build:ts && yarn build:scss",
-    "build:watch": "concurrently \"tsc --watch\" \"sass --watch src/scss:public/css\"",
+    "build": "yarn build:ts && yarn build:frontend && yarn build:scss",
+    "build:watch": "concurrently \"tsc -p tsconfig.server.json --watch\" \"node --watch esbuild.config.js\" \"sass --watch src/scss:public/css\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -45,10 +44,13 @@
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.0.3",
     "concurrently": "^9.2.1",
+    "esbuild": "^0.27.2",
     "nodemon": "^3.0.1",
     "sass": "^1.97.1",
+    "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
 }

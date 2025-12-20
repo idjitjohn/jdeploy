@@ -1,4 +1,5 @@
-@import 'variables';
+@use 'variables' as *;
+@use 'sass:color';
 
 .login-container {
   display: flex;
@@ -60,7 +61,7 @@
       transition: all 0.2s;
 
       &:hover {
-        background: darken($primary-color, 5%);
+        background: color.adjust($primary-color, $lightness: -5%);
         transform: translateY(-0.0625em);
         box-shadow: 0 0.125em 0.5em rgba(0, 0, 0, 0.15);
       }
