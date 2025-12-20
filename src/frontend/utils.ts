@@ -2,7 +2,11 @@ export async function checkAuth(): Promise<void> {
   try {
     await window.api.auth.me()
   } catch (error) {
-    window.location.href = '/index.html'
+    const isLoginPage = window.location.pathname === '/' || window.location.pathname === '/index.html'
+    if (!isLoginPage) {
+      window.location.href = '/index.html'
+    }
+    throw error
   }
 }
 

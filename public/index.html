@@ -3,31 +3,57 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Webhook Deployer - Login</title>
+  <title>Login - Webhook Deployer</title>
   <link rel="stylesheet" href="/css/main.css">
   <link rel="stylesheet" href="/css/login.css">
 </head>
 <body>
   <div class="login-container">
     <div class="login-card">
-      <h1>Webhook Deployer</h1>
+      <div class="login-header">
+        <h1>
+          <span class="login-icon">⚡</span>
+          Webhook Deployer
+        </h1>
+        <p>Deploy with confidence</p>
+      </div>
+
+      <div class="login-alert" id="loginAlert" role="alert"></div>
 
       <form id="loginForm">
         <div class="form-group">
           <label for="username">Username</label>
-          <input type="text" id="username" name="username" required autocomplete="username" placeholder="admin">
+          <input
+            type="text"
+            id="username"
+            name="username"
+            required
+            autocomplete="username"
+            placeholder="Enter your username"
+            spellcheck="false"
+          />
         </div>
 
         <div class="form-group">
           <label for="password">Password</label>
-          <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="••••••">
+          <input
+            type="password"
+            id="password"
+            name="password"
+            required
+            autocomplete="current-password"
+            placeholder="Enter your password"
+          />
         </div>
 
-        <button type="submit" id="loginButton">Log In</button>
+        <button type="submit" id="loginButton" class="login-button">
+          Sign In
+        </button>
       </form>
 
       <div class="login-footer">
-        Default: admin / admin123
+        <strong>Demo Credentials:</strong><br />
+        admin / admin123
       </div>
     </div>
   </div>

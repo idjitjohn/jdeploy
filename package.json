@@ -10,7 +10,7 @@
     "setup-nginx": "sudo node scripts/setup-nginx.js",
     "repo": "node scripts/add-repo.js",
     "domain": "node scripts/add-domain.js",
-    "mock": "node scripts/mock.js",
+    "mock": "tsx scripts/mock.ts",
     "build:ts": "tsc -p tsconfig.server.json",
     "build:frontend": "node esbuild.config.js",
     "build:scss": "sass src/scss:public/css",
@@ -51,6 +51,7 @@
     "nodemon": "^3.0.1",
     "sass": "^1.97.1",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }

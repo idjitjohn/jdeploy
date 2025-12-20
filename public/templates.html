@@ -8,8 +8,8 @@
   <link rel="stylesheet" href="/css/templates.css">
 </head>
 <body>
-  <div class="header">
-    <h1>Webhook Deployer</h1>
+  <header class="header">
+    <h1>⚡ Webhook Deployer</h1>
     <nav>
       <a href="/dashboard.html">Dashboard</a>
       <a href="/repositories.html">Repositories</a>
@@ -17,21 +17,23 @@
       <a href="/templates.html" class="active">Templates</a>
       <a href="/logs.html">Logs</a>
     </nav>
-    <button id="logoutBtn" class="btn btn-danger">Logout</button>
-  </div>
+    <button id="logoutBtn" class="btn btn-secondary btn-sm">Logout</button>
+  </header>
 
-  <div class="container">
-    <div class="card">
-      <div class="templates-header">
+  <main class="container">
+    <div class="templates-container">
+      <section class="templates-header">
         <h2>Deployment Templates</h2>
-        <button id="addTemplateBtn" class="btn btn-primary">Create Custom Template</button>
-      </div>
+        <div class="header-actions">
+          <button id="addTemplateBtn" class="btn btn-primary">+ Create Template</button>
+        </div>
+      </section>
 
       <div id="templatesGrid">
-        <div class="loading">Loading...</div>
+        <div class="loading">Loading templates...</div>
       </div>
     </div>
-  </div>
+  </main>
 
   <script src="/js/api.js"></script>
   <script src="/js/utils.js"></script>

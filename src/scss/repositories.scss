@@ -5,40 +5,50 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2em;
+    margin-bottom: $spacing-2xl;
     flex-wrap: wrap;
-    gap: 1em;
+    gap: $spacing-lg;
 
     h2 {
-      color: $text-color;
-      font-size: 1.75em;
+      color: $color-text;
+      font-size: 2em;
+      font-weight: 600;
       margin: 0;
+      letter-spacing: -0.5px;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: $spacing-sm;
     }
   }
 
   #repositoriesTable {
     width: 100%;
-    background: $bg-white;
-    border-radius: $border-radius;
-    box-shadow: $box-shadow;
-    overflow: auto;
+    background: $color-bg-default;
+    border: 1px solid $color-border-default;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-sm;
+    overflow: hidden;
 
     table {
       width: 100%;
       border-collapse: collapse;
+      font-size: 0.9375em;
 
       thead {
         tr {
-          background: $bg-light;
+          background: $color-bg-secondary;
+          border-bottom: 1px solid $color-border-default;
 
           th {
-            padding: 1em;
+            padding: $spacing-md $spacing-lg;
             text-align: left;
             font-weight: 600;
-            color: $text-color;
+            color: $color-text-secondary;
             font-size: 0.875em;
             text-transform: uppercase;
-            border-bottom: 1px solid $border-color;
+            letter-spacing: 0.5px;
             white-space: nowrap;
           }
         }
@@ -46,32 +56,33 @@
 
       tbody {
         tr {
-          border-bottom: 1px solid $border-color;
-          transition: background-color 0.2s;
+          border-bottom: 1px solid $color-border-muted;
+          transition: background $transition-fast;
 
           td {
-            padding: 1em;
-            color: $text-color;
+            padding: $spacing-md $spacing-lg;
+            color: $color-text;
+            vertical-align: middle;
 
             strong {
-              color: $text-color;
+              color: $color-text;
               font-weight: 600;
               display: block;
-              margin-bottom: 0.25em;
+              margin-bottom: $spacing-xs;
             }
 
             code {
-              background: $bg-light;
-              padding: 0.25em 0.5em;
-              border-radius: $border-radius-sm;
+              background: $color-bg-secondary;
+              padding: $spacing-xs $spacing-sm;
+              border-radius: $radius-sm;
               font-family: $font-mono;
-              font-size: 0.875em;
-              color: #666;
+              font-size: 0.85em;
+              color: $color-text-secondary;
             }
           }
 
           &:hover {
-            background: #f9f9f9;
+            background: $color-bg-secondary;
           }
 
           &:last-child {
@@ -83,14 +94,16 @@
 
     .empty-state {
       text-align: center;
-      padding: 3em;
-      color: $text-lighter;
+      padding: $spacing-2xl;
+      color: $color-text-tertiary;
+      font-size: 0.9375em;
     }
   }
 
   .btn-group {
     display: flex;
-    gap: 0.5em;
+    gap: $spacing-sm;
+    flex-wrap: wrap;
 
     .btn {
       white-space: nowrap;
@@ -99,25 +112,30 @@
 
   .repo-details {
     .detail-row {
-      margin-bottom: 1em;
-      padding-bottom: 1em;
-      border-bottom: 1px solid $border-color;
+      margin-bottom: $spacing-lg;
+      padding-bottom: $spacing-lg;
+      border-bottom: 1px solid $color-border-muted;
 
       &:last-child {
         border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
       }
 
-      label {
-        display: inline-block;
-        width: 8em;
+      .detail-label {
+        display: block;
         font-weight: 600;
-        color: #555;
-        margin-bottom: 0.25em;
+        color: $color-text-secondary;
+        font-size: 0.875em;
+        margin-bottom: $spacing-sm;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
 
       span {
         display: block;
-        color: $text-color;
+        color: $color-text;
+        font-size: 0.9375em;
 
         &.status {
           display: inline-block;
@@ -125,40 +143,56 @@
       }
 
       .branch-item {
-        margin-bottom: 0.5em;
-        padding: 0.5em;
-        background: $bg-light;
-        border-radius: $border-radius-sm;
-        font-size: 0.875em;
+        margin-bottom: $spacing-md;
+        padding: $spacing-md;
+        background: $color-bg-secondary;
+        border: 1px solid $color-border-muted;
+        border-radius: $radius-md;
+        font-size: 0.9375em;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
 
         strong {
           display: block;
-          margin-bottom: 0.25em;
-          color: $text-color;
+          margin-bottom: $spacing-xs;
+          color: $color-text;
+          font-weight: 600;
+        }
+
+        .branch-meta {
+          display: flex;
+          gap: $spacing-md;
+          font-size: 0.875em;
+          color: $color-text-secondary;
+
+          span {
+            display: inline;
+          }
         }
       }
     }
   }
 
-  .form-control {
-    width: auto;
-    padding: 0.5em;
-    border: 1px solid #ddd;
-    border-radius: $border-radius-sm;
-    font-size: 0.875em;
-  }
-
-  @media (max-width: 768px) {
+  @media (max-width: 48em) {
     .repositories-header {
       flex-direction: column;
-      align-items: stretch;
+      align-items: flex-start;
+      gap: $spacing-md;
 
       h2 {
+        width: 100%;
         margin-bottom: 0;
       }
 
-      .btn {
+      .header-actions {
         width: 100%;
+        flex-direction: column;
+
+        .btn {
+          width: 100%;
+        }
       }
     }
 
@@ -167,7 +201,7 @@
 
       table {
         th, td {
-          padding: 0.75em 0.5em;
+          padding: $spacing-sm $spacing-md;
           font-size: 0.875em;
         }
       }

@@ -2,113 +2,166 @@
 
 .dashboard-container {
   .dashboard-header {
-    margin-bottom: 2em;
+    margin-bottom: $spacing-2xl;
 
     h2 {
-      color: $text-color;
-      font-size: 1.75em;
+      color: $color-text;
+      font-size: 2em;
+      font-weight: 600;
       margin: 0;
+      letter-spacing: -0.5px;
+    }
+
+    p {
+      color: $color-text-secondary;
+      margin-top: $spacing-sm;
+      font-size: 0.9375em;
     }
   }
 
   .overview-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(15em, 1fr));
-    gap: 1.5em;
-    margin-bottom: 2em;
+    grid-template-columns: repeat(auto-fit, minmax(16em, 1fr));
+    gap: $spacing-lg;
+    margin-bottom: $spacing-2xl;
 
     .overview-card {
-      background: $bg-white;
-      padding: 1.5em;
-      border-radius: $border-radius;
-      box-shadow: $box-shadow;
-      text-align: center;
-      border-top: 4px solid $primary-color;
+      background: $color-bg-default;
+      padding: $spacing-lg;
+      border: 1px solid $color-border-default;
+      border-radius: $radius-lg;
+      box-shadow: $shadow-sm;
+      transition: all $transition-base;
+      border-left: 4px solid $color-primary;
 
-      .overview-label {
-        color: $text-light;
-        font-size: 0.875em;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 0.5em;
+      &:hover {
+        box-shadow: $shadow-md;
+        border-color: $color-border-muted;
       }
 
-      .overview-value {
-        color: $text-color;
-        font-size: 2.5em;
+      .overview-label {
+        color: $color-text-tertiary;
+        font-size: 0.8125em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: $spacing-sm;
         font-weight: 600;
       }
 
+      .overview-value {
+        color: $color-text;
+        font-size: 2.25em;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: $spacing-sm;
+      }
+
+      .overview-subtitle {
+        color: $color-text-secondary;
+        font-size: 0.875em;
+      }
+
       &:nth-child(2) {
-        border-top-color: $info-color;
+        border-left-color: $color-info;
       }
 
       &:nth-child(3) {
-        border-top-color: $success-color;
+        border-left-color: $color-success;
+      }
+
+      &:nth-child(4) {
+        border-left-color: $color-warning;
       }
     }
   }
 
   .dashboard-section {
-    margin-bottom: 2em;
+    margin-bottom: $spacing-2xl;
 
-    .section-title {
-      color: $text-color;
-      font-size: 1.25em;
-      font-weight: 600;
-      margin-bottom: 1em;
-      padding-bottom: 0.5em;
-      border-bottom: 2px solid $border-color;
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: $spacing-lg;
+      padding-bottom: $spacing-md;
+      border-bottom: 1px solid $color-border-muted;
+
+      .section-title {
+        color: $color-text;
+        font-size: 1.25em;
+        font-weight: 600;
+        margin: 0;
+        letter-spacing: -0.25px;
+      }
+
+      .section-actions {
+        display: flex;
+        gap: $spacing-sm;
+      }
     }
   }
 
   #pm2Table {
     width: 100%;
-    background: $bg-white;
-    border-radius: $border-radius;
-    box-shadow: $box-shadow;
+    background: $color-bg-default;
+    border: 1px solid $color-border-default;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-sm;
     overflow: hidden;
 
     table {
       width: 100%;
       border-collapse: collapse;
+      font-size: 0.9375em;
 
       thead {
         tr {
-          background: $bg-light;
+          background: $color-bg-secondary;
+          border-bottom: 1px solid $color-border-default;
 
           th {
-            padding: 1em;
+            padding: $spacing-md $spacing-lg;
             text-align: left;
             font-weight: 600;
-            color: $text-color;
+            color: $color-text-secondary;
             font-size: 0.875em;
             text-transform: uppercase;
-            border-bottom: 1px solid $border-color;
+            letter-spacing: 0.5px;
+            vertical-align: middle;
           }
         }
       }
 
       tbody {
         tr {
-          border-bottom: 1px solid $border-color;
-
-          td {
-            padding: 1em;
-            color: $text-color;
-
-            strong {
-              color: $text-color;
-              font-weight: 600;
-            }
-          }
+          border-bottom: 1px solid $color-border-muted;
+          transition: background $transition-fast;
 
           &:hover {
-            background: #f9f9f9;
+            background: $color-bg-secondary;
           }
 
           &:last-child {
             border-bottom: none;
+          }
+
+          td {
+            padding: $spacing-md $spacing-lg;
+            color: $color-text;
+            vertical-align: middle;
+
+            strong {
+              color: $color-text;
+              font-weight: 600;
+            }
+
+            code {
+              background: $color-bg-secondary;
+              padding: $spacing-xs $spacing-sm;
+              border-radius: $radius-sm;
+              font-family: $font-mono;
+              font-size: 0.85em;
+            }
           }
         }
       }
@@ -116,62 +169,98 @@
   }
 
   #recentLogs {
-    background: $bg-white;
-    border-radius: $border-radius;
-    box-shadow: $box-shadow;
-    padding: 1.5em;
+    background: $color-bg-default;
+    border: 1px solid $color-border-default;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-sm;
+    overflow: hidden;
 
     .logs-list {
       display: flex;
       flex-direction: column;
-      gap: 1em;
 
       .log-item {
-        padding: 1em;
-        border: 1px solid $border-color;
-        border-radius: $border-radius-sm;
-        transition: all 0.2s;
+        padding: $spacing-lg;
+        border-bottom: 1px solid $color-border-muted;
+        transition: all $transition-fast;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: $spacing-md;
+
+        &:last-child {
+          border-bottom: none;
+        }
 
         &:hover {
-          background: #f9f9f9;
-          border-color: $primary-color;
+          background: $color-bg-secondary;
         }
 
         .log-header {
           display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 0.5em;
+          flex-direction: column;
+          gap: $spacing-xs;
+          flex: 1;
 
           .log-repo {
             font-weight: 600;
-            color: $text-color;
+            color: $color-text;
+            font-size: 0.9375em;
+          }
+
+          .log-meta {
+            display: flex;
+            gap: $spacing-md;
+            font-size: 0.875em;
+
+            .log-branch {
+              color: $color-text-secondary;
+
+              code {
+                background: $color-bg-secondary;
+                padding: $spacing-xs $spacing-sm;
+                border-radius: $radius-sm;
+                font-family: $font-mono;
+                font-size: 0.85em;
+              }
+            }
           }
         }
 
         .log-time {
           font-size: 0.875em;
-          color: $text-light;
-          margin-bottom: 0.25em;
+          color: $color-text-tertiary;
+          white-space: nowrap;
         }
 
-        .log-branch {
-          font-size: 0.875em;
-          color: $text-light;
+        .log-status {
+          flex-shrink: 0;
         }
       }
     }
 
     .empty-state {
       text-align: center;
-      padding: 2em;
-      color: $text-lighter;
+      padding: $spacing-2xl;
+      color: $color-text-tertiary;
+      font-size: 0.9375em;
     }
   }
 
-  @media (max-width: 900px) {
+  @media (max-width: 48em) {
     .overview-grid {
       grid-template-columns: 1fr;
+    }
+
+    .dashboard-section .section-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: $spacing-md;
+    }
+
+    #recentLogs .logs-list .log-item {
+      flex-direction: column;
+      align-items: flex-start;
     }
   }
 }

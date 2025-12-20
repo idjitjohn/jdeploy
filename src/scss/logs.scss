@@ -1,50 +1,59 @@
 @use 'variables' as *;
+@use 'sass:color';
 
 .logs-container {
   .logs-header {
-    margin-bottom: 2em;
+    margin-bottom: $spacing-lg;
 
     h2 {
-      color: $text-color;
-      font-size: 1.75em;
-      margin: 0 0 1em 0;
+      color: $color-text;
+      font-size: 2em;
+      font-weight: 600;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+
+    p {
+      color: $color-text-secondary;
+      margin-top: $spacing-sm;
+      font-size: 0.9375em;
     }
   }
 
   .logs-filters {
     display: flex;
-    gap: 1em;
-    margin-bottom: 2em;
+    gap: $spacing-md;
+    margin-bottom: $spacing-2xl;
     flex-wrap: wrap;
     align-items: flex-end;
 
-    .form-group {
-      margin-bottom: 0;
+    .filter-group {
       flex: 1;
-      min-width: 15em;
+      min-width: 14em;
 
       label {
         display: block;
-        margin-bottom: 0.5em;
-        color: $text-color;
+        margin-bottom: $spacing-sm;
+        color: $color-text;
         font-weight: 500;
         font-size: 0.875em;
       }
 
       select {
         width: 100%;
-        padding: 0.5em;
-        border: 1px solid #ddd;
-        border-radius: $border-radius-sm;
-        font-size: 0.875em;
-        background: $bg-white;
-        color: $text-color;
+        padding: $spacing-sm $spacing-md;
+        border: 1px solid $color-border-default;
+        border-radius: $radius-md;
+        font-size: 0.9375em;
+        background: $color-bg-default;
+        color: $color-text;
         cursor: pointer;
-        transition: border-color 0.2s;
+        transition: all $transition-fast;
 
         &:focus {
           outline: none;
-          border-color: $primary-color;
+          border-color: $color-primary;
+          box-shadow: 0 0 0 3px color.adjust($color-primary, $alpha: -0.85);
         }
       }
     }
@@ -52,27 +61,30 @@
 
   #logsTable {
     width: 100%;
-    background: $bg-white;
-    border-radius: $border-radius;
-    box-shadow: $box-shadow;
-    overflow: auto;
+    background: $color-bg-default;
+    border: 1px solid $color-border-default;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-sm;
+    overflow: hidden;
 
     table {
       width: 100%;
       border-collapse: collapse;
+      font-size: 0.9375em;
 
       thead {
         tr {
-          background: $bg-light;
+          background: $color-bg-secondary;
+          border-bottom: 1px solid $color-border-default;
 
           th {
-            padding: 1em;
+            padding: $spacing-md $spacing-lg;
             text-align: left;
             font-weight: 600;
-            color: $text-color;
+            color: $color-text-secondary;
             font-size: 0.875em;
             text-transform: uppercase;
-            border-bottom: 1px solid $border-color;
+            letter-spacing: 0.5px;
             white-space: nowrap;
           }
         }
@@ -80,54 +92,17 @@
 
       tbody {
         tr {
-          border-bottom: 1px solid $border-color;
-          transition: background-color 0.2s;
+          border-bottom: 1px solid $color-border-muted;
+          transition: background $transition-fast;
 
           td {
-            padding: 1em;
-            color: $text-color;
-
-            .badge {
-              display: inline-block;
-              padding: 0.25em 0.75em;
-              border-radius: $border-radius-sm;
-              font-size: 0.75em;
-              font-weight: 500;
-              background: #e9ecef;
-              color: #495057;
-              margin-right: 0.5em;
-            }
-
-            .status {
-              padding: 0.25em 0.75em;
-              border-radius: $border-radius-sm;
-              font-size: 0.875em;
-              font-weight: 500;
-
-              &.online, &.success {
-                background: #d4edda;
-                color: #155724;
-              }
-
-              &.stopped, &.failed {
-                background: #f8d7da;
-                color: #721c24;
-              }
-
-              &.running {
-                background: #cce5ff;
-                color: #004085;
-              }
-
-              &.pending {
-                background: #fff3cd;
-                color: #856404;
-              }
-            }
+            padding: $spacing-md $spacing-lg;
+            color: $color-text;
+            vertical-align: middle;
           }
 
           &:hover {
-            background: #f9f9f9;
+            background: $color-bg-secondary;
           }
 
           &:last-child {
@@ -139,32 +114,38 @@
 
     .empty-state {
       text-align: center;
-      padding: 3em;
-      color: $text-lighter;
+      padding: $spacing-2xl;
+      color: $color-text-tertiary;
+      font-size: 0.9375em;
     }
   }
 
   .log-details {
     .detail-row {
-      margin-bottom: 1.5em;
-      padding-bottom: 1em;
-      border-bottom: 1px solid $border-color;
+      margin-bottom: $spacing-lg;
+      padding-bottom: $spacing-lg;
+      border-bottom: 1px solid $color-border-muted;
 
       &:last-child {
         border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
       }
 
-      label {
-        display: inline-block;
-        width: 8em;
+      .detail-label {
+        display: block;
         font-weight: 600;
-        color: #555;
-        margin-bottom: 0.25em;
+        color: $color-text-secondary;
+        font-size: 0.875em;
+        margin-bottom: $spacing-sm;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
       }
 
       span {
         display: block;
-        color: $text-color;
+        color: $color-text;
+        font-size: 0.9375em;
 
         &.status {
           display: inline-block;
@@ -174,54 +155,63 @@
       pre {
         background: #1e1e1e;
         color: #d4d4d4;
-        padding: 1em;
-        border-radius: $border-radius-sm;
+        padding: $spacing-md;
+        border-radius: $radius-md;
         overflow: auto;
         max-height: 20em;
-        font-size: 0.875em;
-        margin: 0.5em 0 0 0;
-        line-height: 1.5;
+        font-size: 0.85em;
+        margin: $spacing-md 0 0 0;
+        line-height: 1.4;
+        border: 1px solid #333;
       }
     }
   }
 
   .log-viewer {
     background: #1e1e1e;
-    padding: 1.5em;
-    border-radius: $border-radius;
-    box-shadow: $box-shadow;
-    margin-bottom: 1em;
+    border: 1px solid #333;
+    padding: $spacing-lg;
+    border-radius: $radius-lg;
+    box-shadow: $shadow-md;
+    margin-bottom: $spacing-lg;
 
     .log-viewer-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 1em;
-      padding-bottom: 1em;
+      margin-bottom: $spacing-lg;
+      padding-bottom: $spacing-lg;
       border-bottom: 1px solid #333;
 
       h3 {
         margin: 0;
         color: #d4d4d4;
         font-size: 1em;
+        font-weight: 600;
       }
 
       .log-controls {
         display: flex;
-        gap: 0.5em;
+        gap: $spacing-sm;
 
         button {
-          padding: 0.25em 0.75em;
+          padding: $spacing-xs $spacing-sm;
           background: #333;
           color: #d4d4d4;
-          border: none;
-          border-radius: $border-radius-sm;
+          border: 1px solid #444;
+          border-radius: $radius-sm;
           font-size: 0.875em;
           cursor: pointer;
-          transition: background-color 0.2s;
+          transition: all $transition-fast;
+          font-weight: 500;
 
           &:hover {
             background: #444;
+            border-color: #555;
+          }
+
+          &:active {
+            background: #333;
           }
         }
       }
@@ -230,8 +220,8 @@
     .log-content {
       color: #d4d4d4;
       font-family: $font-mono;
-      font-size: 0.875em;
-      line-height: 1.5;
+      font-size: 0.85em;
+      line-height: 1.4;
       max-height: 25em;
       overflow-y: auto;
       white-space: pre-wrap;
@@ -247,31 +237,32 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 1em;
+    margin-top: $spacing-lg;
     flex-wrap: wrap;
-    gap: 1em;
+    gap: $spacing-md;
 
     .toolbar-info {
       font-size: 0.875em;
-      color: $text-light;
+      color: $color-text-secondary;
     }
 
     .toolbar-actions {
       display: flex;
-      gap: 0.5em;
+      gap: $spacing-sm;
 
       .btn {
-        padding: 0.5em 1em;
+        padding: $spacing-sm $spacing-md;
         font-size: 0.875em;
       }
     }
   }
 
-  @media (max-width: 768px) {
+  @media (max-width: 48em) {
     .logs-filters {
       flex-direction: column;
+      gap: $spacing-md;
 
-      .form-group {
+      .filter-group {
         width: 100%;
         min-width: unset;
       }
@@ -282,7 +273,7 @@
 
       table {
         th, td {
-          padding: 0.75em 0.5em;
+          padding: $spacing-sm $spacing-md;
           font-size: 0.875em;
         }
       }
@@ -291,12 +282,14 @@
     .log-toolbar {
       flex-direction: column;
       align-items: stretch;
+      gap: $spacing-sm;
 
       .toolbar-actions {
         width: 100%;
+        flex-direction: column;
 
         .btn {
-          flex: 1;
+          width: 100%;
         }
       }
     }

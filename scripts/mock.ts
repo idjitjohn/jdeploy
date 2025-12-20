@@ -1,11 +1,16 @@
 #!/usr/bin/env node
 
-require('dotenv').config()
-const mongoose = require('mongoose')
-const fs = require('fs')
-const path = require('path')
+import 'dotenv/config'
+import mongoose from 'mongoose'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import * as modelsModule from '../dist/models/index.js'
 
-const { User, Repository, Domain, Template, Configuration } = require('../server/models')
+const { User, RepositoryModel: Repository, DomainModel: Domain, Template, Configuration } = modelsModule
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 const configPath = path.join(__dirname, '..', 'deploy.config.json')
 const templatesDir = path.join(__dirname, '..', 'templates')
@@ -41,6 +46,27 @@ async function mock() {
       console.log('  Password: admin123\n')
     } else {
       console.log('✓ Admin user already exists\n')
+    }
+
+    const testUsers = [
+      { username: 'dev', password: 'dev123', email: 'dev@localhost', role: 'user' },
+      { username: 'operator', password: 'operator123', email: 'operator@localhost', role: 'user' }
+    ]
+
+    for (const userData of testUsers) {
+      let user = await User.findOne({ username: userData.username })
+      if (!user) {
+        const hashedPassword = await User.hashPassword(userData.password)
+        user = await User.create({
+          username: userData.username,
+          email: userData.email,
+          passwordHash: hashedPassword,
+          role: userData.role
+        })
+        console.log(`✓ Created ${userData.role} user`)
+        console.log(`  Username: ${userData.username}`)
+        console.log(`  Password: ${userData.password}\n`)
+      }
     }
 
     if (config.paths) {
@@ -117,7 +143,7 @@ async function mock() {
         const branchesMap = new Map()
 
         if (repo.branches) {
-          Object.entries(repo.branches).forEach(([branchName, branchConfig]) => {
+          Object.entries(repo.branches).forEach(([branchName, branchConfig]: any) => {
             branchesMap.set(branchName, {
               type: branchConfig.type || 'dev',
               pm2Name: branchConfig.pm2Name || `${repo.name}-${branchConfig.type}`,
@@ -129,7 +155,7 @@ async function mock() {
 
         const envMap = new Map()
         if (repo.env) {
-          Object.entries(repo.env).forEach(([key, value]) => {
+          Object.entries(repo.env).forEach(([key, value]: any) => {
             envMap.set(key, value)
           })
         }
@@ -158,8 +184,14 @@ async function mock() {
     console.log('\n✅ Migration completed successfully!')
     console.log('\nYou can now start the web server with: yarn dev')
     console.log('Login at http://localhost:50000 with:')
-    console.log('  Username: admin')
-    console.log('  Password: admin123\n')
+    console.log('  Admin:')
+    console.log('    Username: admin')
+    console.log('    Password: admin123')
+    console.log('  Test Users:')
+    console.log('    Username: dev')
+    console.log('    Password: dev123')
+    console.log('    Username: operator')
+    console.log('    Password: operator123\n')
 
     await mongoose.disconnect()
     process.exit(0)

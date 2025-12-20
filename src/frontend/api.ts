@@ -19,7 +19,6 @@ async function apiRequest<T = any>(url: string, options: ApiRequestOptions = {})
   })
 
   if (response.status === 401) {
-    window.location.href = '/index.html'
     throw new Error('Unauthorized')
   }
 

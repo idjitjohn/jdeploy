@@ -14,7 +14,7 @@ const buildOptions = {
   minify: true,
   sourcemap: true,
   target: 'ES2020',
-  format: 'esm',
+  format: 'iife',
 }
 
 esbuild.build(buildOptions).catch(() => process.exit(1))
