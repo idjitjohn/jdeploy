@@ -78,7 +78,7 @@ async function loadLogs(): Promise<void> {
                 <td>${escapeHtml(log.triggeredBy)}</td>
                 <td>${duration}</td>
                 <td>
-                  <button class="btn btn-sm btn-primary" onclick="viewLog('${log._id}')">View Details</button>
+                  <button class="btn btn-sm btn-primary" onclick="viewLog('${log._id || ''}')" ${!log._id ? 'disabled' : ''}>View Details</button>
                 </td>
               </tr>
             `
@@ -92,6 +92,10 @@ async function loadLogs(): Promise<void> {
 }
 
 async function viewLog(logId: string): Promise<void> {
+  if (!logId || logId.trim() === '') {
+    showNotification('Invalid log ID', 'error')
+    return
+  }
   try {
     const data = await api.logs.get(logId)
     const log = data.log

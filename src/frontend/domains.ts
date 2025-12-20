@@ -33,7 +33,7 @@ async function loadDomains(): Promise<void> {
               <td><code>${escapeHtml(domain.privateKeyPath)}</code></td>
               <td>${formatDate(domain.createdAt)}</td>
               <td>
-                <button class="btn btn-sm btn-danger" onclick="deleteDomain('${domain._id}', '${domain.name}')">Delete</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteDomain('${domain._id || ''}', '${escapeHtml(domain.name)}')" ${!domain._id ? 'disabled' : ''}>Delete</button>
               </td>
             </tr>
           `).join('')}
@@ -51,6 +51,10 @@ async function loadDomains(): Promise<void> {
 }
 
 async function deleteDomain(id: string, name: string): Promise<void> {
+  if (!id || id.trim() === '') {
+    showNotification('Invalid domain ID', 'error')
+    return
+  }
   if (!confirm(`Are you sure you want to delete domain "${name}"?`)) {
     return
   }

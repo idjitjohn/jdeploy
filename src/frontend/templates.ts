@@ -30,10 +30,10 @@ async function loadTemplates(): Promise<void> {
           </div>
         </div>
         <div class="template-actions">
-          <button class="btn btn-primary btn-sm" onclick="viewTemplate('${template._id}')">View</button>
+          <button class="btn btn-primary btn-sm" onclick="viewTemplate('${template._id || ''}')" ${!template._id ? 'disabled' : ''}>View</button>
           ${!template.isSystem ? `
-            <button class="btn btn-secondary btn-sm" onclick="editTemplate('${template._id}')">Edit</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteTemplate('${template._id}', '${template.name}')">Delete</button>
+            <button class="btn btn-secondary btn-sm" onclick="editTemplate('${template._id || ''}')" ${!template._id ? 'disabled' : ''}>Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTemplate('${template._id || ''}', '${escapeHtml(template.name)}')" ${!template._id ? 'disabled' : ''}>Delete</button>
           ` : ''}
         </div>
       </div>
@@ -49,6 +49,10 @@ async function loadTemplates(): Promise<void> {
 }
 
 async function viewTemplate(id: string): Promise<void> {
+  if (!id || id.trim() === '') {
+    showNotification('Invalid template ID', 'error')
+    return
+  }
   try {
     const data = await api.templates.get(id)
     const template = data.template
@@ -93,6 +97,10 @@ async function viewTemplate(id: string): Promise<void> {
 }
 
 async function editTemplate(id: string): Promise<void> {
+  if (!id || id.trim() === '') {
+    showNotification('Invalid template ID', 'error')
+    return
+  }
   try {
     const data = await api.templates.get(id)
     const template = data.template
@@ -151,6 +159,10 @@ async function editTemplate(id: string): Promise<void> {
 }
 
 async function deleteTemplate(id: string, name: string): Promise<void> {
+  if (!id || id.trim() === '') {
+    showNotification('Invalid template ID', 'error')
+    return
+  }
   if (!confirm(`Are you sure you want to delete template "${name}"?`)) {
     return
   }
