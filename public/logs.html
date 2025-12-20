@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deployment Logs - Webhook Deployer</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/logs.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Webhook Deployer</h1>
+    <nav>
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/repositories.html">Repositories</a>
+      <a href="/domains.html">Domains</a>
+      <a href="/templates.html">Templates</a>
+      <a href="/logs.html" class="active">Logs</a>
+    </nav>
+    <button id="logoutBtn" class="btn btn-danger">Logout</button>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="logs-header">
+        <h2>Deployment Logs</h2>
+      </div>
+
+      <div class="logs-filters">
+        <div class="form-group">
+          <label for="repoFilter">Repository</label>
+          <select id="repoFilter" class="form-control">
+            <option value="">Select repository...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="statusFilter">Status</label>
+          <select id="statusFilter" class="form-control">
+            <option value="">All statuses</option>
+            <option value="success">Success</option>
+            <option value="failed">Failed</option>
+            <option value="running">Running</option>
+            <option value="pending">Pending</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="logsTable">
+        <div class="empty-state">Select a repository to view logs</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/logs.js"></script>
+</body>
+</html>

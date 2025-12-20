@@ -1,0 +1,176 @@
+@import 'variables';
+
+.repositories-container {
+  .repositories-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2em;
+    flex-wrap: wrap;
+    gap: 1em;
+
+    h2 {
+      color: $text-color;
+      font-size: 1.75em;
+      margin: 0;
+    }
+  }
+
+  #repositoriesTable {
+    width: 100%;
+    background: $bg-white;
+    border-radius: $border-radius;
+    box-shadow: $box-shadow;
+    overflow: auto;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+
+      thead {
+        tr {
+          background: $bg-light;
+
+          th {
+            padding: 1em;
+            text-align: left;
+            font-weight: 600;
+            color: $text-color;
+            font-size: 0.875em;
+            text-transform: uppercase;
+            border-bottom: 1px solid $border-color;
+            white-space: nowrap;
+          }
+        }
+      }
+
+      tbody {
+        tr {
+          border-bottom: 1px solid $border-color;
+          transition: background-color 0.2s;
+
+          td {
+            padding: 1em;
+            color: $text-color;
+
+            strong {
+              color: $text-color;
+              font-weight: 600;
+              display: block;
+              margin-bottom: 0.25em;
+            }
+
+            code {
+              background: $bg-light;
+              padding: 0.25em 0.5em;
+              border-radius: $border-radius-sm;
+              font-family: $font-mono;
+              font-size: 0.875em;
+              color: #666;
+            }
+          }
+
+          &:hover {
+            background: #f9f9f9;
+          }
+
+          &:last-child {
+            border-bottom: none;
+          }
+        }
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3em;
+      color: $text-lighter;
+    }
+  }
+
+  .btn-group {
+    display: flex;
+    gap: 0.5em;
+
+    .btn {
+      white-space: nowrap;
+    }
+  }
+
+  .repo-details {
+    .detail-row {
+      margin-bottom: 1em;
+      padding-bottom: 1em;
+      border-bottom: 1px solid $border-color;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      label {
+        display: inline-block;
+        width: 8em;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 0.25em;
+      }
+
+      span {
+        display: block;
+        color: $text-color;
+
+        &.status {
+          display: inline-block;
+        }
+      }
+
+      .branch-item {
+        margin-bottom: 0.5em;
+        padding: 0.5em;
+        background: $bg-light;
+        border-radius: $border-radius-sm;
+        font-size: 0.875em;
+
+        strong {
+          display: block;
+          margin-bottom: 0.25em;
+          color: $text-color;
+        }
+      }
+    }
+  }
+
+  .form-control {
+    width: auto;
+    padding: 0.5em;
+    border: 1px solid #ddd;
+    border-radius: $border-radius-sm;
+    font-size: 0.875em;
+  }
+
+  @media (max-width: 768px) {
+    .repositories-header {
+      flex-direction: column;
+      align-items: stretch;
+
+      h2 {
+        margin-bottom: 0;
+      }
+
+      .btn {
+        width: 100%;
+      }
+    }
+
+    #repositoriesTable {
+      overflow-x: auto;
+
+      table {
+        th, td {
+          padding: 0.75em 0.5em;
+          font-size: 0.875em;
+        }
+      }
+    }
+  }
+}

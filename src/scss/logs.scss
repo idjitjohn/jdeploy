@@ -1,0 +1,304 @@
+@import 'variables';
+
+.logs-container {
+  .logs-header {
+    margin-bottom: 2em;
+
+    h2 {
+      color: $text-color;
+      font-size: 1.75em;
+      margin: 0 0 1em 0;
+    }
+  }
+
+  .logs-filters {
+    display: flex;
+    gap: 1em;
+    margin-bottom: 2em;
+    flex-wrap: wrap;
+    align-items: flex-end;
+
+    .form-group {
+      margin-bottom: 0;
+      flex: 1;
+      min-width: 15em;
+
+      label {
+        display: block;
+        margin-bottom: 0.5em;
+        color: $text-color;
+        font-weight: 500;
+        font-size: 0.875em;
+      }
+
+      select {
+        width: 100%;
+        padding: 0.5em;
+        border: 1px solid #ddd;
+        border-radius: $border-radius-sm;
+        font-size: 0.875em;
+        background: $bg-white;
+        color: $text-color;
+        cursor: pointer;
+        transition: border-color 0.2s;
+
+        &:focus {
+          outline: none;
+          border-color: $primary-color;
+        }
+      }
+    }
+  }
+
+  #logsTable {
+    width: 100%;
+    background: $bg-white;
+    border-radius: $border-radius;
+    box-shadow: $box-shadow;
+    overflow: auto;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+
+      thead {
+        tr {
+          background: $bg-light;
+
+          th {
+            padding: 1em;
+            text-align: left;
+            font-weight: 600;
+            color: $text-color;
+            font-size: 0.875em;
+            text-transform: uppercase;
+            border-bottom: 1px solid $border-color;
+            white-space: nowrap;
+          }
+        }
+      }
+
+      tbody {
+        tr {
+          border-bottom: 1px solid $border-color;
+          transition: background-color 0.2s;
+
+          td {
+            padding: 1em;
+            color: $text-color;
+
+            .badge {
+              display: inline-block;
+              padding: 0.25em 0.75em;
+              border-radius: $border-radius-sm;
+              font-size: 0.75em;
+              font-weight: 500;
+              background: #e9ecef;
+              color: #495057;
+              margin-right: 0.5em;
+            }
+
+            .status {
+              padding: 0.25em 0.75em;
+              border-radius: $border-radius-sm;
+              font-size: 0.875em;
+              font-weight: 500;
+
+              &.online, &.success {
+                background: #d4edda;
+                color: #155724;
+              }
+
+              &.stopped, &.failed {
+                background: #f8d7da;
+                color: #721c24;
+              }
+
+              &.running {
+                background: #cce5ff;
+                color: #004085;
+              }
+
+              &.pending {
+                background: #fff3cd;
+                color: #856404;
+              }
+            }
+          }
+
+          &:hover {
+            background: #f9f9f9;
+          }
+
+          &:last-child {
+            border-bottom: none;
+          }
+        }
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3em;
+      color: $text-lighter;
+    }
+  }
+
+  .log-details {
+    .detail-row {
+      margin-bottom: 1.5em;
+      padding-bottom: 1em;
+      border-bottom: 1px solid $border-color;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      label {
+        display: inline-block;
+        width: 8em;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 0.25em;
+      }
+
+      span {
+        display: block;
+        color: $text-color;
+
+        &.status {
+          display: inline-block;
+        }
+      }
+
+      pre {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 1em;
+        border-radius: $border-radius-sm;
+        overflow: auto;
+        max-height: 20em;
+        font-size: 0.875em;
+        margin: 0.5em 0 0 0;
+        line-height: 1.5;
+      }
+    }
+  }
+
+  .log-viewer {
+    background: #1e1e1e;
+    padding: 1.5em;
+    border-radius: $border-radius;
+    box-shadow: $box-shadow;
+    margin-bottom: 1em;
+
+    .log-viewer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1em;
+      padding-bottom: 1em;
+      border-bottom: 1px solid #333;
+
+      h3 {
+        margin: 0;
+        color: #d4d4d4;
+        font-size: 1em;
+      }
+
+      .log-controls {
+        display: flex;
+        gap: 0.5em;
+
+        button {
+          padding: 0.25em 0.75em;
+          background: #333;
+          color: #d4d4d4;
+          border: none;
+          border-radius: $border-radius-sm;
+          font-size: 0.875em;
+          cursor: pointer;
+          transition: background-color 0.2s;
+
+          &:hover {
+            background: #444;
+          }
+        }
+      }
+    }
+
+    .log-content {
+      color: #d4d4d4;
+      font-family: $font-mono;
+      font-size: 0.875em;
+      line-height: 1.5;
+      max-height: 25em;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+
+      &.auto-scroll {
+        scroll-behavior: smooth;
+      }
+    }
+  }
+
+  .log-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1em;
+    flex-wrap: wrap;
+    gap: 1em;
+
+    .toolbar-info {
+      font-size: 0.875em;
+      color: $text-light;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      gap: 0.5em;
+
+      .btn {
+        padding: 0.5em 1em;
+        font-size: 0.875em;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .logs-filters {
+      flex-direction: column;
+
+      .form-group {
+        width: 100%;
+        min-width: unset;
+      }
+    }
+
+    #logsTable {
+      overflow-x: auto;
+
+      table {
+        th, td {
+          padding: 0.75em 0.5em;
+          font-size: 0.875em;
+        }
+      }
+    }
+
+    .log-toolbar {
+      flex-direction: column;
+      align-items: stretch;
+
+      .toolbar-actions {
+        width: 100%;
+
+        .btn {
+          flex: 1;
+        }
+      }
+    }
+  }
+}

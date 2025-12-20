@@ -43,3 +43,5 @@ deploy-logs/
 deploy.config.json
 certificate/
 text-env/
+public/css
+public/js

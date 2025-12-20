@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Webhook Deployer</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Webhook Deployer</h1>
+    <nav>
+      <a href="/dashboard.html" class="active">Dashboard</a>
+      <a href="/repositories.html">Repositories</a>
+      <a href="/domains.html">Domains</a>
+      <a href="/templates.html">Templates</a>
+      <a href="/logs.html">Logs</a>
+    </nav>
+    <button id="logoutBtn" class="btn btn-danger">Logout</button>
+  </div>
+
+  <div class="container">
+    <div class="dashboard-container">
+      <div class="dashboard-header">
+        <h2>Dashboard</h2>
+      </div>
+
+      <div id="overviewStats"></div>
+
+      <div class="dashboard-section">
+        <div class="section-title">PM2 Status</div>
+        <div id="pm2Table">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+
+      <div class="dashboard-section">
+        <div class="section-title">Recent Deployments</div>
+        <div id="recentLogs">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/api.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

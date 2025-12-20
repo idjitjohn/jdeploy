@@ -1,0 +1,201 @@
+@import 'variables';
+
+.templates-container {
+  .templates-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2em;
+    flex-wrap: wrap;
+    gap: 1em;
+
+    h2 {
+      color: $text-color;
+      font-size: 1.75em;
+      margin: 0;
+    }
+  }
+
+  #templatesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(20em, 1fr));
+    gap: 1.5em;
+
+    .card {
+      margin: 0;
+      background: $bg-white;
+      padding: 1.5em;
+      border-radius: $border-radius;
+      box-shadow: $box-shadow;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s;
+
+      &:hover {
+        box-shadow: $box-shadow-lg;
+        transform: translateY(-0.125em);
+      }
+
+      .template-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        margin-bottom: 1em;
+
+        h3 {
+          margin: 0;
+          color: $text-color;
+          font-size: 1.125em;
+        }
+
+        .badge {
+          padding: 0.25em 0.75em;
+          border-radius: $border-radius-sm;
+          font-size: 0.75em;
+          font-weight: 500;
+          background: #e9ecef;
+          color: #495057;
+
+          &.system {
+            background: #667eea;
+            color: white;
+          }
+        }
+      }
+
+      .template-description {
+        color: #666;
+        margin-bottom: 1em;
+        font-size: 0.875em;
+        flex-grow: 1;
+      }
+
+      .template-commands {
+        margin-bottom: 1em;
+        font-size: 0.875em;
+
+        strong {
+          color: $text-color;
+        }
+      }
+
+      .template-actions {
+        display: flex;
+        gap: 0.5em;
+
+        .btn {
+          flex: 1;
+          font-size: 0.875em;
+        }
+      }
+    }
+
+    .empty-state {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 3em;
+      color: $text-lighter;
+    }
+  }
+
+  .form-group {
+    margin-bottom: 1em;
+
+    label {
+      display: block;
+      margin-bottom: 0.5em;
+      color: $text-color;
+      font-weight: 500;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 0.75em;
+      border: 1px solid #ddd;
+      border-radius: $border-radius-sm;
+      font-size: 1em;
+      transition: border-color 0.2s;
+
+      &:focus {
+        outline: none;
+        border-color: $primary-color;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+      }
+    }
+
+    textarea {
+      min-height: 8em;
+      font-family: $font-mono;
+      font-size: 0.875em;
+      resize: vertical;
+    }
+  }
+
+  .code-block {
+    background: $bg-light;
+    padding: 1em;
+    border-radius: $border-radius-sm;
+    font-family: $font-mono;
+    font-size: 0.875em;
+    color: $text-color;
+    overflow-x: auto;
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  }
+
+  .template-details {
+    .detail-row {
+      margin-bottom: 1.5em;
+      padding-bottom: 1em;
+      border-bottom: 1px solid $border-color;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      label {
+        display: block;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 0.5em;
+      }
+
+      span {
+        display: block;
+        color: $text-color;
+      }
+
+      pre {
+        background: $bg-light;
+        padding: 1em;
+        border-radius: $border-radius-sm;
+        font-size: 0.875em;
+        overflow-x: auto;
+        margin: 0.5em 0 0 0;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .templates-header {
+      flex-direction: column;
+      align-items: stretch;
+
+      h2 {
+        margin-bottom: 0;
+      }
+
+      .btn {
+        width: 100%;
+      }
+    }
+
+    #templatesGrid {
+      grid-template-columns: 1fr;
+    }
+  }
+}

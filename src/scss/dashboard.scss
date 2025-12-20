@@ -1,0 +1,177 @@
+@import 'variables';
+
+.dashboard-container {
+  .dashboard-header {
+    margin-bottom: 2em;
+
+    h2 {
+      color: $text-color;
+      font-size: 1.75em;
+      margin: 0;
+    }
+  }
+
+  .overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15em, 1fr));
+    gap: 1.5em;
+    margin-bottom: 2em;
+
+    .overview-card {
+      background: $bg-white;
+      padding: 1.5em;
+      border-radius: $border-radius;
+      box-shadow: $box-shadow;
+      text-align: center;
+      border-top: 4px solid $primary-color;
+
+      .overview-label {
+        color: $text-light;
+        font-size: 0.875em;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5em;
+      }
+
+      .overview-value {
+        color: $text-color;
+        font-size: 2.5em;
+        font-weight: 600;
+      }
+
+      &:nth-child(2) {
+        border-top-color: $info-color;
+      }
+
+      &:nth-child(3) {
+        border-top-color: $success-color;
+      }
+    }
+  }
+
+  .dashboard-section {
+    margin-bottom: 2em;
+
+    .section-title {
+      color: $text-color;
+      font-size: 1.25em;
+      font-weight: 600;
+      margin-bottom: 1em;
+      padding-bottom: 0.5em;
+      border-bottom: 2px solid $border-color;
+    }
+  }
+
+  #pm2Table {
+    width: 100%;
+    background: $bg-white;
+    border-radius: $border-radius;
+    box-shadow: $box-shadow;
+    overflow: hidden;
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+
+      thead {
+        tr {
+          background: $bg-light;
+
+          th {
+            padding: 1em;
+            text-align: left;
+            font-weight: 600;
+            color: $text-color;
+            font-size: 0.875em;
+            text-transform: uppercase;
+            border-bottom: 1px solid $border-color;
+          }
+        }
+      }
+
+      tbody {
+        tr {
+          border-bottom: 1px solid $border-color;
+
+          td {
+            padding: 1em;
+            color: $text-color;
+
+            strong {
+              color: $text-color;
+              font-weight: 600;
+            }
+          }
+
+          &:hover {
+            background: #f9f9f9;
+          }
+
+          &:last-child {
+            border-bottom: none;
+          }
+        }
+      }
+    }
+  }
+
+  #recentLogs {
+    background: $bg-white;
+    border-radius: $border-radius;
+    box-shadow: $box-shadow;
+    padding: 1.5em;
+
+    .logs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1em;
+
+      .log-item {
+        padding: 1em;
+        border: 1px solid $border-color;
+        border-radius: $border-radius-sm;
+        transition: all 0.2s;
+
+        &:hover {
+          background: #f9f9f9;
+          border-color: $primary-color;
+        }
+
+        .log-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 0.5em;
+
+          .log-repo {
+            font-weight: 600;
+            color: $text-color;
+          }
+        }
+
+        .log-time {
+          font-size: 0.875em;
+          color: $text-light;
+          margin-bottom: 0.25em;
+        }
+
+        .log-branch {
+          font-size: 0.875em;
+          color: $text-light;
+        }
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2em;
+      color: $text-lighter;
+    }
+  }
+
+  @media (max-width: 900px) {
+    .overview-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Repositories - Webhook Deployer</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/repositories.css">
+</head>
+<body>
+  <div class="header">
+    <h1>Webhook Deployer</h1>
+    <nav>
+      <a href="/dashboard.html">Dashboard</a>
+      <a href="/repositories.html" class="active">Repositories</a>
+      <a href="/domains.html">Domains</a>
+      <a href="/templates.html">Templates</a>
+      <a href="/logs.html">Logs</a>
+    </nav>
+    <button id="logoutBtn" class="btn btn-danger">Logout</button>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="repositories-header">
+        <h2>Repositories</h2>
+        <button id="addRepositoryBtn" class="btn btn-primary">Add Repository</button>
+      </div>
+
+      <div id="repositoriesTable">
+        <div class="loading">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/repositories.js"></script>
+</body>
+</html>
