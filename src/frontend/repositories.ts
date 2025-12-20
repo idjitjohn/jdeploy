@@ -35,9 +35,9 @@ async function loadRepositories(): Promise<void> {
               <td>${repo.branches ? Object.keys(repo.branches).length : 0}</td>
               <td>${formatDate(repo.createdAt)}</td>
               <td>
-                <button class="btn btn-sm btn-primary" onclick="viewRepository('${repo._id}')">View</button>
-                <button class="btn btn-sm btn-secondary" onclick="editRepository('${repo._id}')">Edit</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteRepository('${repo._id}', '${repo.name}')">Delete</button>
+                <button class="btn btn-sm btn-primary" onclick="viewRepository('${repo._id || ''}')" ${!repo._id ? 'disabled' : ''}>View</button>
+                <button class="btn btn-sm btn-secondary" onclick="editRepository('${repo._id || ''}')" ${!repo._id ? 'disabled' : ''}>Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteRepository('${repo._id || ''}', '${escapeHtml(repo.name)}')" ${!repo._id ? 'disabled' : ''}>Delete</button>
               </td>
             </tr>
           `).join('')}
@@ -55,6 +55,10 @@ async function loadRepositories(): Promise<void> {
 }
 
 async function viewRepository(id: string): Promise<void> {
+  if (!id || id.trim() === '') {
+    showNotification('Invalid repository ID', 'error')
+    return
+  }
   try {
     const data = await api.repositories.get(id)
     const repo = data.repository
@@ -101,6 +105,10 @@ async function viewRepository(id: string): Promise<void> {
 }
 
 async function editRepository(id: string): Promise<void> {
+  if (!id || id.trim() === '') {
+    showNotification('Invalid repository ID', 'error')
+    return
+  }
   try {
     const data = await api.repositories.get(id)
     const repo = data.repository
@@ -152,6 +160,10 @@ async function editRepository(id: string): Promise<void> {
 }
 
 async function deleteRepository(id: string, name: string): Promise<void> {
+  if (!id || id.trim() === '') {
+    showNotification('Invalid repository ID', 'error')
+    return
+  }
   if (!confirm(`Are you sure you want to delete repository "${name}"?`)) {
     return
   }
