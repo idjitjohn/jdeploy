@@ -45,11 +45,12 @@
       }
 
       .template-header {
-        padding: $spacing-lg;
+        padding-inline: $spacing-lg;
+        padding-block: $spacing-sm;
         border-bottom: 1px solid $color-border-muted;
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
+        align-items: center;
         gap: $spacing-md;
 
         h3 {
@@ -63,7 +64,7 @@
         .badge {
           padding: $spacing-xs $spacing-sm;
           border-radius: $radius-sm;
-          font-size: 0.75em;
+          font-size: 0.55em;
           font-weight: 600;
           background: $color-bg-secondary;
           color: $color-text-secondary;
@@ -88,15 +89,17 @@
 
         .template-description {
           color: $color-text-secondary;
-          margin-bottom: $spacing-md;
+          margin-bottom: $spacing-sm;
           font-size: 0.875em;
           flex-grow: 1;
           line-height: 1.5;
         }
 
         .template-commands {
-          margin-bottom: $spacing-lg;
-          padding-top: $spacing-lg;
+          display: flex;
+          align-items: center;
+          gap: $spacing-lg;
+          padding-top: $spacing-sm;
           border-top: 1px solid $color-border-muted;
           font-size: 0.875em;
 
@@ -106,7 +109,6 @@
             font-size: 0.75em;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: $spacing-sm;
           }
 
           code {
@@ -127,14 +129,13 @@
 
       .template-actions {
         padding: $spacing-lg;
-        border-top: 1px solid $color-border-muted;
-        background: $color-bg-secondary;
+        padding-top: 0;
         display: flex;
         gap: $spacing-sm;
-
+        justify-content: flex-end;
         .btn {
-          flex: 1;
           font-size: 0.875em;
+          padding-inline: $spacing-md;
         }
       }
     }

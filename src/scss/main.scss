@@ -449,7 +449,9 @@ table {
   }
 
   .modal-header {
-    padding: $spacing-lg;
+    padding-inline: $spacing-lg;
+    padding-block: $spacing-sm;
+    padding-right: $spacing-sm;
     border-bottom: 1px solid $color-border-muted;
     display: flex;
     justify-content: space-between;
@@ -640,5 +642,100 @@ pre {
       width: 100%;
       overflow-x: auto;
     }
+  }
+}
+
+// Domain editor styles
+.domain-editor {
+  .domain-info {
+    padding-bottom: $spacing-lg;
+    border-bottom: 1px solid $color-border-default;
+
+    label {
+      display: block;
+      color: $color-text-secondary;
+      font-size: 0.75em;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: $spacing-xs;
+    }
+
+    p {
+      margin: 0;
+      color: $color-text;
+      font-weight: 500;
+      font-size: 1em;
+    }
+  }
+
+  .editor-section {
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: $spacing-md 0;
+      gap: $spacing-md;
+
+      span {
+        color: $color-text;
+        font-weight: 500;
+        font-size: 0.9375em;
+        flex: 1;
+      }
+
+      .btn {
+        flex-shrink: 0;
+      }
+    }
+
+    .editor-content {
+      padding: $spacing-sm;
+      background: $color-bg-secondary;
+      border: 1px solid $color-border-default;
+      border-radius: $radius-md;
+      display: flex;
+      flex-direction: column;
+      gap: $spacing-md;
+      animation: fadeIn $transition-fast;
+
+      textarea {
+        min-height: 10em;
+        padding: $spacing-md;
+        background: $color-bg-default;
+        border: 1px solid $color-border-default;
+        border-radius: $radius-sm;
+        font-family: $font-mono;
+        font-size: 0.8125em;
+        line-height: 1.6;
+        resize: none;
+        color: $color-text;
+        transition: border-color $transition-fast, box-shadow $transition-fast;
+
+        &:focus {
+          outline: none;
+          border-color: $color-primary;
+          box-shadow: 0 0 0 3px color.adjust($color-primary, $alpha: -0.9);
+        }
+
+        &::placeholder {
+          color: $color-text-muted;
+        }
+      }
+
+      button {
+        align-self: flex-end;
+        min-width: 5em;
+      }
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }

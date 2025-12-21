@@ -51,7 +51,7 @@ export function showNotification(message: string, type: 'info' | 'success' | 'er
 
 export function createModal(title: string, content: string): HTMLElement {
   const modal = document.createElement('div')
-  modal.className = 'modal'
+  modal.className = 'modal active'
   modal.innerHTML = `
     <div class="modal-overlay"></div>
     <div class="modal-content">

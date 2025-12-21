@@ -35,7 +35,6 @@ async function loadRepositories(): Promise<void> {
               <td>${repo.branches ? Object.keys(repo.branches).length : 0}</td>
               <td>${formatDate(repo.createdAt)}</td>
               <td>
-                <button class="btn btn-sm btn-primary" onclick="viewRepository('${repo.id || ''}')" ${!repo.id ? 'disabled' : ''}>View</button>
                 <button class="btn btn-sm btn-secondary" onclick="editRepository('${repo.id || ''}')" ${!repo.id ? 'disabled' : ''}>Edit</button>
                 <button class="btn btn-sm btn-danger" onclick="deleteRepository('${repo.id || ''}', '${escapeHtml(repo.name)}')" ${!repo.id ? 'disabled' : ''}>Delete</button>
               </td>
@@ -54,56 +53,6 @@ async function loadRepositories(): Promise<void> {
   }
 }
 
-async function viewRepository(id: string): Promise<void> {
-  if (!id || id.trim() === '') {
-    showNotification('Invalid repository ID', 'error')
-    return
-  }
-  try {
-    const data = await api.repositories.get(id)
-    const repo = data.repository
-
-    const content = `
-      <div class="repo-details">
-        <div class="detail-row">
-          <label>Name:</label>
-          <span>${escapeHtml(repo.name)}</span>
-        </div>
-        <div class="detail-row">
-          <label>Repository URL:</label>
-          <span>${escapeHtml(repo.repoUrl)}</span>
-        </div>
-        <div class="detail-row">
-          <label>Domain:</label>
-          <span>${escapeHtml(repo.domain || 'N/A')}</span>
-        </div>
-        <div class="detail-row">
-          <label>Port:</label>
-          <span>${escapeHtml(repo.port || 'N/A')}</span>
-        </div>
-        <div class="detail-row">
-          <label>Template:</label>
-          <span>${escapeHtml(repo.template || 'N/A')}</span>
-        </div>
-        <div class="detail-row">
-          <label>Branches (${Object.keys(repo.branches || {}).length}):</label>
-          <div>
-            ${Object.entries(repo.branches || {}).map(([name, config]: any) => `
-              <div class="branch-item">
-                <strong>${escapeHtml(name)}</strong> - Type: ${config.type}, PM2: ${config.pm2Name}
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      </div>
-    `
-
-    createModal('Repository Details', content)
-  } catch (error) {
-    showNotification('Failed to load repository: ' + (error as Error).message, 'error')
-  }
-}
-
 async function editRepository(id: string): Promise<void> {
   if (!id || id.trim() === '') {
     showNotification('Invalid repository ID', 'error')
@@ -117,7 +66,7 @@ async function editRepository(id: string): Promise<void> {
       <form id="editRepoForm">
         <div class="form-group">
           <label for="repoName">Repository Name</label>
-          <input type="text" id="repoName" value="${escapeHtml(repo.name)}" disabled>
+          <input type="text" id="repoName" value="${escapeHtml(repo.name)}" required>
         </div>
         <div class="form-group">
           <label for="repoUrl">Repository URL</label>
@@ -125,7 +74,9 @@ async function editRepository(id: string): Promise<void> {
         </div>
         <div class="form-group">
           <label for="domain">Domain</label>
-          <input type="text" id="domain" value="${escapeHtml(repo.domain || '')}" placeholder="example.com">
+          <select id="domain">
+            <option value="">No domain</option>
+          </select>
         </div>
         <div class="form-group">
           <label for="port">Port</label>
@@ -136,14 +87,35 @@ async function editRepository(id: string): Promise<void> {
     `
 
     const modal = createModal('Edit Repository', content)
+    const domainSelect = modal.querySelector('#domain') as HTMLSelectElement
     const form = modal.querySelector('#editRepoForm') as HTMLFormElement
+
+    // Load domains
+    api.domains.list()
+      .then((domainsData: any) => {
+        const domains = domainsData.domains || []
+        domains.forEach((domain: any) => {
+          const option = document.createElement('option')
+          option.value = domain.name
+          option.textContent = domain.name
+          if (domain.name === repo.domain) {
+            option.selected = true
+          }
+          domainSelect.appendChild(option)
+        })
+      })
+      .catch(() => {
+        showNotification('Failed to load domains', 'error')
+      })
+
     if (form) {
       form.addEventListener('submit', async (e: Event) => {
         e.preventDefault()
         try {
           await api.repositories.update(id, {
+            name: (document.getElementById('repoName') as HTMLInputElement).value,
             repoUrl: (document.getElementById('repoUrl') as HTMLInputElement).value,
-            domain: (document.getElementById('domain') as HTMLInputElement).value,
+            domain: (document.getElementById('domain') as HTMLSelectElement).value,
             port: (document.getElementById('port') as HTMLInputElement).value
           })
           showNotification('Repository updated successfully', 'success')
@@ -271,7 +243,6 @@ if (document.readyState === 'loading') {
 declare global {
   interface Window {
     loadRepositories: typeof loadRepositories
-    viewRepository: typeof viewRepository
     editRepository: typeof editRepository
     deleteRepository: typeof deleteRepository
     showAddRepositoryModal: typeof showAddRepositoryModal
@@ -279,7 +250,6 @@ declare global {
 }
 
 window.loadRepositories = loadRepositories
-window.viewRepository = viewRepository
 window.editRepository = editRepository
 window.deleteRepository = deleteRepository
 window.showAddRepositoryModal = showAddRepositoryModal
