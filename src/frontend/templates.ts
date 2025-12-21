@@ -30,10 +30,10 @@ async function loadTemplates(): Promise<void> {
           </div>
         </div>
         <div class="template-actions">
-          <button class="btn btn-primary btn-sm" onclick="viewTemplate('${template._id || ''}')" ${!template._id ? 'disabled' : ''}>View</button>
+          <button class="btn btn-primary btn-sm" onclick="viewTemplate('${template.id || ''}')" ${!template.id ? 'disabled' : ''}>View</button>
           ${!template.isSystem ? `
-            <button class="btn btn-secondary btn-sm" onclick="editTemplate('${template._id || ''}')" ${!template._id ? 'disabled' : ''}>Edit</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteTemplate('${template._id || ''}', '${escapeHtml(template.name)}')" ${!template._id ? 'disabled' : ''}>Delete</button>
+            <button class="btn btn-secondary btn-sm" onclick="editTemplate('${template.id || ''}')" ${!template.id ? 'disabled' : ''}>Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteTemplate('${template.id || ''}', '${escapeHtml(template.name)}')" ${!template.id ? 'disabled' : ''}>Delete</button>
           ` : ''}
         </div>
       </div>

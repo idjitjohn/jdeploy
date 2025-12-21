@@ -35,9 +35,9 @@ async function loadRepositories(): Promise<void> {
               <td>${repo.branches ? Object.keys(repo.branches).length : 0}</td>
               <td>${formatDate(repo.createdAt)}</td>
               <td>
-                <button class="btn btn-sm btn-primary" onclick="viewRepository('${repo._id || ''}')" ${!repo._id ? 'disabled' : ''}>View</button>
-                <button class="btn btn-sm btn-secondary" onclick="editRepository('${repo._id || ''}')" ${!repo._id ? 'disabled' : ''}>Edit</button>
-                <button class="btn btn-sm btn-danger" onclick="deleteRepository('${repo._id || ''}', '${escapeHtml(repo.name)}')" ${!repo._id ? 'disabled' : ''}>Delete</button>
+                <button class="btn btn-sm btn-primary" onclick="viewRepository('${repo.id || ''}')" ${!repo.id ? 'disabled' : ''}>View</button>
+                <button class="btn btn-sm btn-secondary" onclick="editRepository('${repo.id || ''}')" ${!repo.id ? 'disabled' : ''}>Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteRepository('${repo.id || ''}', '${escapeHtml(repo.name)}')" ${!repo.id ? 'disabled' : ''}>Delete</button>
               </td>
             </tr>
           `).join('')}

@@ -33,7 +33,7 @@ async function loadDomains(): Promise<void> {
               <td><code>${escapeHtml(domain.privateKeyPath)}</code></td>
               <td>${formatDate(domain.createdAt)}</td>
               <td>
-                <button class="btn btn-sm btn-danger" onclick="deleteDomain('${domain._id || ''}', '${escapeHtml(domain.name)}')" ${!domain._id ? 'disabled' : ''}>Delete</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteDomain('${domain.id || ''}', '${escapeHtml(domain.name)}')" ${!domain.id ? 'disabled' : ''}>Delete</button>
               </td>
             </tr>
           `).join('')}

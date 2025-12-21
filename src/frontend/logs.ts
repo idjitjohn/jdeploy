@@ -78,7 +78,7 @@ async function loadLogs(): Promise<void> {
                 <td>${escapeHtml(log.triggeredBy)}</td>
                 <td>${duration}</td>
                 <td>
-                  <button class="btn btn-sm btn-primary" onclick="viewLog('${log._id || ''}')" ${!log._id ? 'disabled' : ''}>View Details</button>
+                  <button class="btn btn-sm btn-primary" onclick="viewLog('${log.id || ''}')" ${!log.id ? 'disabled' : ''}>View Details</button>
                 </td>
               </tr>
             `
