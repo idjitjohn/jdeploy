@@ -47,8 +47,12 @@ async function start() {
     })
 
     await fastify.register(rateLimit, {
-      max: 100,
+      max: 500,
       timeWindow: '15 minutes',
+      skipOnError: true,
+      keyGenerator: (request: FastifyRequest) => {
+        return request.headers['x-forwarded-for'] as string || request.ip
+      },
     })
 
     await fastify.register(authRoutes)

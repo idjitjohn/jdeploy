@@ -111,7 +111,7 @@ const writeConfig = (config) => {
 const promptRepoDetails = async () => {
   console.log('\n--- Add New Repository ---\n')
 
-  const name = await question('Repository name (e.g., my-app): ')
+  const name = await question('Application name (e.g., my-app): ')
   try {
     var validatedName = validateRepositoryName(name)
   } catch (err) {

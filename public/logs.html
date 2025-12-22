@@ -12,12 +12,12 @@
     <h1>⚡ Webhook Deployer</h1>
     <nav>
       <a href="/dashboard.html">Dashboard</a>
-      <a href="/repositories.html">Repositories</a>
+      <a href="/repositories.html">Applications</a>
       <a href="/domains.html">Domains</a>
       <a href="/templates.html">Templates</a>
       <a href="/logs.html" class="active">Logs</a>
     </nav>
-    <button id="logoutBtn" class="btn btn-secondary btn-sm">Logout</button>
+    <button id="logout-btn" class="btn btn-secondary btn-sm">Logout</button>
   </header>
 
   <main class="container">
@@ -29,14 +29,14 @@
 
       <div class="logs-filters">
         <div class="filter-group">
-          <label for="repoFilter">Repository</label>
-          <select id="repoFilter">
+          <label for="repo-filter">Repository</label>
+          <select id="repo-filter">
             <option value="">Select repository...</option>
           </select>
         </div>
         <div class="filter-group">
-          <label for="statusFilter">Status</label>
-          <select id="statusFilter">
+          <label for="status-filter">Status</label>
+          <select id="status-filter">
             <option value="">All statuses</option>
             <option value="success">Success</option>
             <option value="failed">Failed</option>
@@ -46,7 +46,7 @@
         </div>
       </div>
 
-      <div id="logsTable">
+      <div id="logs-table">
         <div class="empty-state">Select a repository to view logs</div>
       </div>
     </div>

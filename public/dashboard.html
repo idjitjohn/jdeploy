@@ -12,23 +12,40 @@
     <h1>⚡ Webhook Deployer</h1>
     <nav>
       <a href="/dashboard.html" class="active">Dashboard</a>
-      <a href="/repositories.html">Repositories</a>
+      <a href="/repositories.html">Applications</a>
       <a href="/domains.html">Domains</a>
       <a href="/templates.html">Templates</a>
       <a href="/logs.html">Logs</a>
     </nav>
-    <button id="logoutBtn" class="btn btn-secondary btn-sm">Logout</button>
+    <button id="logout-btn" class="btn btn-secondary btn-sm">Logout</button>
   </header>
 
   <main class="container">
     <div class="dashboard-container">
       <section class="dashboard-header">
-        <h2>Dashboard</h2>
-        <p>Monitor your deployments and system status at a glance</p>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2>Dashboard</h2>
+            <p>Monitor your deployments and system status at a glance</p>
+          </div>
+          <button id="refresh-btn" class="btn btn-primary">Refresh</button>
+        </div>
       </section>
 
-      <div id="overviewStats" class="overview-grid">
-        <div class="loading">Loading stats...</div>
+      <div class="top-items">
+        <div id="overview-stats" class="overview-grid">
+          <div class="loading">Loading stats...</div>
+        </div>
+
+        <section class="dashboard-section">
+          <div class="section-header">
+            <h3 class="section-title">Recent Deployments</h3>
+            <div class="section-actions"></div>
+          </div>
+          <div id="recent-logs">
+            <div class="loading">Loading deployments...</div>
+          </div>
+        </section>
       </div>
 
       <section class="dashboard-section">
@@ -36,18 +53,8 @@
           <h3 class="section-title">Active Services</h3>
           <div class="section-actions"></div>
         </div>
-        <div id="pm2Table">
+        <div id="pm2-table">
           <div class="loading">Loading services...</div>
-        </div>
-      </section>
-
-      <section class="dashboard-section">
-        <div class="section-header">
-          <h3 class="section-title">Recent Deployments</h3>
-          <div class="section-actions"></div>
-        </div>
-        <div id="recentLogs">
-          <div class="loading">Loading deployments...</div>
         </div>
       </section>
     </div>

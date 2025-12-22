@@ -117,7 +117,7 @@ Templates are loaded from `templates/` directory, not stored in config.
 
 ## Usage
 
-### Add Repository
+### Add Application
 
 ```bash
 yarn repo

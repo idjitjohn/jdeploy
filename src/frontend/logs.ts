@@ -9,7 +9,7 @@ async function loadRepositories(): Promise<void> {
     const data = await api.repositories.list()
     repositories = data.repositories || []
 
-    const repoFilter = document.getElementById('repoFilter') as HTMLSelectElement
+    const repoFilter = document.getElementById('repo-filter') as HTMLSelectElement
     if (repoFilter) {
       repoFilter.innerHTML = '<option value="">Select repository...</option>' +
         repositories.map(repo => `<option value="${repo.name}">${repo.name}</option>`).join('')
@@ -20,13 +20,13 @@ async function loadRepositories(): Promise<void> {
 }
 
 async function loadLogs(): Promise<void> {
-  const repoFilter = document.getElementById('repoFilter') as HTMLSelectElement
-  const statusFilter = document.getElementById('statusFilter') as HTMLSelectElement
+  const repoFilter = document.getElementById('repo-filter') as HTMLSelectElement
+  const statusFilter = document.getElementById('status-filter') as HTMLSelectElement
   const repoName = repoFilter.value
   const status = statusFilter.value
 
   if (!repoName) {
-    const logsTable = document.getElementById('logsTable')
+    const logsTable = document.getElementById('logs-table')
     if (logsTable) {
       logsTable.innerHTML = '<div class="empty-state">Select a repository to view logs</div>'
     }
@@ -42,7 +42,7 @@ async function loadLogs(): Promise<void> {
     const data = await api.logs.list(repoName, query)
     const logs = data.logs || []
 
-    const logsTable = document.getElementById('logsTable')
+    const logsTable = document.getElementById('logs-table')
     if (!logsTable) return
 
     if (logs.length === 0) {
@@ -163,8 +163,8 @@ async function initLogs(): Promise<void> {
     await checkAuth()
     await loadRepositories()
 
-    const repoFilter = document.getElementById('repoFilter')
-    const statusFilter = document.getElementById('statusFilter')
+    const repoFilter = document.getElementById('repo-filter')
+    const statusFilter = document.getElementById('status-filter')
 
     if (repoFilter) {
       repoFilter.addEventListener('change', loadLogs)

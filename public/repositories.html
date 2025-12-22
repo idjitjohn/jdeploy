@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Repositories - Webhook Deployer</title>
+  <title>Applications - Webhook Deployer</title>
   <link rel="stylesheet" href="/css/main.css">
   <link rel="stylesheet" href="/css/repositories.css">
 </head>
@@ -12,24 +12,24 @@
     <h1>⚡ Webhook Deployer</h1>
     <nav>
       <a href="/dashboard.html">Dashboard</a>
-      <a href="/repositories.html" class="active">Repositories</a>
+      <a href="/repositories.html" class="active">Applications</a>
       <a href="/domains.html">Domains</a>
       <a href="/templates.html">Templates</a>
       <a href="/logs.html">Logs</a>
     </nav>
-    <button id="logoutBtn" class="btn btn-secondary btn-sm">Logout</button>
+    <button id="logout-btn" class="btn btn-secondary btn-sm">Logout</button>
   </header>
 
   <main class="container">
     <div class="repositories-container">
       <section class="repositories-header">
-        <h2>Repositories</h2>
+        <h2>Applications</h2>
         <div class="header-actions">
-          <button id="addRepositoryBtn" class="btn btn-primary">+ Add Repository</button>
+          <button id="add-repository-btn" class="btn btn-primary">+ Add Application</button>
         </div>
       </section>
 
-      <div id="repositoriesTable">
+      <div id="repositories-table">
         <div class="loading">Loading repositories...</div>
       </div>
     </div>

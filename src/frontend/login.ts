@@ -18,7 +18,7 @@ async function handleLogin(e?: Event): Promise<void> {
 }
 
 function initLogin(): void {
-  const loginForm = document.getElementById('loginForm')
+  const loginForm = document.getElementById('login-form')
   if (loginForm) {
     loginForm.addEventListener('submit', handleLogin)
   }

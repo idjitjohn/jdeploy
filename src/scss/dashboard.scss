@@ -2,7 +2,7 @@
 
 .dashboard-container {
   .dashboard-header {
-    margin-bottom: $spacing-2xl;
+    margin-bottom: $spacing-lg;
 
     h2 {
       color: $color-text;
@@ -19,15 +19,21 @@
     }
   }
 
-  .overview-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(16em, 1fr));
+  .top-items{
+    display: flex;
     gap: $spacing-lg;
-    margin-bottom: $spacing-2xl;
+    margin-bottom: $spacing-md;
+  }
+
+  .overview-grid {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
 
     .overview-card {
       background: $color-bg-default;
-      padding: $spacing-lg;
+      padding-inline: $spacing-md;
+      padding-block: $spacing-sm;
       border: 1px solid $color-border-default;
       border-radius: $radius-lg;
       box-shadow: $shadow-sm;
@@ -41,10 +47,9 @@
 
       .overview-label {
         color: $color-text-tertiary;
-        font-size: 0.8125em;
+        font-size: 0.7em;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: $spacing-sm;
         font-weight: 600;
       }
 
@@ -53,7 +58,7 @@
         font-size: 2.25em;
         font-weight: 700;
         line-height: 1;
-        margin-bottom: $spacing-sm;
+        margin-bottom: $spacing-xs;
       }
 
       .overview-subtitle {
@@ -76,15 +81,15 @@
   }
 
   .dashboard-section {
-    margin-bottom: $spacing-2xl;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 
     .section-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: $spacing-lg;
-      padding-bottom: $spacing-md;
-      border-bottom: 1px solid $color-border-muted;
+      margin-bottom: $spacing-sm;
 
       .section-title {
         color: $color-text;
@@ -174,6 +179,7 @@
     border-radius: $radius-lg;
     box-shadow: $shadow-sm;
     overflow: hidden;
+    flex: 1;
 
     .logs-list {
       display: flex;

@@ -46,7 +46,7 @@ async function loadOverviewStats(): Promise<void> {
       </div>
     `
 
-    const statsContainer = document.getElementById('overviewStats')
+    const statsContainer = document.getElementById('overview-stats')
     if (statsContainer) {
       statsContainer.innerHTML = statsHtml
     }
@@ -61,7 +61,7 @@ async function loadPM2Status(): Promise<void> {
     const processes = data.processes || []
 
     if (processes.length === 0) {
-      const table = document.getElementById('pm2Table')
+      const table = document.getElementById('pm2-table')
       if (table) {
         table.innerHTML = '<p class="empty-state">No PM2 processes running</p>'
       }
@@ -93,7 +93,7 @@ async function loadPM2Status(): Promise<void> {
       </table>
     `
 
-    const table = document.getElementById('pm2Table')
+    const table = document.getElementById('pm2-table')
     if (table) {
       table.innerHTML = tableHtml
     }
@@ -108,7 +108,7 @@ async function loadRecentLogs(): Promise<void> {
     const logs = data.logs || []
 
     if (logs.length === 0) {
-      const logsContainer = document.getElementById('recentLogs')
+      const logsContainer = document.getElementById('recent-logs')
       if (logsContainer) {
         logsContainer.innerHTML = '<p class="empty-state">No deployment logs</p>'
       }
@@ -132,7 +132,7 @@ async function loadRecentLogs(): Promise<void> {
       </div>
     `
 
-    const logsContainer = document.getElementById('recentLogs')
+    const logsContainer = document.getElementById('recent-logs')
     if (logsContainer) {
       logsContainer.innerHTML = logsHtml
     }
@@ -148,11 +148,22 @@ async function initDashboard(): Promise<void> {
     await loadPM2Status()
     await loadRecentLogs()
 
-    // Refresh PM2 status every 5 seconds
-    setInterval(loadPM2Status, 5000)
-
-    // Refresh logs every 10 seconds
-    setInterval(loadRecentLogs, 10000)
+    const refreshBtn = document.getElementById('refresh-btn')
+    if (refreshBtn) {
+      refreshBtn.addEventListener('click', async () => {
+        refreshBtn.disabled = true
+        try {
+          await loadOverviewStats()
+          await loadPM2Status()
+          await loadRecentLogs()
+          showNotification('Dashboard refreshed', 'success')
+        } catch (error) {
+          showNotification('Failed to refresh: ' + (error as Error).message, 'error')
+        } finally {
+          refreshBtn.disabled = false
+        }
+      })
+    }
   } catch (error) {
     showNotification('Dashboard initialization failed: ' + (error as Error).message, 'error')
   }

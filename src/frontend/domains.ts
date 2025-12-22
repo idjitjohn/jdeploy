@@ -7,7 +7,7 @@ async function loadDomains(): Promise<void> {
     const domains = data.domains || []
 
     if (domains.length === 0) {
-      const table = document.getElementById('domainsTable')
+      const table = document.getElementById('domains-table')
       if (table) {
         table.innerHTML = '<p class="empty-state">No domains configured</p>'
       }
@@ -38,7 +38,7 @@ async function loadDomains(): Promise<void> {
       </table>
     `
 
-    const table = document.getElementById('domainsTable')
+    const table = document.getElementById('domains-table')
     if (table) {
       table.innerHTML = tableHtml
     }
@@ -173,10 +173,10 @@ async function deleteDomain(id: string, name: string): Promise<void> {
 
 function showAddDomainModal(): void {
   const content = `
-    <form id="addDomainForm">
+    <form id="add-domain-form">
       <div class="form-group">
-        <label for="domainName">Domain Name</label>
-        <input type="text" id="domainName" required placeholder="example.com">
+        <label for="domain-name">Domain Name</label>
+        <input type="text" id="domain-name" required placeholder="example.com">
       </div>
       <div class="form-group">
         <label for="certificate">SSL Certificate (.crt)</label>
@@ -185,8 +185,8 @@ function showAddDomainModal(): void {
 -----END CERTIFICATE-----"></textarea>
       </div>
       <div class="form-group">
-        <label for="privateKey">Private Key (.key)</label>
-        <textarea id="privateKey" required placeholder="-----BEGIN PRIVATE KEY-----
+        <label for="private-key">Private Key (.key)</label>
+        <textarea id="private-key" required placeholder="-----BEGIN PRIVATE KEY-----
 ...
 -----END PRIVATE KEY-----"></textarea>
       </div>
@@ -195,16 +195,16 @@ function showAddDomainModal(): void {
   `
 
   const modal = createModal('Add Domain', content)
-  const form = modal.querySelector('#addDomainForm') as HTMLFormElement
+  const form = modal.querySelector('#add-domain-form') as HTMLFormElement
 
   if (form) {
     form.addEventListener('submit', async (e: Event) => {
       e.preventDefault()
       try {
         await api.domains.create({
-          name: (document.getElementById('domainName') as HTMLInputElement).value,
+          name: (document.getElementById('domain-name') as HTMLInputElement).value,
           certificate: (document.getElementById('certificate') as HTMLTextAreaElement).value,
-          privateKey: (document.getElementById('privateKey') as HTMLTextAreaElement).value
+          privateKey: (document.getElementById('private-key') as HTMLTextAreaElement).value
         })
         showNotification('Domain added successfully', 'success')
         modal.remove()
@@ -221,7 +221,7 @@ async function initDomains(): Promise<void> {
     await checkAuth()
     await loadDomains()
 
-    const addBtn = document.getElementById('addDomainBtn')
+    const addBtn = document.getElementById('add-domain-btn')
     if (addBtn) {
       addBtn.addEventListener('click', showAddDomainModal)
     }
