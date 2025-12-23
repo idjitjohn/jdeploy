@@ -1,0 +1,109 @@
+@use '../../shared/variables' as *;
+
+.RecentLogs {
+  display: flex;
+  flex-direction: column;
+  padding: 1.5em;
+  background-color: white;
+  border: 1px solid $border-color;
+  border-radius: 0.5em;
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5em;
+  }
+
+  .title {
+    margin: 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: $text-dark;
+  }
+
+  .view-all {
+    padding: 0.4em 0.8em;
+    font-size: 0.85em;
+    color: $primary-color;
+    background: none;
+    border: 1px solid $primary-color;
+    border-radius: 0.3em;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      background-color: $primary-color;
+      color: white;
+    }
+  }
+
+  .list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8em;
+  }
+
+  .item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1em;
+    background-color: rgba($primary-color, 0.02);
+    border: 1px solid rgba($border-color, 0.5);
+    border-radius: 0.4em;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: rgba($primary-color, 0.05);
+    }
+  }
+
+  .info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .repo {
+    font-weight: 600;
+    color: $text-dark;
+    font-size: 0.95em;
+    margin-bottom: 0.3em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .meta {
+    display: flex;
+    gap: 1em;
+    font-size: 0.8em;
+    color: $text-light;
+    flex-wrap: wrap;
+  }
+
+  .branch {
+    display: inline-block;
+    padding: 0.2em 0.5em;
+    background-color: rgba($primary-color, 0.1);
+    border-radius: 0.2em;
+    color: $primary-color;
+    font-weight: 500;
+  }
+
+  .time {
+    display: inline-block;
+  }
+
+  .duration {
+    display: inline-block;
+    color: $text-light;
+  }
+
+  .empty {
+    padding: 2em 1em;
+    text-align: center;
+    color: $text-light;
+    font-style: italic;
+  }
+}

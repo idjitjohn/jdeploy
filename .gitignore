@@ -21,23 +21,16 @@ ecosystem.config.js
 # OS files
 .DS_Store
 Thumbs.db
+
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # Temporary files
 *.tmp
-*.swp
-*.swo
 *~
-
-# Deploy logs
-deploy-logs/
-
-# IDE
-.vscode
-.idea
-*.swp
-*.swo
 
 # Config files with sensitive data
 deploy.config.json
@@ -45,4 +38,8 @@ certificate/
 text-env/
 public/css
 public/js
-dist
+dist/
+
+# Build outputs
+.next/
+*.tsbuildinfo

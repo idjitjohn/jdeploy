@@ -1,0 +1,81 @@
+@use '../../shared/variables' as *;
+
+.Templates {
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2em;
+
+    h2 {
+      margin: 0;
+      font-size: 1.75em;
+      color: $text-dark;
+    }
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(20em, 1fr));
+    gap: 1.5em;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3em;
+    color: $text-light;
+    font-style: italic;
+    background: white;
+    border: 1px solid $border-color;
+    border-radius: 0.5em;
+  }
+
+  .card {
+    background: white;
+    border: 1px solid $border-color;
+    border-radius: 0.5em;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      padding: .7em 1em;
+      border-bottom: 1px solid $border-color;
+      background: $header-bg;
+
+      h3 {
+        margin: 0;
+        font-size: 1.125em;
+        color: $text-dark;
+      }
+    }
+
+    .card-body {
+      padding: 1em;
+      padding-bottom: 0;
+      flex: 1;
+
+      .description {
+        color: $text-light;
+        margin: 0;
+        font-size: 0.875em;
+      }
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.5em;
+      padding: 1em;
+    }
+  }
+
+  .loading {
+    text-align: center;
+    padding: 3em;
+    color: $text-light;
+  }
+}

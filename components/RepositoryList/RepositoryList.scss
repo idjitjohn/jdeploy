@@ -1,0 +1,13 @@
+@use '../../shared/variables' as *;
+
+.RepositoryList {
+  width: 100%;
+
+  .empty {
+    padding: 3em 1em;
+    text-align: center;
+    color: $text-light;
+    font-style: italic;
+    font-size: 1.1em;
+  }
+}

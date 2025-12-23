@@ -1,0 +1,13 @@
+@use '../../shared/variables' as *;
+
+.Grid {
+  display: grid;
+
+  @media (max-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr !important;
+  }
+}

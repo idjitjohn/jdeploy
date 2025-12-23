@@ -1,0 +1,27 @@
+@use '../../shared/variables' as *;
+
+.Container {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 1.5em;
+
+  &.sm {
+    max-width: 640px;
+  }
+
+  &.md {
+    max-width: 960px;
+  }
+
+  &.lg {
+    max-width: 1200px;
+  }
+
+  &.xl {
+    max-width: 1400px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 0 1em;
+  }
+}

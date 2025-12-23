@@ -1,0 +1,40 @@
+@use '../../../shared/variables' as *;
+
+.TemplateForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5em;
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+
+    label {
+      font-weight: 500;
+      color: $text-dark;
+      font-size: 0.875em;
+    }
+
+    .error {
+      color: $error-color;
+      font-size: 0.75em;
+      margin-top: -0.25em;
+    }
+
+    .hint {
+      font-size: 0.75em;
+      color: $text-light;
+      margin-top: 0.25em;
+    }
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 1em;
+    justify-content: flex-end;
+    margin-top: 1em;
+    padding-top: 1em;
+    border-top: 1px solid $border-color;
+  }
+}

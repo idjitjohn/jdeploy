@@ -1,0 +1,62 @@
+@use '../../shared/variables' as *;
+
+.Repositories {
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2em;
+
+    h2 {
+      margin: 0;
+      font-size: 1.75em;
+      color: $text-dark;
+    }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3em;
+    color: $text-light;
+    font-style: italic;
+    background: white;
+    border: 1px solid $border-color;
+    border-radius: 0.5em;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border: 1px solid $border-color;
+    border-radius: 0.5em;
+    overflow: hidden;
+
+    th, td {
+      padding: 1em;
+      text-align: left;
+      border-bottom: 1px solid $border-color;
+    }
+
+    th {
+      font-weight: 600;
+      color: $text-dark;
+      background: $header-bg;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  .actions-cell {
+    display: flex;
+    gap: 0.5em;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 3em;
+    color: $text-light;
+  }
+}

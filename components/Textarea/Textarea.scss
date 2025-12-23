@@ -1,0 +1,46 @@
+.Textarea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+
+  .label {
+    font-size: 0.95em;
+    font-weight: 500;
+    color: #374151;
+  }
+
+  .field {
+    padding: 0.75em;
+    font-size: 0.95em;
+    border: 1px solid #d1d5db;
+    border-radius: 0.4em;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.2s;
+
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    }
+
+    &:disabled {
+      background-color: #f3f4f6;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    &.error {
+      border-color: #ef4444;
+
+      &:focus {
+        box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.1);
+      }
+    }
+  }
+
+  .error-message {
+    font-size: 0.85em;
+    color: #ef4444;
+  }
+}

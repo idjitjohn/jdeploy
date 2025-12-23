@@ -1,0 +1,97 @@
+@use '../../shared/variables' as *;
+
+.Settings {
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2em;
+
+    h2 {
+      margin: 0;
+      font-size: 1.75em;
+      color: $text-dark;
+    }
+  }
+
+  .section {
+    background: white;
+    border: 1px solid $border-color;
+    border-radius: 0.5em;
+    padding: 1.5em;
+    margin-bottom: 2em;
+
+    h3 {
+      margin: 0 0 0.5em;
+      font-size: 1.25em;
+      color: $text-dark;
+    }
+
+    .description {
+      margin: 0 0 1.5em;
+      color: $text-light;
+      font-size: 0.875em;
+    }
+  }
+
+  .paths-section {
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5em;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(20em, 1fr));
+      gap: 1.5em;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5em;
+
+      .hint {
+        margin: 0.25em 0 0;
+        font-size: 0.75em;
+        color: $text-light;
+        font-style: italic;
+      }
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 1em;
+      justify-content: flex-end;
+      padding-top: 1em;
+      border-top: 1px solid $border-color;
+    }
+  }
+
+  .info-section {
+    .info-box {
+      background: #f0f4ff;
+      border-left: 4px solid $primary-color;
+      padding: 1em;
+      border-radius: 0.25em;
+
+      p {
+        margin: 0;
+        color: $text-dark;
+        line-height: 1.6;
+
+        strong {
+          color: $text-dark;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+
+  .loading {
+    text-align: center;
+    padding: 3em;
+    color: $text-light;
+  }
+}

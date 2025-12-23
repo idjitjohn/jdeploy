@@ -1,0 +1,37 @@
+@use '../../../../shared/variables' as *;
+
+.CommandList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75em;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 0.25em;
+  overflow: hidden;
+
+  .empty-state {
+    text-align: center;
+    padding: 1.5em;
+    color: $text-light;
+    font-style: italic;
+    background: #fafafa;
+
+    p {
+      margin: 0 0 0.75em;
+    }
+  }
+
+  .commands-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: white;
+  }
+
+  .command-actions {
+    display: flex;
+    justify-content: flex-start;
+    padding: 0.5em;
+    padding-top: 0;
+  }
+}

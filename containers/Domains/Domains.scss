@@ -1,0 +1,70 @@
+@use '../../shared/variables' as *;
+
+.Domains {
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2em;
+
+    h2 {
+      margin: 0;
+      font-size: 1.75em;
+      color: $text-dark;
+    }
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18em, 1fr));
+    gap: 1.5em;
+  }
+
+  .empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3em;
+    color: $text-light;
+    font-style: italic;
+    background: white;
+    border: 1px solid $border-color;
+    border-radius: 0.5em;
+  }
+
+  .card {
+    background: white;
+    border: 1px solid $border-color;
+    border-radius: 0.5em;
+    padding: 1.5em;
+    display: flex;
+    flex-direction: column;
+
+    .card-title {
+      font-size: 1.125em;
+      font-weight: 600;
+      color: $text-dark;
+      margin: 0 0 1em;
+    }
+
+    .card-body {
+      flex: 1;
+      margin-bottom: 1em;
+
+      .info {
+        font-size: 0.875em;
+        color: $text-light;
+      }
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 0.5em;
+    }
+  }
+
+  .loading {
+    text-align: center;
+    padding: 3em;
+    color: $text-light;
+  }
+}

@@ -1,0 +1,125 @@
+@use '../../shared/variables' as *;
+
+.ProcessList {
+  width: 100%;
+  border: 1px solid $border-color;
+  border-radius: 0.5em;
+  overflow: hidden;
+
+  .header {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1.5fr;
+    gap: 1em;
+    padding: 1em;
+    background-color: $header-bg;
+    border-bottom: 2px solid $border-color;
+    font-weight: 600;
+    font-size: 0.9em;
+    color: $text-dark;
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr 1fr 1fr;
+      
+      .col-info,
+      .col-actions {
+        display: none;
+      }
+    }
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .item {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr 1.5fr;
+    gap: 1em;
+    padding: 1em;
+    border-bottom: 1px solid $border-color;
+    align-items: center;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: rgba($primary-color, 0.02);
+    }
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    @media (max-width: 1024px) {
+      grid-template-columns: 1fr 1fr 1fr;
+      
+      .col-info,
+      .col-actions {
+        display: none;
+      }
+    }
+  }
+
+  .col {
+    font-size: 0.9em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .name {
+    font-weight: 500;
+    color: $text-dark;
+  }
+
+  .buttons {
+    display: flex;
+    gap: 0.5em;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 0.4em 0.8em;
+    font-size: 0.8em;
+    border: none;
+    border-radius: 0.3em;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+
+    &.btn-start {
+      background-color: rgba($success-color, 0.1);
+      color: $success-color;
+
+      &:hover {
+        background-color: $success-color;
+        color: white;
+      }
+    }
+
+    &.btn-stop {
+      background-color: rgba($error-color, 0.1);
+      color: $error-color;
+
+      &:hover {
+        background-color: $error-color;
+        color: white;
+      }
+    }
+
+    &.btn-restart {
+      background-color: rgba($primary-color, 0.1);
+      color: $primary-color;
+
+      &:hover {
+        background-color: $primary-color;
+        color: white;
+      }
+    }
+  }
+
+  .empty {
+    padding: 2em 1em;
+    text-align: center;
+    color: $text-light;
+    font-style: italic;
+  }
+}

@@ -2,39 +2,24 @@
 
 import 'dotenv/config'
 import mongoose from 'mongoose'
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import * as modelsModule from '../dist/models/index.js'
+import User, { IUserModel } from '@/app/api/models/User'
+import RepositoryModel from '@/app/api/models/Repository'
+import DomainModel from '@/app/api/models/Domain'
+import TemplateModel from '@/app/api/models/Template'
+import bcrypt from 'bcryptjs'
 
-const { User, RepositoryModel: Repository, DomainModel: Domain, Template, Configuration } = modelsModule
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-const configPath = path.join(__dirname, '..', 'deploy.config.json')
-const templatesDir = path.join(__dirname, '..', 'templates')
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/webhook-deployer'
 
 async function mock() {
   try {
-    const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/webhook-deployer'
-    console.log(`\nConnecting to MongoDB: ${mongoURI}`)
-
-    await mongoose.connect(mongoURI)
+    console.log('\nConnecting to MongoDB...')
+    await mongoose.connect(MONGODB_URI)
     console.log('✓ Connected to MongoDB\n')
 
-    if (!fs.existsSync(configPath)) {
-      console.error(`❌ Config file not found: ${configPath}`)
-      console.log('Creating default configuration...\n')
-    }
-
-    const config = fs.existsSync(configPath)
-      ? JSON.parse(fs.readFileSync(configPath, 'utf-8'))
-      : { paths: {}, domains: [], repositories: [], self: {} }
-
+    // Create admin user
     let adminUser = await User.findOne({ username: 'admin' })
     if (!adminUser) {
-      const hashedPassword = await User.hashPassword('admin123')
+      const hashedPassword = await bcrypt.hash('admin123', 10)
       adminUser = await User.create({
         username: 'admin',
         email: 'admin@localhost',
@@ -48,6 +33,7 @@ async function mock() {
       console.log('✓ Admin user already exists\n')
     }
 
+    // Create test users
     const testUsers = [
       { username: 'dev', password: 'dev123', email: 'dev@localhost', role: 'user' },
       { username: 'operator', password: 'operator123', email: 'operator@localhost', role: 'user' }
@@ -56,7 +42,7 @@ async function mock() {
     for (const userData of testUsers) {
       let user = await User.findOne({ username: userData.username })
       if (!user) {
-        const hashedPassword = await User.hashPassword(userData.password)
+        const hashedPassword = await bcrypt.hash(userData.password, 10)
         user = await User.create({
           username: userData.username,
           email: userData.email,
@@ -69,134 +55,116 @@ async function mock() {
       }
     }
 
-    if (config.paths) {
-      await Configuration.findOneAndUpdate(
-        { key: 'paths' },
-        {
-          key: 'paths',
-          value: config.paths
+    // Create sample domains
+    const domains = [
+      { name: 'example.com' },
+      { name: 'test.local' },
+      { name: 'demo.app' }
+    ]
+
+    for (const domain of domains) {
+      const existing = await DomainModel.findOne({ name: domain.name })
+      if (!existing) {
+        await DomainModel.create({
+          name: domain.name
+        })
+        console.log(`✓ Created domain: ${domain.name}`)
+      }
+    }
+    console.log()
+
+    // Create system templates
+    const templates = [
+      {
+        name: 'node',
+        displayName: 'Node.js',
+        description: 'Standard Node.js project with yarn',
+        commands: ['yarn install', 'yarn build'],
+        preDeploy: ['yarn ci'],
+        postDeploy: ['yarn start'],
+        isSystem: true
+      },
+      {
+        name: 'nextjs',
+        displayName: 'Next.js',
+        description: 'Next.js SSR/SSG application',
+        commands: ['yarn install', 'yarn build'],
+        preDeploy: ['yarn install'],
+        postDeploy: ['yarn start'],
+        isSystem: true
+      },
+      {
+        name: 'react',
+        displayName: 'React',
+        description: 'React SPA with yarn and build output',
+        commands: ['yarn install', 'yarn build'],
+        preDeploy: [],
+        postDeploy: ['pm2 serve build'],
+        isSystem: true
+      }
+    ]
+
+    for (const template of templates) {
+      const existing = await TemplateModel.findOne({ name: template.name })
+      if (!existing) {
+        await TemplateModel.create(template)
+        console.log(`✓ Created template: ${template.displayName}`)
+      }
+    }
+    console.log()
+
+    // Create sample repository
+    const existingRepo = await RepositoryModel.findOne({ name: 'sample-app' })
+    if (!existingRepo) {
+      await RepositoryModel.create({
+        name: 'sample-app',
+        repoUrl: 'https://github.com/example/sample-app.git',
+        template: 'node',
+        domain: 'example.com',
+        port: 3000,
+        commands: ['yarn install', 'yarn build'],
+        preDeploy: [],
+        postDeploy: [],
+        nginx: {
+          enabled: true,
+          template: []
         },
-        { upsert: true }
-      )
-      console.log('✓ Migrated paths configuration')
+        env: new Map([
+          ['NODE_ENV', 'production'],
+          ['PORT', '3000']
+        ]),
+        branches: new Map([
+          ['main', {
+            type: 'prod',
+            pm2Name: 'sample-app-prod',
+            preDeploy: [],
+            postDeploy: []
+          }],
+          ['staging', {
+            type: 'staging',
+            pm2Name: 'sample-app-staging',
+            preDeploy: [],
+            postDeploy: []
+          }]
+        ])
+      })
+      console.log('✓ Created sample repository: sample-app\n')
     }
 
-    if (config.self) {
-      await Configuration.findOneAndUpdate(
-        { key: 'self' },
-        {
-          key: 'self',
-          value: config.self
-        },
-        { upsert: true }
-      )
-      console.log('✓ Migrated self configuration')
-    }
-
-    if (config.domains && config.domains.length > 0) {
-      for (const domain of config.domains) {
-        const certificateDir = config.paths.home
-          ? path.join(config.paths.home, 'certificate', domain.name)
-          : path.join(__dirname, '..', 'text-env', 'certificate', domain.name)
-
-        await Domain.findOneAndUpdate(
-          { name: domain.name },
-          {
-            name: domain.name,
-            certificatePath: path.join(certificateDir, 'certificate.crt'),
-            privateKeyPath: path.join(certificateDir, 'private.key')
-          },
-          { upsert: true }
-        )
-        console.log(`✓ Migrated domain: ${domain.name}`)
-      }
-    }
-
-    if (fs.existsSync(templatesDir)) {
-      const templateFiles = fs.readdirSync(templatesDir).filter(f => f.endsWith('.json'))
-
-      for (const file of templateFiles) {
-        const templateData = JSON.parse(fs.readFileSync(path.join(templatesDir, file), 'utf-8'))
-        const templateName = file.replace('.json', '')
-
-        await Template.findOneAndUpdate(
-          { name: templateName },
-          {
-            name: templateName,
-            displayName: templateData.name || templateName,
-            description: templateData.description || '',
-            commands: templateData.commands || [],
-            preDeploy: templateData.preDeploy || [],
-            postDeploy: templateData.postDeploy || [],
-            nginx: templateData.nginx || { enabled: true, template: [] },
-            env: templateData.env || {},
-            isSystem: true
-          },
-          { upsert: true }
-        )
-        console.log(`✓ Migrated template: ${templateName}`)
-      }
-    }
-
-    if (config.repositories && config.repositories.length > 0) {
-      for (const repo of config.repositories) {
-        const branchesMap = new Map()
-
-        if (repo.branches) {
-          Object.entries(repo.branches).forEach(([branchName, branchConfig]: any) => {
-            branchesMap.set(branchName, {
-              type: branchConfig.type || 'dev',
-              pm2Name: branchConfig.pm2Name || `${repo.name}-${branchConfig.type}`,
-              preDeploy: branchConfig.preDeploy || [],
-              postDeploy: branchConfig.postDeploy || []
-            })
-          })
-        }
-
-        const envMap = new Map()
-        if (repo.env) {
-          Object.entries(repo.env).forEach(([key, value]: any) => {
-            envMap.set(key, value)
-          })
-        }
-
-        await Repository.findOneAndUpdate(
-          { name: repo.name },
-          {
-            name: repo.name,
-            repoUrl: repo.repoUrl,
-            template: repo.template,
-            domain: repo.domain,
-            port: repo.port,
-            commands: repo.commands || [],
-            preDeploy: repo.preDeploy || [],
-            postDeploy: repo.postDeploy || [],
-            nginx: repo.nginx || { enabled: true, template: [] },
-            env: envMap,
-            branches: branchesMap
-          },
-          { upsert: true }
-        )
-        console.log(`✓ Migrated repository: ${repo.name}`)
-      }
-    }
-
-    console.log('\n✅ Migration completed successfully!')
+    console.log('✅ Mock data setup completed!')
     console.log('\nYou can now start the web server with: yarn dev')
     console.log('Login at http://localhost:50000 with:')
-    console.log('  Admin:')
+    console.log('\n  Admin:')
     console.log('    Username: admin')
     console.log('    Password: admin123')
-    console.log('  Test Users:')
-    console.log('    Username: dev')
-    console.log('    Password: dev123')
-    console.log('    Username: operator')
-    console.log('    Password: operator123\n')
+    console.log('\n  Test Users:')
+    console.log('    Username: dev / Password: dev123')
+    console.log('    Username: operator / Password: operator123\n')
 
     await mongoose.disconnect()
     process.exit(0)
   } catch (error) {
-    console.error('\n❌ Migration error:', error)
+    console.error('\n❌ Mock setup error:', error)
     await mongoose.disconnect()
     process.exit(1)
   }

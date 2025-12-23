@@ -1,0 +1,28 @@
+@use '../../shared/variables' as *;
+
+.Section {
+  margin-bottom: 2em;
+
+  .header {
+    margin-bottom: 1.5em;
+  }
+
+  .title {
+    margin: 0 0 0.5em 0;
+    font-size: 1.5em;
+    font-weight: 700;
+    color: $text-dark;
+  }
+
+  .subtitle {
+    margin: 0;
+    font-size: 0.95em;
+    color: $text-light;
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+  }
+}

@@ -1,0 +1,189 @@
+@use '../../shared/variables' as *;
+
+.Dashboard {
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2em;
+
+    h2 {
+      margin: 0;
+      font-size: 1.75em;
+      color: $text-dark;
+    }
+  }
+
+  .first-row {
+    display: flex;
+    gap: 1em;
+    margin-bottom: 2em;
+
+    .stats-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1em;
+
+      .stat-card {
+        background: white;
+        border: 1px solid $border-color;
+        border-radius: 0.5em;
+        padding: .6em 1em;
+        text-align: center;
+        min-width: 10em;
+
+        .stat-label {
+          color: $text-light;
+          font-size: 0.875em;
+          margin-bottom: 0.5em;
+        }
+
+        .stat-value {
+          font-size: 2em;
+          font-weight: 700;
+          color: $text-dark;
+        }
+      }
+    }
+
+    .section.system-status {
+
+      background: white;
+      border: 1px solid $border-color;
+      border-radius: 0.5em;
+      padding: 1.5em;
+
+      h3 {
+        margin: 0 0 1em;
+        font-size: 1.25em;
+        color: $text-dark;
+      }
+
+      .status-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+
+        .status-item {
+          display: flex;
+          align-items: center;
+          gap: 1em;
+          padding: 0.5em 1em;
+          background: $background-light;
+          border-radius: 0.5em;
+          border: 1px solid $border-color;
+          transition: all 0.2s ease;
+
+          &::before {
+            content: '';
+            width: 2.5em;
+            height: 2.5em;
+            flex-shrink: 0;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            filter: brightness(0) saturate(100%) invert(39%) sepia(81%) saturate(465%) hue-rotate(210deg);
+          }
+
+          &.status::before {
+            background-image: url('/icon-status.svg');
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          }
+
+          &.uptime::before {
+            background-image: url('/icon-uptime.svg');
+          }
+
+          &.env::before {
+            background-image: url('/icon-environment.svg');
+          }
+
+          &:hover {
+            border-color: $primary-color;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+          }
+
+          .status-content {
+            flex: 1;
+            min-width: 0;
+
+            .status-label {
+              font-size: 0.875em;
+              color: $text-light;
+              font-weight: 500;
+            }
+
+            .status-value {
+              font-size: 1.125em;
+              font-weight: 700;
+              color: $text-dark;
+              text-transform: capitalize;
+            }
+          }
+        }
+      }
+    }
+
+    .processes{
+      flex: 1;
+    }
+  }
+
+  .section {
+    background: white;
+    border: 1px solid $border-color;
+    border-radius: 0.5em;
+    padding: 1.5em;
+    h3 {
+      margin: 0 0 1em;
+      font-size: 1.25em;
+      color: $text-dark;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 2em;
+      color: $text-light;
+      font-style: italic;
+    }
+
+    .processes-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1em;
+
+      .process-item {
+        padding: 1em;
+        background: $header-bg;
+        border-radius: 0.25em;
+        border-left: 4px solid #667eea;
+
+        .process-name {
+          font-weight: 600;
+          color: $text-dark;
+        }
+
+        .process-details {
+          font-size: 0.875em;
+          color: $text-light;
+          margin-top: 0.5em;
+        }
+      }
+    }
+  }
+
+  .loading {
+    text-align: center;
+    padding: 3em;
+    color: $text-light;
+  }
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+}

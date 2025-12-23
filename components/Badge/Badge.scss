@@ -1,0 +1,52 @@
+@use '../../shared/variables' as *;
+
+.Badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35em 0.8em;
+  font-size: 0.85em;
+  font-weight: 600;
+  border-radius: 0.3em;
+  white-space: nowrap;
+
+  &.primary {
+    background-color: #888;
+    color: white;
+  }
+
+  &.success {
+    background-color: $success-color;
+    color: white;
+  }
+
+  &.error {
+    background-color: $error-color;
+    color: white;
+  }
+
+  &.warning {
+    background-color: $warning-color;
+    color: white;
+  }
+
+  &.info {
+    background-color: $info-color;
+    color: white;
+  }
+
+  &.neutral {
+    background-color: $neutral-color;
+    color: $text-dark;
+  }
+
+  &.sm {
+    padding: 0.25em 0.6em;
+    font-size: 0.75em;
+  }
+
+  &.lg {
+    padding: 0.5em 1em;
+    font-size: 0.95em;
+  }
+}

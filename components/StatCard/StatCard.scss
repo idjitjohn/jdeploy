@@ -1,0 +1,75 @@
+@use '../../shared/variables' as *;
+
+.StatCard {
+  display: flex;
+  gap: 1.2em;
+  padding: 1.5em;
+  background-color: white;
+  border: 1px solid $border-color;
+  border-radius: 0.5em;
+  transition: box-shadow 0.2s, transform 0.2s;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+  }
+
+  .icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.5em;
+    height: 3.5em;
+    background-color: rgba($primary-color, 0.1);
+    border-radius: 0.5em;
+    color: $primary-color;
+    font-size: 1.5em;
+    flex-shrink: 0;
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.35em;
+    flex: 1;
+  }
+
+  .label {
+    margin: 0;
+    font-size: 0.85em;
+    color: $text-light;
+    font-weight: 500;
+  }
+
+  .value {
+    margin: 0;
+    font-size: 1.8em;
+    font-weight: 700;
+    color: $text-dark;
+  }
+
+  .trend {
+    display: inline-block;
+    font-size: 0.8em;
+    font-weight: 600;
+    padding: 0.3em 0.6em;
+    border-radius: 0.3em;
+    width: fit-content;
+
+    &.up {
+      color: $success-color;
+      background-color: rgba($success-color, 0.1);
+    }
+
+    &.down {
+      color: $error-color;
+      background-color: rgba($error-color, 0.1);
+    }
+
+    &.neutral {
+      color: $text-light;
+      background-color: rgba($text-light, 0.1);
+    }
+  }
+}

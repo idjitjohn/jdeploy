@@ -1,0 +1,76 @@
+@use '../../../shared/variables' as *;
+
+.TemplateView {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5em;
+
+  .view-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1em;
+    padding-bottom: 1em;
+    border-bottom: 1px solid $border-color;
+
+    h4 {
+      margin: 0 0 0.25em;
+      font-size: 1.125em;
+      color: $text-dark;
+    }
+
+    .name {
+      margin: 0;
+      font-size: 0.875em;
+      color: $text-light;
+      font-family: monospace;
+    }
+
+    .system-badge {
+      padding: 0.25em 0.75em;
+      background: $secondary-color;
+      color: white;
+      border-radius: 0.25em;
+      font-size: 0.75em;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+  }
+
+  .view-section {
+    h5 {
+      margin: 0 0 0.5em;
+      font-size: 0.875em;
+      color: $text-dark;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    p {
+      margin: 0;
+      color: $text-light;
+      line-height: 1.6;
+    }
+
+    .commands-list {
+      margin: 0;
+      padding-left: 1.5em;
+      color: $text-light;
+
+      li {
+        margin-bottom: 0.5em;
+        font-family: monospace;
+        font-size: 0.875em;
+        color: $text-dark;
+      }
+    }
+  }
+
+  .view-actions {
+    display: flex;
+    gap: 1em;
+    justify-content: flex-end;
+    padding-top: 1em;
+    border-top: 1px solid $border-color;
+  }
+}

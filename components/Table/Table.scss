@@ -1,0 +1,64 @@
+@use '../../shared/variables' as *;
+
+.Table {
+  width: 100%;
+  overflow-x: auto;
+
+  .content {
+    width: 100%;
+    border-collapse: collapse;
+    border: 1px solid $border-color;
+    border-radius: 0.4em;
+    overflow: hidden;
+
+    &.striped tbody tr:nth-child(odd) {
+      background-color: rgba($primary-color, 0.02);
+    }
+
+    &.hoverable tbody tr {
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: rgba($primary-color, 0.08);
+      }
+    }
+  }
+
+  .head {
+    background-color: $header-bg;
+    border-bottom: 2px solid $border-color;
+  }
+
+  .header {
+    padding: 1em;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9em;
+    color: $text-dark;
+    white-space: nowrap;
+  }
+
+  .body {
+    font-size: 0.9em;
+  }
+
+  .row {
+    border-bottom: 1px solid $border-color;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  .cell {
+    padding: 0.9em 1em;
+    vertical-align: middle;
+  }
+
+  .empty {
+    padding: 2em 1em;
+    text-align: center;
+    color: $text-light;
+    font-style: italic;
+  }
+}

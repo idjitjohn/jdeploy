@@ -1,0 +1,19 @@
+@use '../../shared/variables' as *;
+
+.Form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5em;
+
+  .group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+  }
+
+  .actions {
+    display: flex;
+    gap: 1em;
+    margin-top: 1em;
+  }
+}

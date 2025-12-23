@@ -1,0 +1,7 @@
+@use '../../shared/variables' as *;
+
+.PageContent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5em;
+}

@@ -1,0 +1,93 @@
+@use '../../../../shared/variables' as *;
+
+.CommandItem {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+  padding: 0em 0.75em 0em 0em;
+  background: white;
+  border: none;
+  border-radius: 0;
+  transition: all 0.2s ease;
+  cursor: grab;
+  user-select: none;
+  position: relative;
+  &:before{
+    content: "$";
+    font-weight: bold;
+    margin-left: .5em;
+    line-height: 1;
+    font-size: .8em;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  &.dragging {
+    opacity: 0.5;
+    background: #f5f5f5;
+    cursor: grabbing;
+  }
+
+  &:hover {
+    background: #fafafa;
+
+    .ci-actions {
+      opacity: 1;
+    }
+  }
+
+  .ci-text {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    font-family: 'Courier New', monospace;
+    font-size: 0.875em;
+    color: #333;
+    overflow-x: auto;
+    white-space: nowrap;
+    word-break: break-all;
+    pointer-events: none;
+    font-weight: 600;
+    opacity: .7;
+  }
+
+  .ci-actions {
+    display: flex;
+    align-items: center;
+    gap: .4em;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    pointer-events: auto;
+
+    .ci-action {
+      width: 1.8em;
+      height: 1.5em;
+      border-radius: .2em;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      opacity: 1;
+      transition: transform 0.2s ease;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: auto 80%;
+      pointer-events: auto;
+
+      &:hover {
+        transform: scale(1.1);
+        background-color: rgba(#000, .05);
+      }
+      &.edit{
+        background-image: url('/pencil.svg');
+      }
+      &.delete{
+        background-image: url('/trash.svg');
+      }
+    }
+  }
+}
