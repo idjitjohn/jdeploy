@@ -25,9 +25,14 @@ interface Props {
   onAddAfter?: () => void
   autoEdit?: boolean
   inputRef?: (el: HTMLInputElement | null) => void
+  itemRef?: (el: CommandItemHandle) => void
 }
 
-export default function CommandItem({ id, command, index, onUpdate, onDelete, onDeleteLine, onFocusPrevious, onAddAfter, autoEdit, inputRef: inputRefCallback }: Props) {
+export interface CommandItemHandle {
+  flushPendingEdit: () => void
+}
+
+export default function CommandItem({ id, command, index, onUpdate, onDelete, onDeleteLine, onFocusPrevious, onAddAfter, autoEdit, inputRef: inputRefCallback, itemRef }: Props) {
   const [isEditing, setIsEditing] = useState(autoEdit || false)
   const [editValue, setEditValue] = useState(command)
   const [showAutocomplete, setShowAutocomplete] = useState(false)
@@ -59,6 +64,47 @@ export default function CommandItem({ id, command, index, onUpdate, onDelete, on
     }
   }, [isEditing])
 
+  const handleBlur = () => {
+    // Clear any pending timeout first
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current)
+    }
+
+    // Use timeout only to allow clicking on autocomplete items, but update state immediately
+    if (editValue.trim() && editValue !== command) {
+      console.log('Command updated:', { old: command, new: editValue.trim() })
+      onUpdate(editValue.trim())
+    } else {
+      setEditValue(command)
+    }
+    
+    // Delay hiding the input to allow autocomplete interaction
+    blurTimeoutRef.current = setTimeout(() => {
+      setIsEditing(false)
+    }, 150)
+  }
+
+  const flushPendingEdit = () => {
+    if (blurTimeoutRef.current) {
+      clearTimeout(blurTimeoutRef.current)
+      blurTimeoutRef.current = null
+    }
+    if (editValue.trim() && editValue !== command) {
+      console.log('Flushing pending edit:', { old: command, new: editValue.trim() })
+      onUpdate(editValue.trim())
+    }
+    setIsEditing(false)
+  }
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus()
+      // Position caret at the end of the input instead of selecting all
+      const length = inputRef.current.value.length
+      inputRef.current.setSelectionRange(length, length)
+    }
+  }, [isEditing])
+
   useEffect(() => {
     // Expose the input ref to the parent
     if (inputRefCallback && !isEditing) {
@@ -66,17 +112,12 @@ export default function CommandItem({ id, command, index, onUpdate, onDelete, on
     }
   }, [isEditing, inputRefCallback])
 
-  const handleBlur = () => {
-    // Add timeout to allow clicking on autocomplete items
-    blurTimeoutRef.current = setTimeout(() => {
-      if (editValue.trim() && editValue !== command) {
-        onUpdate(editValue.trim())
-      } else {
-        setEditValue(command)
-      }
-      setIsEditing(false)
-    }, 150)
-  }
+  useEffect(() => {
+    // Expose the item ref for flush operations
+    if (itemRef) {
+      itemRef({ flushPendingEdit })
+    }
+  }, [itemRef, flushPendingEdit])
 
   useEffect(() => {
     return () => {
@@ -169,8 +210,15 @@ export default function CommandItem({ id, command, index, onUpdate, onDelete, on
         setIsEditing(false)
       }
     } else if (e.key === 'Backspace' && editValue === '' && index > 0) {
-      // If input is empty and we're not on the first line, delete this line
+      // Mark that user started backspace on empty input
+      // We'll complete the delete action on keyup
       e.preventDefault()
+    }
+  }
+
+  const handleKeyUp = (e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && editValue === '' && index > 0) {
+      // Only delete if input is still empty after backspace
       if (onDeleteLine) {
         onDeleteLine()
         // Focus previous line
@@ -218,6 +266,7 @@ export default function CommandItem({ id, command, index, onUpdate, onDelete, on
             onPointerDown={(e) => e.stopPropagation()}
             onKeyUp={(e) => {
               e.stopPropagation()
+              handleKeyUp(e)
               calculateAutocompletePos()
             }}
             onKeyPress={(e) => e.stopPropagation()}

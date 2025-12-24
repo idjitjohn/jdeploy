@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
           ...repo,
           id: repo._id.toString(),
           _id: undefined,
-          env: repo.env instanceof Map ? Object.fromEntries(repo.env) : (repo.env || {}),
+          nginxConfig: repo.nginx || '',
+          env: repo.env || '',
           branches: repo.branches instanceof Map ? Object.fromEntries(repo.branches) : (repo.branches || {}),
         })),
       },
@@ -94,8 +95,8 @@ export async function POST(request: NextRequest) {
       commands: data.commands || [],
       preDeploy: data.preDeploy || [],
       postDeploy: data.postDeploy || [],
-      nginx: data.nginx || { enabled: true, template: [] },
-      env: data.env || new Map(),
+      nginx: data.nginxConfig || '',
+      env: data.env || '',
       branches: data.branches || new Map(),
     })
 
@@ -120,6 +121,7 @@ export async function POST(request: NextRequest) {
       branch: 'main',
       repoUrl: data.repoUrl,
       logPath,
+      port: data.port,
       env: data.env ? Object.fromEntries(Object.entries(data.env)) : {},
       commands: data.commands || [],
       preDeploy: data.preDeploy || [],

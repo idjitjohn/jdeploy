@@ -22,6 +22,8 @@ interface Domain {
 interface Template {
   id: string
   displayName: string
+  commands?: string[]
+  description?: string
 }
 
 export function useRepositories() {
@@ -129,6 +131,24 @@ export function useRepositories() {
     }
   }
 
+  const handleRedeployRepository = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to redeploy "${name}"?`)) {
+      return
+    }
+
+    try {
+      showNotification(`Redeploying ${name}...`, 'info')
+      await fetch(`/api/repositories/${id}/redeploy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      showNotification(`Repository ${name} redeployed`, 'success')
+      await loadRepositories()
+    } catch (error) {
+      showNotification('Redeploy failed: ' + (error as Error).message, 'error')
+    }
+  }
+
   const openAddModal = () => setShowAddModal(true)
   const closeAddModal = () => setShowAddModal(false)
 
@@ -156,6 +176,7 @@ export function useRepositories() {
     closeEditModal,
     handleAddRepository,
     handleUpdateRepository,
-    handleDeleteRepository
+    handleDeleteRepository,
+    handleRedeployRepository
   }
 }

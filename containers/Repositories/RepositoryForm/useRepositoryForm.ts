@@ -1,4 +1,17 @@
-import { useState, FormEvent, ChangeEvent } from 'react'
+import { useState, FormEvent, ChangeEvent, Dispatch, SetStateAction } from 'react'
+
+interface FormDataType {
+  id?: string
+  name: string
+  repoUrl: string
+  domain: string
+  port: string
+  template: string
+  commands?: string[]
+  preDeploy?: string[]
+  postDeploy?: string[]
+  nginxConfig?: string
+}
 
 interface UseRepositoryFormProps {
   onSubmit: (data: any) => void
@@ -9,17 +22,26 @@ interface UseRepositoryFormProps {
     domain?: string
     port?: number
     template?: string
+    commands?: string[]
+    preDeploy?: string[]
+    postDeploy?: string[]
+    nginxConfig?: string
   }
 }
 
 export function useRepositoryForm({ onSubmit, initialData }: UseRepositoryFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormDataType>({
+    id: initialData?.id,
     name: initialData?.name || '',
     repoUrl: initialData?.repoUrl || '',
     domain: initialData?.domain || '',
     port: initialData?.port?.toString() || '',
-    template: initialData?.template || ''
+    template: initialData?.template || '',
+    commands: initialData?.commands || [],
+    preDeploy: initialData?.preDeploy || [],
+    postDeploy: initialData?.postDeploy || [],
+    nginxConfig: initialData?.nginxConfig || ''
   })
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -48,6 +70,7 @@ export function useRepositoryForm({ onSubmit, initialData }: UseRepositoryFormPr
     formData,
     isSubmitting,
     handleChange,
-    handleSubmit
+    handleSubmit,
+    setFormData
   }
 }

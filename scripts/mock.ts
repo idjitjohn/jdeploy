@@ -82,6 +82,8 @@ async function mock() {
         commands: ['yarn install', 'yarn build'],
         preDeploy: ['yarn ci'],
         postDeploy: ['yarn start'],
+        nginx: '',
+        env: '',
         isSystem: true
       },
       {
@@ -91,6 +93,8 @@ async function mock() {
         commands: ['yarn install', 'yarn build'],
         preDeploy: ['yarn install'],
         postDeploy: ['yarn start'],
+        nginx: '',
+        env: '',
         isSystem: true
       },
       {
@@ -100,6 +104,8 @@ async function mock() {
         commands: ['yarn install', 'yarn build'],
         preDeploy: [],
         postDeploy: ['pm2 serve build'],
+        nginx: '',
+        env: '',
         isSystem: true
       }
     ]
@@ -125,14 +131,8 @@ async function mock() {
         commands: ['yarn install', 'yarn build'],
         preDeploy: [],
         postDeploy: [],
-        nginx: {
-          enabled: true,
-          template: []
-        },
-        env: new Map([
-          ['NODE_ENV', 'production'],
-          ['PORT', '3000']
-        ]),
+        nginx: '',
+        env: 'NODE_ENV=production\nPORT=3000',
         branches: new Map([
           ['main', {
             type: 'prod',

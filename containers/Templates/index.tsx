@@ -75,6 +75,7 @@ export default function Templates() {
         <TemplateForm
           onSubmit={handleAddTemplate}
           onCancel={closeAddModal}
+          availableTemplates={templates}
         />
       </Modal>
 

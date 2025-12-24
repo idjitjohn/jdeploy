@@ -3,7 +3,92 @@
 .TemplateForm {
   display: flex;
   flex-direction: column;
-  gap: 1.5em;
+  gap: 1em;
+
+  .template-selector{
+    .Select {
+      flex-direction: row;
+      align-items: center;
+      gap: 1.5em;
+    }
+    .hint{
+      font-size: .7em;
+      margin-top: 0;
+    }
+  }
+
+  &.edit-mode {
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid $border-color;
+      margin-bottom: 1.5em;
+
+      .tab {
+        padding: 0.5em 1em;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: $text-light;
+        font-size: 0.9em;
+        transition: all 0.2s ease;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+
+        &:hover {
+          color: $text-dark;
+        }
+
+        &.active {
+          color: #333;
+          border-bottom-color: #333;
+        }
+      }
+    }
+
+    .tab-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5em;
+    }
+  }
+
+  &.add-mode {
+    .tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid $border-color;
+      margin-bottom: 1.5em;
+
+      .tab {
+        padding: 0.5em 1em;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: $text-light;
+        font-size: 0.9em;
+        transition: all 0.2s ease;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -1px;
+
+        &:hover {
+          color: $text-dark;
+        }
+
+        &.active {
+          color: #333;
+          border-bottom-color: #333;
+        }
+      }
+    }
+
+    .tab-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5em;
+      min-height: 20em;
+    }
+  }
 
   .form-group {
     display: flex;
@@ -26,6 +111,57 @@
       font-size: 0.75em;
       color: $text-light;
       margin-top: 0.25em;
+    }
+  }
+
+  .command-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75em;
+
+    label {
+      font-weight: 500;
+      color: $text-dark;
+    }
+
+    .hint {
+      font-size: 0.7em;
+      color: $text-light;
+      margin-top: 0.5em;
+    }
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1em;
+    margin-top: 1em;
+    padding-top: 1em;
+    border-top: 1px solid $border-color;
+
+    .step-dots {
+      display: flex;
+      gap: 0.5em;
+      align-items: center;
+
+      .dot {
+        width: 0.5em;
+        height: 0.5em;
+        border-radius: 50%;
+        background: #ccc;
+        transition: background 0.3s ease;
+
+        &.active {
+          background: #333;
+        }
+      }
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 1em;
+      justify-content: flex-end;
     }
   }
 

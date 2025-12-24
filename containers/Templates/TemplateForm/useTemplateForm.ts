@@ -1,10 +1,13 @@
 import { useState, useCallback } from 'react'
 
 interface FormData {
+  id?: string
   name: string
   displayName: string
   description: string
   commands: string[]
+  nginxConfig?: string
+  env?: string
 }
 
 interface Errors {
@@ -16,10 +19,13 @@ interface Errors {
 
 export function useTemplateForm(initialData?: any) {
   const [formData, setFormData] = useState<FormData>({
+    id: initialData?.id,
     name: initialData?.name || '',
     displayName: initialData?.displayName || '',
     description: initialData?.description || '',
-    commands: initialData?.commands || []
+    commands: initialData?.commands || [],
+    nginxConfig: initialData?.nginxConfig || '',
+    env: initialData?.env || ''
   })
 
   const [errors, setErrors] = useState<Errors>({})
@@ -53,10 +59,13 @@ export function useTemplateForm(initialData?: any) {
 
     setIsSubmitting(true)
     try {
-      await onSubmit({
+      const filteredCommands = formData.commands.filter(c => c.trim())
+      const submitData = {
         ...formData,
-        commands: formData.commands.filter(c => c.trim())
-      })
+        commands: filteredCommands
+      }
+      console.log('Submitting template data:', submitData)
+      await onSubmit(submitData)
     } finally {
       setIsSubmitting(false)
     }

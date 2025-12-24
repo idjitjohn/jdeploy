@@ -3,7 +3,7 @@ import { Schema, model, Document, models } from 'mongoose'
 interface DeploymentLog extends Document {
   repository: string
   branch: string
-  type: 'webhook' | 'manual' | 'cli'
+  type: 'webhook' | 'manual' | 'cli' | 'initial'
   status: 'pending' | 'running' | 'success' | 'failed'
   triggeredBy: string
   startedAt: Date
@@ -27,7 +27,7 @@ const deploymentLogSchema = new Schema<DeploymentLog>({
   },
   type: {
     type: String,
-    enum: ['webhook', 'manual', 'cli'],
+    enum: ['webhook', 'manual', 'cli', 'initial'],
     default: 'manual',
   },
   status: {

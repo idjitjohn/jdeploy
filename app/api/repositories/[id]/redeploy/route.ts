@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
-import DeploymentLogModel from '@/app/api/models/DeploymentLog'
 import RepositoryModel from '@/app/api/models/Repository'
+import DeploymentLogModel from '@/app/api/models/DeploymentLog'
 import ConfigurationModel from '@/app/api/models/Configuration'
 import { verifyAuth } from '@/app/api/middleware/auth'
 import { runDeployment, getLogPath, setDeploymentConfig } from '@/lib/deployment'
-import { startProcess, savePM2 } from '@/lib/pm2'
+import { ObjectId } from 'mongodb'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ repoName: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const auth = await verifyAuth(request)
@@ -23,18 +23,17 @@ export async function POST(
 
     await connectDB()
 
-    // Load configuration
-    const config = await ConfigurationModel.findOne()
-    if (config?.paths) {
-      setDeploymentConfig(config.paths)
+    const { id } = await params
+
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { error: 'Invalid repository ID' },
+        { status: 400 }
+      )
     }
 
-    const { searchParams } = new URL(request.url)
-    const branch = searchParams.get('branch') || 'main'
+    const repo = await RepositoryModel.findById(id)
 
-    const { repoName } = await params
-
-    const repo = await RepositoryModel.findOne({ name: repoName })
     if (!repo) {
       return NextResponse.json(
         { error: 'Repository not found' },
@@ -42,12 +41,19 @@ export async function POST(
       )
     }
 
-    const logPath = getLogPath(repoName)
-    const branchConfig = repo.branches.get(branch)
+    // Load configuration
+    const config = await ConfigurationModel.findOne()
+    if (config?.paths) {
+      setDeploymentConfig(config.paths)
+    }
+
+    const logPath = getLogPath(repo.name)
+    const branch = 'main'
     const env = Object.fromEntries(repo.env || [])
 
+    // Create deployment log record
     const log = new DeploymentLogModel({
-      repository: repoName,
+      repository: repo.name,
       branch,
       type: 'manual',
       status: 'running',
@@ -57,8 +63,9 @@ export async function POST(
     })
     await log.save()
 
+    // Run deployment in background
     runDeployment({
-      repoName: repoName,
+      repoName: repo.name,
       branch,
       repoUrl: repo.repoUrl,
       logPath,
@@ -68,16 +75,7 @@ export async function POST(
       preDeploy: repo.preDeploy || [],
       postDeploy: repo.postDeploy || [],
     }).then(async (result) => {
-      const pm2Name = branchConfig?.pm2Name || `${repoName}-${branch}`
-
       if (result.success) {
-        startProcess(pm2Name, 'npm start', {
-          instances: 1,
-          exec_mode: 'fork',
-          env
-        })
-        savePM2()
-
         await DeploymentLogModel.findByIdAndUpdate(log._id, {
           status: 'success',
           completedAt: new Date(),
@@ -99,19 +97,19 @@ export async function POST(
       {
         log: {
           id: log._id.toString(),
-          repository: log.repository,
-          branch: log.branch,
-          type: log.type,
-          status: log.status,
-          triggeredBy: log.triggeredBy,
+          repository: repo.name,
+          branch,
+          type: 'manual',
+          status: 'running',
+          triggeredBy: auth.username,
           startedAt: log.startedAt,
           logFile: logPath,
         },
       },
-      { status: 201 }
+      { status: 202 }
     )
   } catch (error) {
-    console.error('Start deployment error:', error)
+    console.error('Redeploy error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -1,18 +1,5 @@
 import { Schema, model, Document, models } from 'mongoose'
 
-interface NginxTemplate extends Document {
-  enabled: boolean
-  template: string[]
-}
-
-const nginxTemplateSchema = new Schema<NginxTemplate>({
-  enabled: {
-    type: Boolean,
-    default: true,
-  },
-  template: [String],
-}, { _id: false })
-
 interface Template extends Document {
   name: string
   displayName: string
@@ -20,8 +7,8 @@ interface Template extends Document {
   commands: string[]
   preDeploy: string[]
   postDeploy: string[]
-  nginx: NginxTemplate
-  env: Map<string, string>
+  nginx: string
+  env: string
   isSystem: boolean
   createdAt: Date
   updatedAt: Date
@@ -52,13 +39,12 @@ const templateSchema = new Schema<Template>({
     default: [],
   },
   nginx: {
-    type: nginxTemplateSchema,
-    default: () => ({ enabled: true, template: [] }),
+    type: String,
+    default: '',
   },
   env: {
-    type: Map,
-    of: String,
-    default: () => new Map(),
+    type: String,
+    default: '',
   },
   isSystem: {
     type: Boolean,

@@ -1,0 +1,68 @@
+.CodeEditor {
+  display: flex;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375em;
+  overflow: hidden;
+  /* background: #f9fafb; */
+  min-height: 12em;
+
+  .line-numbers {
+    /* background: linear-gradient(90deg, #f9fafb 0%, #f3f4f6 100%); */
+    border-right: 1px solid #e5e7eb;
+    padding: 0.25em 0;
+    text-align: right;
+    user-select: none;
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: #d1d5db;
+    overflow: hidden;
+    min-width: 2em;
+    flex-shrink: 0;
+    .line-number {
+      padding: 0.5em 0.75em;
+      height: 1.6em;
+      transition: color 0.2s ease;
+    }
+  }
+
+  .code-textarea {
+    flex: 1;
+    padding: 0.75em;
+    border: none;
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    font-size: 0.9em;
+    line-height: 1.6;
+    color: #374151;
+    background: #f9fafb;
+    resize: vertical;
+    outline: none;
+    overflow: auto;
+
+    &::placeholder {
+      color: #d1d5db;
+    }
+
+    &:focus {
+      background: white;
+    }
+
+    &::-webkit-scrollbar {
+      width: 0.5em;
+      height: 0.5em;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 0.25em;
+
+      &:hover {
+        background: #9ca3af;
+      }
+    }
+  }
+}

@@ -21,19 +21,6 @@ const branchConfigSchema = new Schema<BranchConfig>({
   postDeploy: [String],
 }, { _id: false })
 
-interface NginxConfig extends Document {
-  enabled: boolean
-  template: string[]
-}
-
-const nginxConfigSchema = new Schema<NginxConfig>({
-  enabled: {
-    type: Boolean,
-    default: true,
-  },
-  template: [String],
-}, { _id: false })
-
 interface Repository extends Document {
   name: string
   repoUrl: string
@@ -43,8 +30,8 @@ interface Repository extends Document {
   commands: string[]
   preDeploy: string[]
   postDeploy: string[]
-  nginx: NginxConfig
-  env: Map<string, string>
+  nginx: string
+  env: string
   branches: Map<string, BranchConfig>
   createdAt: Date
   updatedAt: Date
@@ -84,13 +71,12 @@ const repositorySchema = new Schema<Repository>({
     default: [],
   },
   nginx: {
-    type: nginxConfigSchema,
-    default: () => ({ enabled: true, template: [] }),
+    type: String,
+    default: '',
   },
   env: {
-    type: Map,
-    of: String,
-    default: () => new Map(),
+    type: String,
+    default: '',
   },
   branches: {
     type: Map,

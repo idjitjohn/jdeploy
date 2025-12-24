@@ -17,6 +17,7 @@ interface Props {
   name?: string
   placeholder?: string
   className?: string
+  size?: 'sm' | 'md' | 'lg'
   children?: ReactNode
 }
 
@@ -31,10 +32,11 @@ export default function Select({
   name,
   placeholder = 'Select an option',
   className = '',
+  size = 'md',
   children
 }: Props) {
   return (
-    <div className={`Select ${className}`}>
+    <div className={`Select ${className} ${size}`}>
       {label && <label className="label">{label}</label>}
       <select
         className={`field ${error ? 'error' : ''}`}

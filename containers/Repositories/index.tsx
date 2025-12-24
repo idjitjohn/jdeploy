@@ -33,7 +33,8 @@ export default function Repositories() {
     closeEditModal,
     handleAddRepository,
     handleUpdateRepository,
-    handleDeleteRepository
+    handleDeleteRepository,
+    handleRedeployRepository
   } = useRepositories()
 
   if (isLoading) {
@@ -80,6 +81,7 @@ export default function Repositories() {
                   <td>{formatDate(repo.createdAt)}</td>
                   <td>
                     <div className="actions-cell">
+                      <Button size="sm" onClick={() => handleRedeployRepository(repo.id, repo.name)}>Redeploy</Button>
                       <Button size="sm" variant="secondary" onClick={() => openEditModal(repo)}>Edit</Button>
                       <Button size="sm" variant="danger" onClick={() => handleDeleteRepository(repo.id, repo.name)}>Delete</Button>
                     </div>

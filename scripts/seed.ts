@@ -42,6 +42,8 @@ async function seed() {
       commands: ['npm install', 'npm run build'],
       preDeploy: ['npm ci'],
       postDeploy: ['npm run start'],
+      nginx: '',
+      env: '',
       isSystem: true
     })
     console.log('✓ Node.js template created')
@@ -53,6 +55,8 @@ async function seed() {
       commands: ['yarn install', 'yarn build'],
       preDeploy: ['yarn install'],
       postDeploy: ['yarn start'],
+      nginx: '',
+      env: '',
       isSystem: true
     })
     console.log('✓ Next.js template created')
@@ -71,14 +75,8 @@ async function seed() {
       commands: ['npm install', 'npm run build'],
       preDeploy: [],
       postDeploy: [],
-      nginx: {
-        enabled: true,
-        template: []
-      },
-      env: new Map([
-        ['NODE_ENV', 'production'],
-        ['PORT', '3000']
-      ]),
+      nginx: '',
+      env: 'NODE_ENV=production\nPORT=3000',
       branches: new Map([
         ['main', {
           type: 'prod',

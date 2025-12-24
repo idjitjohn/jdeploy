@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   DndContext,
   closestCenter,
@@ -16,25 +16,32 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy
 } from '@dnd-kit/sortable'
-import CommandItem from '../CommandItem'
+import CommandItem, { CommandItemHandle } from '../CommandItem'
 import Button from '@/components/Button'
 import './CommandList.scss'
 
 interface Props {
   commands: string[]
   onCommandsChange: (commands: string[]) => void
-  onAddCommand: () => void
+  onAddCommand: (afterIndex?: number) => void
   onDeleteCommand: (index: number) => void
+  listRef?: (handle: CommandListHandle) => void
+}
+
+export interface CommandListHandle {
+  flushAllEdits: () => void
 }
 
 export default function CommandList({
   commands,
   onCommandsChange,
   onAddCommand,
-  onDeleteCommand
+  onDeleteCommand,
+  listRef
 }: Props) {
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
   const commandRefs = useRef<(HTMLInputElement | null)[]>([])
+  const itemRefs = useRef<(CommandItemHandle | null)[]>([])
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -64,6 +71,7 @@ export default function CommandList({
 
       if (oldIndex !== -1 && newIndex !== -1) {
         const newCommands = arrayMove(commands, oldIndex, newIndex)
+        console.log('Commands reordered:', newCommands)
         onCommandsChange(newCommands)
       }
     }
@@ -76,7 +84,7 @@ export default function CommandList({
   }
 
   const handleAddAfter = (afterIndex: number) => {
-    onAddCommand()
+    onAddCommand(afterIndex)
     setEditingIndex(afterIndex + 1)
   }
 
@@ -95,6 +103,20 @@ export default function CommandList({
       }
     }
   }
+
+  const flushAllEdits = () => {
+    itemRefs.current.forEach((handle) => {
+      if (handle) {
+        handle.flushPendingEdit()
+      }
+    })
+  }
+
+  useEffect(() => {
+    if (listRef) {
+      listRef({ flushAllEdits })
+    }
+  }, [listRef, flushAllEdits])
 
   return (
     <div className="CommandList">
@@ -127,6 +149,9 @@ export default function CommandList({
                 onFocusPrevious={() => handleFocusPrevious(index)}
                 inputRef={(el) => {
                   commandRefs.current[index] = el
+                }}
+                itemRef={(handle) => {
+                  itemRefs.current[index] = handle
                 }}
               />
             ))}

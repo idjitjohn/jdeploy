@@ -11,6 +11,7 @@ export interface DeploymentContext {
   commands: string[]
   preDeploy: string[]
   postDeploy: string[]
+  port?: number
 }
 
 export interface DeploymentConfig {
@@ -49,6 +50,25 @@ export function getLogPath(repoName: string): string {
   return path.join(logsDir, `${Date.now()}.log`)
 }
 
+export function getReleasePath(repoName: string): string {
+  return path.join(deploymentConfig.release, repoName)
+}
+
+export function interpolateVariables(command: string, context: { repoName: string; branch: string; port?: number }): string {
+  const codePath = getDeploymentPath(context.repoName, context.branch)
+  const releasePath = getReleasePath(context.repoName)
+  const certificatePath = path.join(deploymentConfig.certificate, context.repoName)
+  
+  return command
+    .replace(/\$cf\$/g, codePath)
+    .replace(/\$rf\$/g, releasePath)
+    .replace(/\$certsf\$/g, certificatePath)
+    .replace(/\$logsf\$/g, path.join(deploymentConfig.logs, context.repoName))
+    .replace(/\$branch\$/g, context.branch)
+    .replace(/\$repoName\$/g, context.repoName)
+    .replace(/\$port\$/g, context.port?.toString() || '')
+}
+
 export function executeCommand(cmd: string, cwd: string, env?: Record<string, string>): string {
   try {
     const result = execSync(cmd, {
@@ -71,6 +91,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
   const output: string[] = []
   const deployPath = getDeploymentPath(context.repoName, context.branch)
 
+  console.log(`\n🚀 [${context.repoName}] Starting deployment for branch: ${context.branch}`)
   try {
     output.push(`[${new Date().toISOString()}] Starting deployment for ${context.repoName}/${context.branch}`)
 
@@ -89,22 +110,28 @@ export async function runDeployment(context: DeploymentContext): Promise<{
 
     output.push(`[${new Date().toISOString()}] Running pre-deploy scripts...`)
     for (const script of context.preDeploy) {
-      output.push(`> ${script}`)
-      const result = executeCommand(script, deployPath, context.env)
+      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port })
+      output.push(`> ${interpolated}`)
+      console.log(`[${context.repoName}] Executing pre-deploy: ${interpolated}`)
+      const result = executeCommand(interpolated, deployPath, context.env)
       output.push(result)
     }
 
     output.push(`[${new Date().toISOString()}] Running deployment commands...`)
     for (const cmd of context.commands) {
-      output.push(`> ${cmd}`)
-      const result = executeCommand(cmd, deployPath, context.env)
+      const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port })
+      output.push(`> ${interpolated}`)
+      console.log(`[${context.repoName}] Executing command: ${interpolated}`)
+      const result = executeCommand(interpolated, deployPath, context.env)
       output.push(result)
     }
 
     output.push(`[${new Date().toISOString()}] Running post-deploy scripts...`)
     for (const script of context.postDeploy) {
-      output.push(`> ${script}`)
-      const result = executeCommand(script, deployPath, context.env)
+      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port })
+      output.push(`> ${interpolated}`)
+      console.log(`[${context.repoName}] Executing post-deploy: ${interpolated}`)
+      const result = executeCommand(interpolated, deployPath, context.env)
       output.push(result)
     }
 
@@ -113,6 +140,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     const fullOutput = output.join('\n')
     fs.writeFileSync(context.logPath, fullOutput)
 
+    console.log(`✅ [${context.repoName}] Deployment completed successfully\n`)
     return {
       success: true,
       output: fullOutput
@@ -124,6 +152,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     const fullOutput = output.join('\n')
     fs.writeFileSync(context.logPath, fullOutput)
 
+    console.error(`❌ [${context.repoName}] Deployment failed: ${errorMsg}\n`)
     return {
       success: false,
       output: fullOutput,
