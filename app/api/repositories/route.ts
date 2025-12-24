@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
 import RepositoryModel from '@/app/api/models/Repository'
+import DeploymentLogModel from '@/app/api/models/DeploymentLog'
 import { verifyAuth } from '@/app/api/middleware/auth'
-import { runDeployment, getLogPath } from '@/lib/deployment'
+import { runDeployment, getLogPath, setDeploymentConfig } from '@/lib/deployment'
+import ConfigurationModel from '@/app/api/models/Configuration'
 
 export async function GET(request: NextRequest) {
   try {
@@ -69,6 +71,12 @@ export async function POST(request: NextRequest) {
 
     await connectDB()
 
+    // Load configuration
+    const config = await ConfigurationModel.findOne()
+    if (config?.paths) {
+      setDeploymentConfig(config.paths)
+    }
+
     const existingRepo = await RepositoryModel.findOne({ name: data.name })
     if (existingRepo) {
       return NextResponse.json(
@@ -95,6 +103,18 @@ export async function POST(request: NextRequest) {
 
     const logPath = getLogPath(data.name)
 
+    // Create a deployment log record for the initial deployment
+    const log = new DeploymentLogModel({
+      repository: data.name,
+      branch: 'main',
+      type: 'initial',
+      status: 'running',
+      triggeredBy: auth.username,
+      startedAt: new Date(),
+      logFile: logPath,
+    })
+    await log.save()
+
     runDeployment({
       repoName: data.name,
       branch: 'main',
@@ -104,6 +124,21 @@ export async function POST(request: NextRequest) {
       commands: data.commands || [],
       preDeploy: data.preDeploy || [],
       postDeploy: data.postDeploy || [],
+    }).then(async (result) => {
+      if (result.success) {
+        await DeploymentLogModel.findByIdAndUpdate(log._id, {
+          status: 'success',
+          completedAt: new Date(),
+          exitCode: 0
+        })
+      } else {
+        await DeploymentLogModel.findByIdAndUpdate(log._id, {
+          status: 'failed',
+          completedAt: new Date(),
+          exitCode: 1,
+          errorMessage: result.error
+        })
+      }
     }).catch((error) => {
       console.error('Background deployment error:', error)
     })

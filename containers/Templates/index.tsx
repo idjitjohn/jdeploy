@@ -3,10 +3,8 @@
 import Header from '@/components/Header'
 import Modal from '@/components/Modal'
 import Button from '@/components/Button'
-import Badge from '@/components/Badge'
-import { escapeHtml } from '@/lib/utils'
 import TemplateForm from './TemplateForm'
-import TemplateView from './TemplateView'
+import TemplateCard from './TemplateCard'
 import { useTemplates } from './useTemplates'
 import './Templates.scss'
 
@@ -59,25 +57,15 @@ export default function Templates() {
             <div className="empty-state">No templates configured</div>
           ) : (
             templates.map((template: Template) => (
-              <div key={template.id} className="card">
-                <div className="card-header">
-                  <h3>{escapeHtml(template.displayName)}</h3>
-                  <Badge size='sm' variant={template.isSystem ? 'neutral' : 'primary'}>
-                    {template.isSystem ? 'System' : 'Custom'}
-                  </Badge>
-                </div>
-                <div className="card-body">
-                  <p className="description">{escapeHtml(template.description)}</p>
-                </div>
-                <div className="card-actions">
-                  <Button size="sm" onClick={() => openViewModal(template.id)}>View</Button>
-                  {!template.isSystem && (
-                    <>
-                      <Button size="sm" variant="danger" onClick={() => handleDeleteTemplate(template.id, template.displayName)}>Delete</Button>
-                    </>
-                  )}
-                </div>
-              </div>
+              <TemplateCard
+                key={template.id}
+                id={template.id}
+                displayName={template.displayName}
+                description={template.description}
+                isSystem={template.isSystem}
+                onEdit={() => openViewModal(template.id)}
+                onDelete={() => handleDeleteTemplate(template.id, template.displayName)}
+              />
             ))
           )}
         </div>
@@ -90,13 +78,15 @@ export default function Templates() {
         />
       </Modal>
 
-      <Modal isOpen={!!viewingId} title={viewingTemplate?.displayName || ''} onClose={closeViewModal} size="large">
+      <Modal isOpen={!!viewingId} title={viewingTemplate ? `Edit ${viewingTemplate.displayName}` : ''} onClose={closeViewModal} size="large">
         {viewingTemplate && (
-          <TemplateView
-            template={viewingTemplate}
-            onClose={closeViewModal}
-            onEdit={handleUpdateTemplate}
-            onDelete={handleDeleteTemplate}
+          <TemplateForm
+            initialData={viewingTemplate}
+            onSubmit={async (data) => {
+              await handleUpdateTemplate(data)
+              closeViewModal()
+            }}
+            onCancel={closeViewModal}
           />
         )}
       </Modal>

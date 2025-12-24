@@ -1,11 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import Input from '@/components/Input'
 import Textarea from '@/components/Textarea'
 import Button from '@/components/Button'
 import CommandList from './CommandList'
-import CommandEditor from './CommandEditor'
 import { useTemplateForm } from './useTemplateForm'
 import './TemplateForm.scss'
 
@@ -22,9 +20,7 @@ interface TemplateFormProps {
 }
 
 export default function TemplateForm({ initialData, onSubmit, onCancel }: TemplateFormProps) {
-  const { formData, errors, isSubmitting, setFormData, validateForm, handleSubmit } = useTemplateForm(initialData)
-  const [editingCommandIndex, setEditingCommandIndex] = useState<number | null>(null)
-  const [editingCommand, setEditingCommand] = useState('')
+  const { formData, errors, isSubmitting, setFormData, handleSubmit } = useTemplateForm(initialData)
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -38,21 +34,6 @@ export default function TemplateForm({ initialData, onSubmit, onCancel }: Templa
       ...prev,
       commands
     }))
-  }
-
-  const handleEditCommand = (index: number, command: string) => {
-    setEditingCommandIndex(index)
-    setEditingCommand(command)
-  }
-
-  const handleSaveCommand = (newCommand: string) => {
-    if (editingCommandIndex !== null) {
-      const newCommands = [...formData.commands]
-      newCommands[editingCommandIndex] = newCommand
-      handleCommandsChange(newCommands)
-      setEditingCommandIndex(null)
-      setEditingCommand('')
-    }
   }
 
   const handleAddCommand = () => {
@@ -75,7 +56,6 @@ export default function TemplateForm({ initialData, onSubmit, onCancel }: Templa
   }
 
   return (
-    <>
     <form className="TemplateForm" onSubmit={onFormSubmit}>
       <div className="form-group">
         <Input
@@ -120,11 +100,10 @@ export default function TemplateForm({ initialData, onSubmit, onCancel }: Templa
         <CommandList
           commands={formData.commands}
           onCommandsChange={handleCommandsChange}
-          onEditCommand={handleEditCommand}
           onAddCommand={handleAddCommand}
           onDeleteCommand={handleDeleteCommand}
         />
-        <p className="hint">Drag to reorder, click Edit to modify, or delete commands</p>
+        <p className="hint">Click to edit, drag to reorder, or delete commands</p>
       </div>
 
       <div className="form-actions">
@@ -136,13 +115,5 @@ export default function TemplateForm({ initialData, onSubmit, onCancel }: Templa
         </Button>
       </div>
     </form>
-
-    <CommandEditor
-      isOpen={editingCommandIndex !== null}
-      command={editingCommand}
-      onSave={handleSaveCommand}
-      onCancel={() => setEditingCommandIndex(null)}
-    />
-    </>
   )
 }

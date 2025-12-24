@@ -185,7 +185,7 @@ export async function DELETE(
       )
     }
 
-    const template = await TemplateModel.findByIdAndDelete(id)
+    const template = await TemplateModel.findById(id)
 
     if (!template) {
       return NextResponse.json(
@@ -193,6 +193,16 @@ export async function DELETE(
         { status: 404 }
       )
     }
+
+    // Prevent deletion of system templates
+    if (template.isSystem) {
+      return NextResponse.json(
+        { error: 'Cannot delete system templates' },
+        { status: 403 }
+      )
+    }
+
+    await TemplateModel.findByIdAndDelete(id)
 
     return NextResponse.json(
       { message: 'Template deleted successfully' },

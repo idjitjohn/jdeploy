@@ -2,8 +2,6 @@ import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
-const DEPLOYMENTS_DIR = '/var/webhooks/deployments'
-
 export interface DeploymentContext {
   repoName: string
   branch: string
@@ -15,12 +13,36 @@ export interface DeploymentContext {
   postDeploy: string[]
 }
 
+export interface DeploymentConfig {
+  home: string
+  code: string
+  release: string
+  certificate: string
+  logs: string
+  nginxAvailable: string
+  nginxEnabled: string
+}
+
+let deploymentConfig: DeploymentConfig = {
+  home: '/var/webhooks',
+  code: '/var/webhooks/code',
+  release: '/var/webhooks/release',
+  certificate: '/var/webhooks/certificate',
+  logs: '/var/webhooks/logs',
+  nginxAvailable: '/etc/nginx/sites-available',
+  nginxEnabled: '/etc/nginx/sites-enabled'
+}
+
+export function setDeploymentConfig(config: DeploymentConfig) {
+  deploymentConfig = config
+}
+
 export function getDeploymentPath(repoName: string, branch: string): string {
-  return path.join(DEPLOYMENTS_DIR, repoName, branch)
+  return path.join(deploymentConfig.code, repoName, branch)
 }
 
 export function getLogPath(repoName: string): string {
-  const logsDir = path.join(DEPLOYMENTS_DIR, repoName, 'logs')
+  const logsDir = path.join(deploymentConfig.logs, repoName)
   if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir, { recursive: true })
   }

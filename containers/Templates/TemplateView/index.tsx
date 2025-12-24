@@ -1,9 +1,6 @@
 'use client'
 
-import { useState } from 'react'
-import Button from '@/components/Button'
 import { escapeHtml } from '@/lib/utils'
-import TemplateForm from '../TemplateForm'
 import './TemplateView.scss'
 
 interface TemplateViewProps {
@@ -15,50 +12,9 @@ interface TemplateViewProps {
     isSystem?: boolean
     commands?: string[]
   }
-  onClose: () => void
-  onEdit?: (data: any) => Promise<void>
-  onDelete?: (id: string) => Promise<void>
 }
 
-export default function TemplateView({ template, onClose, onEdit, onDelete }: TemplateViewProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-
-  const handleEdit = async (data: any) => {
-    if (onEdit) {
-      await onEdit({ ...data, id: template.id })
-      setIsEditing(false)
-    }
-  }
-
-  const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete template "${template.displayName}"?`)) {
-      return
-    }
-
-    setIsDeleting(true)
-    try {
-      if (onDelete) {
-        await onDelete(template.id)
-      }
-    } finally {
-      setIsDeleting(false)
-    }
-  }
-
-  if (isEditing && !template.isSystem) {
-    return (
-      <div className="TemplateView">
-        <h4>Edit Template</h4>
-        <TemplateForm
-          initialData={template}
-          onSubmit={handleEdit}
-          onCancel={() => setIsEditing(false)}
-        />
-      </div>
-    )
-  }
-
+export default function TemplateView({ template }: TemplateViewProps) {
   return (
     <div className="TemplateView">
       <div className="view-header">
@@ -84,22 +40,6 @@ export default function TemplateView({ template, onClose, onEdit, onDelete }: Te
           </ul>
         </div>
       )}
-
-      <div className="view-actions">
-        <Button variant="secondary" onClick={onClose}>
-          Close
-        </Button>
-        {!template.isSystem && (
-          <>
-            <Button onClick={() => setIsEditing(true)}>
-              Edit
-            </Button>
-            <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </Button>
-          </>
-        )}
-      </div>
     </div>
   )
 }

@@ -51,9 +51,12 @@ export function useSettings() {
   const loadConfiguration = async () => {
     try {
       const data = await api.configuration.get() as any
-      if (data.configuration) {
+      if (data?.configuration?.paths) {
         setPaths(data.configuration.paths)
         setOriginalPaths(data.configuration.paths)
+      } else if (data?.paths) {
+        setPaths(data.paths)
+        setOriginalPaths(data.paths)
       }
     } catch (error) {
       showNotification('Failed to load configuration: ' + (error as Error).message, 'error')

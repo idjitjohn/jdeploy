@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
 import DeploymentLogModel from '@/app/api/models/DeploymentLog'
 import RepositoryModel from '@/app/api/models/Repository'
+import ConfigurationModel from '@/app/api/models/Configuration'
 import { verifyAuth } from '@/app/api/middleware/auth'
-import { runDeployment, getLogPath } from '@/lib/deployment'
+import { runDeployment, getLogPath, setDeploymentConfig } from '@/lib/deployment'
 import { startProcess, savePM2 } from '@/lib/pm2'
 
 export async function POST(
@@ -21,6 +22,12 @@ export async function POST(
     }
 
     await connectDB()
+
+    // Load configuration
+    const config = await ConfigurationModel.findOne()
+    if (config?.paths) {
+      setDeploymentConfig(config.paths)
+    }
 
     const { searchParams } = new URL(request.url)
     const branch = searchParams.get('branch') || 'main'
