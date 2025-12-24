@@ -1,0 +1,11 @@
+@use '../../../shared/variables' as *;
+
+.TemplateEditor {
+  .view-actions {
+    display: flex;
+    gap: 0.5em;
+    justify-content: flex-end;
+    padding-top: 1.5em;
+    border-top: 1px solid $border-color;
+  }
+}

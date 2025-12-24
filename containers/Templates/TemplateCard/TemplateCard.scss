@@ -1,0 +1,48 @@
+@use '../../../shared/variables' as *;
+
+.TemplateCard {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border: 1px solid $border-color;
+  border-radius: 0.5em;
+  padding: 1.5em;
+  gap: 1em;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: $primary-color;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5em;
+
+    h3 {
+      margin: 0;
+      font-size: 1.125em;
+      color: $text-dark;
+      flex: 1;
+    }
+  }
+
+  .card-body {
+    flex: 1;
+
+    .description {
+      margin: 0;
+      color: $text-light;
+      font-size: 0.9em;
+      line-height: 1.5;
+    }
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 0.5em;
+    margin-top: auto;
+  }
+}
