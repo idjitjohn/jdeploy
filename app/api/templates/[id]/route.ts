@@ -115,7 +115,7 @@ export async function PUT(
           isSystem: data.isSystem || false,
         },
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: false, overwrite: false }
     )
 
     if (!template) {

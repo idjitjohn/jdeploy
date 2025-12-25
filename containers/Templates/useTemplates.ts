@@ -66,7 +66,11 @@ export function useTemplates() {
         name: formData.name,
         displayName: formData.displayName,
         description: formData.description,
-        commands: formData.commands
+        commands: formData.commands,
+        preDeploy: formData.preDeploy,
+        postDeploy: formData.postDeploy,
+        nginxConfig: formData.nginxConfig,
+        env: formData.env
       })
       showNotification('Template updated successfully', 'success')
       setViewingId(null)

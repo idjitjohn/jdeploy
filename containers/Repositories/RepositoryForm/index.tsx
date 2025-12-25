@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import Input from '@/components/Input'
 import Select from '@/components/Select'
 import Button from '@/components/Button'
 import CodeEditor from '@/components/CodeEditor'
-import CommandList from '@/containers/Templates/TemplateForm/CommandList'
+import CommandList, { CommandListHandle } from '@/containers/Templates/TemplateForm/CommandList'
 import { useRepositoryForm } from './useRepositoryForm'
 import './RepositoryForm.scss'
 
@@ -36,6 +36,9 @@ interface Props {
 export default function RepositoryForm({ onSubmit, onCancel, domains, templates, initialData }: Props) {
   const isEdit = !!initialData?.id
   const [currentStep, setCurrentStep] = useState(0)
+  const commandListRef = useRef<CommandListHandle>(null)
+  const preDeployListRef = useRef<CommandListHandle>(null)
+  const postDeployListRef = useRef<CommandListHandle>(null)
   const {
     formData,
     isSubmitting,
@@ -43,6 +46,13 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
     handleSubmit,
     setFormData
   } = useRepositoryForm({ onSubmit, initialData })
+
+  const onFormSubmit = (e: React.FormEvent) => {
+    commandListRef.current?.flushAllEdits()
+    preDeployListRef.current?.flushAllEdits()
+    postDeployListRef.current?.flushAllEdits()
+    handleSubmit(e)
+  }
 
   const handleCommandsChange = (commands: string[]) => {
     setFormData(prev => ({
@@ -151,7 +161,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
   // Edit mode with tabs
   if (isEdit) {
     return (
-      <form className="RepositoryForm edit-mode" onSubmit={handleSubmit}>
+      <form className="RepositoryForm edit-mode" onSubmit={onFormSubmit}>
         <div className="tabs">
           <button
             type="button"
@@ -230,6 +240,9 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                   onCommandsChange={handleCommandsChange}
                   onAddCommand={handleAddCommand}
                   onDeleteCommand={handleDeleteCommand}
+                  listRef={(handle) => {
+                    commandListRef.current = handle
+                  }}
                 />
                 <p className="hint">Click to edit, drag to reorder, or delete commands</p>
               </div>
@@ -241,6 +254,9 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                   onCommandsChange={handlePreDeployChange}
                   onAddCommand={handleAddPreDeploy}
                   onDeleteCommand={handleDeletePreDeploy}
+                  listRef={(handle) => {
+                    preDeployListRef.current = handle
+                  }}
                 />
                 <p className="hint">Commands to run before deployment</p>
               </div>
@@ -252,6 +268,9 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                   onCommandsChange={handlePostDeployChange}
                   onAddCommand={handleAddPostDeploy}
                   onDeleteCommand={handleDeletePostDeploy}
+                  listRef={(handle) => {
+                    postDeployListRef.current = handle
+                  }}
                 />
                 <p className="hint">Commands to run after deployment</p>
               </div>
@@ -285,7 +304,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
 
   // Add mode with steps
   return (
-    <form className="RepositoryForm add-mode" onSubmit={handleSubmit}>
+    <form className="RepositoryForm add-mode" onSubmit={onFormSubmit}>
       <div className="step-content">
         {currentStep === 0 && (
           <>
@@ -354,6 +373,9 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                 onCommandsChange={handleCommandsChange}
                 onAddCommand={handleAddCommand}
                 onDeleteCommand={handleDeleteCommand}
+                listRef={(handle) => {
+                  commandListRef.current = handle
+                }}
               />
               <p className="hint">Click to edit, drag to reorder, or delete commands</p>
             </div>
@@ -365,6 +387,9 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                 onCommandsChange={handlePreDeployChange}
                 onAddCommand={handleAddPreDeploy}
                 onDeleteCommand={handleDeletePreDeploy}
+                listRef={(handle) => {
+                  preDeployListRef.current = handle
+                }}
               />
               <p className="hint">Commands to run before deployment</p>
             </div>
@@ -376,6 +401,9 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                 onCommandsChange={handlePostDeployChange}
                 onAddCommand={handleAddPostDeploy}
                 onDeleteCommand={handleDeletePostDeploy}
+                listRef={(handle) => {
+                  postDeployListRef.current = handle
+                }}
               />
               <p className="hint">Commands to run after deployment</p>
             </div>

@@ -272,12 +272,13 @@ export default function CommandItem({ id, command, index, onUpdate, onDelete, on
             onKeyPress={(e) => e.stopPropagation()}
           />
           {showAutocomplete && (
-            <div className="ci-autocomplete" style={{ top: `${autocompletePos.top}px`, left: `${autocompletePos.left}px` }}>
+            <div className="ci-autocomplete" style={{ top: `${autocompletePos.top}px`, left: `${autocompletePos.left}px` }} onMouseDown={(e) => e.preventDefault()}>
               {VARIABLES.map((variable) => (
                 <div
                   key={variable.key}
                   className="ci-autocomplete-item"
                   onClick={() => handleSelectVariable(variable.key)}
+                  onMouseDown={(e) => e.preventDefault()}
                 >
                   <span className="key">{variable.key}</span>
                   <span className="description">{variable.description}</span>

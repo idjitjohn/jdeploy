@@ -80,8 +80,16 @@ async function mock() {
         displayName: 'Node.js',
         description: 'Standard Node.js project with yarn',
         commands: ['yarn install', 'yarn build'],
-        preDeploy: ['yarn ci'],
-        postDeploy: ['yarn start'],
+        preDeploy: [
+          'cd $cf$',
+          'git fetch origin $branch$',
+          'git reset --hard origin/$branch$',
+          'git checkout $branch$'
+        ],
+        postDeploy: [
+          'pm2 restart $pm2Name$',
+          'sudo systemctl restart nginx'
+        ],
         nginx: '',
         env: '',
         isSystem: true
@@ -91,8 +99,16 @@ async function mock() {
         displayName: 'Next.js',
         description: 'Next.js SSR/SSG application',
         commands: ['yarn install', 'yarn build'],
-        preDeploy: ['yarn install'],
-        postDeploy: ['yarn start'],
+        preDeploy: [
+          'cd $cf$',
+          'git fetch origin $branch$',
+          'git reset --hard origin/$branch$',
+          'git checkout $branch$'
+        ],
+        postDeploy: [
+          'pm2 restart $pm2Name$',
+          'sudo systemctl restart nginx'
+        ],
         nginx: '',
         env: '',
         isSystem: true
@@ -102,8 +118,16 @@ async function mock() {
         displayName: 'React',
         description: 'React SPA with yarn and build output',
         commands: ['yarn install', 'yarn build'],
-        preDeploy: [],
-        postDeploy: ['pm2 serve build'],
+        preDeploy: [
+          'cd $cf$',
+          'git fetch origin $branch$',
+          'git reset --hard origin/$branch$',
+          'git checkout $branch$'
+        ],
+        postDeploy: [
+          'pm2 restart $pm2Name$',
+          'sudo systemctl restart nginx'
+        ],
         nginx: '',
         env: '',
         isSystem: true

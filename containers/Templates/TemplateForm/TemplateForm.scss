@@ -3,89 +3,75 @@
 .TemplateForm {
   display: flex;
   flex-direction: column;
-  gap: 1em;
 
-  .template-selector{
+  .template-selector {
     .Select {
       flex-direction: row;
       align-items: center;
       gap: 1.5em;
     }
-    .hint{
-      font-size: .7em;
+
+    .hint {
+      font-size: 0.7em;
       margin-top: 0;
     }
   }
 
-  &.edit-mode {
-    .tabs {
-      display: flex;
-      gap: 0;
-      border-bottom: 1px solid $border-color;
-      margin-bottom: 1.5em;
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid $border-color;
+    margin-bottom: 1.5em;
 
-      .tab {
-        padding: 0.5em 1em;
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: $text-light;
-        font-size: 0.9em;
-        transition: all 0.2s ease;
-        border-bottom: 2px solid transparent;
-        margin-bottom: -1px;
+    .tab {
+      padding: 0.5em 1em;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: $text-light;
+      font-size: 0.9em;
+      transition: all 0.2s ease;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
 
-        &:hover {
-          color: $text-dark;
-        }
+      &:hover {
+        color: $text-dark;
+      }
 
-        &.active {
-          color: #333;
-          border-bottom-color: #333;
-        }
+      &.active {
+        color: #333;
+        border-bottom-color: #333;
       }
     }
+  }
 
-    .tab-content {
+  .tab-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5em;
+    overflow: hidden;
+    .command-section {
       display: flex;
       flex-direction: column;
-      gap: 1.5em;
+      overflow: hidden;
+      gap: 0.75em;
+
+      label {
+        font-weight: 500;
+        color: $text-dark;
+      }
+
+      .hint {
+        font-size: 0.7em;
+        color: $text-light;
+        margin-top: 0.5em;
+      }
     }
   }
 
   &.add-mode {
-    .tabs {
-      display: flex;
-      gap: 0;
-      border-bottom: 1px solid $border-color;
-      margin-bottom: 1.5em;
-
-      .tab {
-        padding: 0.5em 1em;
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: $text-light;
-        font-size: 0.9em;
-        transition: all 0.2s ease;
-        border-bottom: 2px solid transparent;
-        margin-bottom: -1px;
-
-        &:hover {
-          color: $text-dark;
-        }
-
-        &.active {
-          color: #333;
-          border-bottom-color: #333;
-        }
-      }
-    }
-
     .tab-content {
-      display: flex;
-      flex-direction: column;
-      gap: 1.5em;
+      gap: 1em;
       min-height: 20em;
     }
   }
@@ -111,23 +97,6 @@
       font-size: 0.75em;
       color: $text-light;
       margin-top: 0.25em;
-    }
-  }
-
-  .command-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75em;
-
-    label {
-      font-weight: 500;
-      color: $text-dark;
-    }
-
-    .hint {
-      font-size: 0.7em;
-      color: $text-light;
-      margin-top: 0.5em;
     }
   }
 

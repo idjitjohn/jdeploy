@@ -43,3 +43,4 @@ dist/
 # Build outputs
 .next/
 *.tsbuildinfo
+__old

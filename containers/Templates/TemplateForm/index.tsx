@@ -28,6 +28,8 @@ interface TemplateFormProps {
     displayName: string
     description: string
     commands?: string[]
+    preDeploy?: string[]
+    postDeploy?: string[]
     nginxConfig?: string
     env?: string
   }>
@@ -39,6 +41,8 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
   const { formData, errors, isSubmitting, setFormData, handleSubmit } = useTemplateForm(initialData)
   const commandListRef = useRef<CommandListHandle>(null)
+  const preDeployListRef = useRef<CommandListHandle>(null)
+  const postDeployListRef = useRef<CommandListHandle>(null)
 
   // Check if form data has changed from initial state
   const hasChanges = useMemo(() => {
@@ -72,6 +76,8 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
         displayName: selectedTemplate.displayName,
         description: selectedTemplate.description,
         commands: selectedTemplate.commands || [],
+        preDeploy: selectedTemplate.preDeploy || [],
+        postDeploy: selectedTemplate.postDeploy || [],
         nginxConfig: selectedTemplate.nginxConfig || '',
         env: selectedTemplate.env || ''
       })
@@ -107,9 +113,69 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
     }))
   }
 
+  const handlePreDeployChange = (commands: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      preDeploy: commands
+    }))
+  }
+
+  const handleAddPreDeploy = (afterIndex?: number) => {
+    setFormData(prev => {
+      const newCommands = [...(prev.preDeploy || [])]
+      if (afterIndex !== undefined) {
+        newCommands.splice(afterIndex + 1, 0, '')
+      } else {
+        newCommands.push('')
+      }
+      return {
+        ...prev,
+        preDeploy: newCommands
+      }
+    })
+  }
+
+  const handleDeletePreDeploy = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      preDeploy: (prev.preDeploy || []).filter((_, i) => i !== index)
+    }))
+  }
+
+  const handlePostDeployChange = (commands: string[]) => {
+    setFormData(prev => ({
+      ...prev,
+      postDeploy: commands
+    }))
+  }
+
+  const handleAddPostDeploy = (afterIndex?: number) => {
+    setFormData(prev => {
+      const newCommands = [...(prev.postDeploy || [])]
+      if (afterIndex !== undefined) {
+        newCommands.splice(afterIndex + 1, 0, '')
+      } else {
+        newCommands.push('')
+      }
+      return {
+        ...prev,
+        postDeploy: newCommands
+      }
+    })
+  }
+
+  const handleDeletePostDeploy = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      postDeploy: (prev.postDeploy || []).filter((_, i) => i !== index)
+    }))
+  }
+
   const onFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     commandListRef.current?.flushAllEdits()
+    preDeployListRef.current?.flushAllEdits()
+    postDeployListRef.current?.flushAllEdits()
     await handleSubmit(onSubmit)
   }
 
@@ -188,19 +254,49 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
           )}
 
           {currentStep === 1 && (
-            <div className="command-section">
-              <label>Build Commands</label>
-              <CommandList
-                commands={formData.commands || []}
-                onCommandsChange={handleCommandsChange}
-                onAddCommand={handleAddCommand}
-                onDeleteCommand={handleDeleteCommand}
-                listRef={(handle) => {
-                  commandListRef.current = handle
-                }}
-              />
-              <p className="hint">Click to edit, drag to reorder, or delete commands</p>
-            </div>
+            <>
+              <div className="command-section">
+                <label>Pre-Deploy Commands</label>
+                <CommandList
+                  commands={formData.preDeploy || []}
+                  onCommandsChange={handlePreDeployChange}
+                  onAddCommand={handleAddPreDeploy}
+                  onDeleteCommand={handleDeletePreDeploy}
+                  listRef={(handle) => {
+                    preDeployListRef.current = handle
+                  }}
+                />
+                <p className="hint">Commands run before deployment</p>
+              </div>
+
+              <div className="command-section">
+                <label>Build Commands</label>
+                <CommandList
+                  commands={formData.commands || []}
+                  onCommandsChange={handleCommandsChange}
+                  onAddCommand={handleAddCommand}
+                  onDeleteCommand={handleDeleteCommand}
+                  listRef={(handle) => {
+                    commandListRef.current = handle
+                  }}
+                />
+                <p className="hint">Click to edit, drag to reorder, or delete commands</p>
+              </div>
+
+              <div className="command-section">
+                <label>Post-Deploy Commands</label>
+                <CommandList
+                  commands={formData.postDeploy || []}
+                  onCommandsChange={handlePostDeployChange}
+                  onAddCommand={handleAddPostDeploy}
+                  onDeleteCommand={handleDeletePostDeploy}
+                  listRef={(handle) => {
+                    postDeployListRef.current = handle
+                  }}
+                />
+                <p className="hint">Commands run after deployment</p>
+              </div>
+            </>
           )}
 
           {currentStep === 2 && (
@@ -221,7 +317,7 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
               <CodeEditor
                 value={formData.env || ''}
                 onChange={(value) => handleChange('env', value)}
-                placeholder="Enter environment variables (KEY=value format, one per line)..."
+                placeholder="KEY=BLABLA (environment variables)..."
                 language="env"
               />
             </div>
@@ -339,19 +435,49 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
         )}
 
         {currentStep === 1 && (
-          <div className="command-section">
-            <label>Build Commands</label>
-            <CommandList
-              commands={formData.commands || []}
-              onCommandsChange={handleCommandsChange}
-              onAddCommand={handleAddCommand}
-              onDeleteCommand={handleDeleteCommand}
-              listRef={(handle) => {
-                commandListRef.current = handle
-              }}
-            />
-            <p className="hint">Click to edit, drag to reorder, or delete commands</p>
-          </div>
+          <>
+            <div className="command-section">
+              <label>Build Commands</label>
+              <CommandList
+                commands={formData.commands || []}
+                onCommandsChange={handleCommandsChange}
+                onAddCommand={handleAddCommand}
+                onDeleteCommand={handleDeleteCommand}
+                listRef={(handle) => {
+                  commandListRef.current = handle
+                }}
+              />
+              <p className="hint">Click to edit, drag to reorder, or delete commands</p>
+            </div>
+
+            <div className="command-section" style={{ marginTop: '1.5em' }}>
+              <label>Pre-Deploy Commands</label>
+              <CommandList
+                commands={formData.preDeploy || []}
+                onCommandsChange={handlePreDeployChange}
+                onAddCommand={handleAddPreDeploy}
+                onDeleteCommand={handleDeletePreDeploy}
+                listRef={(handle) => {
+                  preDeployListRef.current = handle
+                }}
+              />
+              <p className="hint">Commands run before deployment</p>
+            </div>
+
+            <div className="command-section" style={{ marginTop: '1.5em' }}>
+              <label>Post-Deploy Commands</label>
+              <CommandList
+                commands={formData.postDeploy || []}
+                onCommandsChange={handlePostDeployChange}
+                onAddCommand={handleAddPostDeploy}
+                onDeleteCommand={handleDeletePostDeploy}
+                listRef={(handle) => {
+                  postDeployListRef.current = handle
+                }}
+              />
+              <p className="hint">Commands run after deployment</p>
+            </div>
+          </>
         )}
 
         {currentStep === 2 && (
@@ -372,7 +498,7 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
             <CodeEditor
               value={formData.env || ''}
               onChange={(value) => handleChange('env', value)}
-              placeholder="Enter environment variables (KEY=value format, one per line)..."
+              placeholder="KEY=BLABLA (environment variables)..."
               language="env"
             />
           </div>

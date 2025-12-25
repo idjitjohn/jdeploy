@@ -6,6 +6,8 @@ interface FormData {
   displayName: string
   description: string
   commands: string[]
+  preDeploy?: string[]
+  postDeploy?: string[]
   nginxConfig?: string
   env?: string
 }
@@ -24,6 +26,8 @@ export function useTemplateForm(initialData?: any) {
     displayName: initialData?.displayName || '',
     description: initialData?.description || '',
     commands: initialData?.commands || [],
+    preDeploy: initialData?.preDeploy || [],
+    postDeploy: initialData?.postDeploy || [],
     nginxConfig: initialData?.nginxConfig || '',
     env: initialData?.env || ''
   })
@@ -60,9 +64,13 @@ export function useTemplateForm(initialData?: any) {
     setIsSubmitting(true)
     try {
       const filteredCommands = formData.commands.filter(c => c.trim())
+      const filteredPreDeploy = formData.preDeploy?.filter(c => c.trim()) || []
+      const filteredPostDeploy = formData.postDeploy?.filter(c => c.trim()) || []
       const submitData = {
         ...formData,
-        commands: filteredCommands
+        commands: filteredCommands,
+        preDeploy: filteredPreDeploy,
+        postDeploy: filteredPostDeploy
       }
       console.log('Submitting template data:', submitData)
       await onSubmit(submitData)

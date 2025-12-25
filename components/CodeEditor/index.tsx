@@ -34,7 +34,6 @@ export default function CodeEditor({
 
   useEffect(() => {
     if (!lineNumbersRef.current) return
-    alert(JSON.stringify(value))
     const lineCount = value.split('\n').length
     const container = lineNumbersRef.current
 
@@ -127,17 +126,19 @@ export default function CodeEditor({
 
   return (
     <div className="CodeEditor">
-      <div className="line-numbers" ref={lineNumbersRef}></div>
-      <textarea
-        ref={textareaRef}
-        className="code-textarea"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onScroll={handleScroll}
-        onKeyDown={handleKeyDown}
-        placeholder={placeholder}
-        spellCheck="false"
-      />
+      <div className='ce-container'>
+        <div className="line-numbers" ref={lineNumbersRef}></div>
+        <textarea
+          ref={textareaRef}
+          className="code-textarea"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onScroll={handleScroll}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          spellCheck="false"
+        />
+      </div>
     </div>
   )
 }

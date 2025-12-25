@@ -78,4 +78,14 @@
     padding: 3em;
     color: $text-light;
   }
+
+  .Modal{
+    .md-body{
+      overflow: hidden !important;
+      display: flex;
+      >*{
+        flex: 1;
+      }
+    }
+  }
 }

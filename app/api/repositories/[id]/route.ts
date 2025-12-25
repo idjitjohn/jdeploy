@@ -115,7 +115,7 @@ export async function PUT(
           branches: data.branches || new Map(),
         },
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: false }
     )
 
     if (!repository) {

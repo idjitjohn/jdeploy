@@ -87,7 +87,11 @@ export function useRepositories() {
         repoUrl: formData.repoUrl,
         domain: formData.domain,
         port: formData.port,
-        template: formData.template
+        template: formData.template,
+        commands: formData.commands || [],
+        preDeploy: formData.preDeploy || [],
+        postDeploy: formData.postDeploy || [],
+        nginxConfig: formData.nginxConfig || ''
       })
       showNotification('Repository created successfully', 'success')
       setShowAddModal(false)
@@ -106,7 +110,11 @@ export function useRepositories() {
         repoUrl: formData.repoUrl,
         domain: formData.domain,
         port: formData.port,
-        template: formData.template
+        template: formData.template,
+        commands: formData.commands || [],
+        preDeploy: formData.preDeploy || [],
+        postDeploy: formData.postDeploy || [],
+        nginxConfig: formData.nginxConfig || ''
       })
       showNotification('Repository updated successfully', 'success')
       setShowEditModal(false)
