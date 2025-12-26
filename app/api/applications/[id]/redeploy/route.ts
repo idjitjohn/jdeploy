@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
-import RepositoryModel from '@/app/api/models/Repository'
+import ApplicationModel from '@/app/api/models/Application'
 import DeploymentLogModel from '@/app/api/models/DeploymentLog'
 import ConfigurationModel from '@/app/api/models/Configuration'
 import { verifyAuth } from '@/app/api/middleware/auth'
@@ -32,7 +32,7 @@ export async function POST(
       )
     }
 
-    const repo = await RepositoryModel.findById(id)
+    const repo = await ApplicationModel.findById(id)
 
     if (!repo) {
       return NextResponse.json(
@@ -49,11 +49,11 @@ export async function POST(
 
     const logPath = getLogPath(repo.name)
     const branch = 'main'
-    const env = Object.fromEntries(repo.env || [])
+    const env = {}
 
     // Create deployment log record
     const log = new DeploymentLogModel({
-      repository: repo.name,
+      application: repo.name,
       branch,
       type: 'manual',
       status: 'running',
@@ -71,6 +71,8 @@ export async function POST(
       logPath,
       port: repo.port,
       env,
+      envFileContent: repo.env || '',
+      envFilePath: repo.envFilePath || '.env',
       commands: repo.commands || [],
       preDeploy: repo.preDeploy || [],
       postDeploy: repo.postDeploy || [],
@@ -97,7 +99,7 @@ export async function POST(
       {
         log: {
           id: log._id.toString(),
-          repository: repo.name,
+          application: repo.name,
           branch,
           type: 'manual',
           status: 'running',

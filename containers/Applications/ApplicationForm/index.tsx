@@ -6,14 +6,14 @@ import Select from '@/components/Select'
 import Button from '@/components/Button'
 import CodeEditor from '@/components/CodeEditor'
 import CommandList, { CommandListHandle } from '@/containers/Templates/TemplateForm/CommandList'
-import { useRepositoryForm } from './useRepositoryForm'
+import { useRepositoryForm } from './useApplicationForm'
 import './RepositoryForm.scss'
 
 interface Props {
   onSubmit: (data: any) => void
   onCancel: () => void
   domains: Array<{ id: string; name: string }>
-  templates: Array<{ 
+  templates: Array<{
     id: string
     displayName: string
     commands?: string[]
@@ -35,6 +35,7 @@ interface Props {
     postDeploy?: string[]
     nginxConfig?: string
     env?: string
+    envFilePath?: string
   }
 }
 
@@ -53,13 +54,26 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
     setFormData
   } = useRepositoryForm({ onSubmit, initialData })
 
-  // Check if form data has changed from initial state
-  const hasChanges = useMemo(() => {
-    if (!initialData && !selectedTemplateId) {
-      return formData.name !== '' || formData.repoUrl !== '' || formData.domain !== '' || formData.port !== ''
+  // Check if template-related fields have changed
+  const hasTemplateChanges = useMemo(() => {
+    if (!selectedTemplateId) {
+      return false
     }
-    return true
-  }, [formData, initialData, selectedTemplateId])
+
+    const selectedTemplate = templates.find(t => t.id === selectedTemplateId)
+    if (!selectedTemplate) {
+      return false
+    }
+
+    // Compare commands
+    const commandsChanged = JSON.stringify(formData.commands || []) !== JSON.stringify(selectedTemplate.commands || [])
+    const preDeployChanged = JSON.stringify(formData.preDeploy || []) !== JSON.stringify(selectedTemplate.preDeploy || [])
+    const postDeployChanged = JSON.stringify(formData.postDeploy || []) !== JSON.stringify(selectedTemplate.postDeploy || [])
+    const nginxChanged = (formData.nginxConfig || '') !== (selectedTemplate.nginxConfig || '')
+    const envChanged = (formData.env || '') !== (selectedTemplate.env || '')
+
+    return commandsChanged || preDeployChanged || postDeployChanged || nginxChanged || envChanged
+  }, [formData, selectedTemplateId, templates])
 
   const onFormSubmit = (e: React.FormEvent) => {
     commandListRef.current?.flushAllEdits()
@@ -147,7 +161,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
   }
 
   const handleTemplateSelect = (templateId: string) => {
-    if (hasChanges) {
+    if (hasTemplateChanges) {
       const proceed = window.confirm(
         'Selecting a template will overwrite all current changes. Continue?'
       )
@@ -308,15 +322,25 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
           )}
 
           {currentStep === 3 && (
-            <div className="command-section">
-              <label>Environment Variables</label>
-              <CodeEditor
-                value={formData.env || ''}
-                onChange={(value) => setFormData(prev => ({ ...prev, env: value }))}
-                placeholder="KEY=VALUE (environment variables)..."
-                language="env"
+            <>
+              <Input
+                label="Environment File Path"
+                name="envFilePath"
+                value={formData.envFilePath || '.env'}
+                onChange={handleChange}
+                placeholder=".env"
               />
-            </div>
+
+              <div className="command-section">
+                <label>Environment Variables</label>
+                <CodeEditor
+                  value={formData.env || ''}
+                  onChange={(value) => setFormData(prev => ({ ...prev, env: value }))}
+                  placeholder="KEY=VALUE (environment variables)..."
+                  language="env"
+                />
+              </div>
+            </>
           )}
         </div>
 
@@ -382,7 +406,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
               name="template"
               value={formData.template}
               onChange={(e) => handleTemplateSelect(e.target.value)}
-              disabled={hasChanges}
+              disabled={hasTemplateChanges}
               required
             >
               <option value="">Select a template</option>
@@ -392,7 +416,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                 </option>
               ))}
             </Select>
-            {hasChanges && selectedTemplateId && (
+            {hasTemplateChanges && selectedTemplateId && (
               <p className="hint" style={{ marginTop: '-1em', color: '#9ca3af', fontSize: '0.75em' }}>
                 Template selector is disabled after making changes
               </p>
@@ -458,6 +482,14 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
               />
             </div>
 
+            <Input
+              label="Environment File Path"
+              name="envFilePath"
+              value={formData.envFilePath || '.env'}
+              onChange={handleChange}
+              placeholder=".env"
+            />
+
             <div className="command-section" style={{ marginTop: '1.5em' }}>
               <label>Environment Variables</label>
               <CodeEditor
@@ -501,7 +533,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
               loading={isSubmitting}
               disabled={isSubmitting}
             >
-              Deploy
+              Prepare
             </Button>
           )}
         </div>

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import bcrypt from 'bcryptjs'
 import User from '@/app/api/models/User'
-import RepositoryModel from '@/app/api/models/Repository'
+import RepositoryModel from '@/app/api/models/Application'
 import DomainModel from '@/app/api/models/Domain'
 import TemplateModel from '@/app/api/models/Template'
 

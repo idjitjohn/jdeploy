@@ -3,9 +3,9 @@
 import Header from '@/components/Header'
 import Modal from '@/components/Modal'
 import Button from '@/components/Button'
-import RepositoryForm from './RepositoryForm'
+import RepositoryForm from './ApplicationForm'
 import { formatDate, escapeHtml } from '@/lib/utils'
-import { useRepositories } from './useRepositories'
+import { useRepositories } from './useApplications'
 import './Repositories.scss'
 
 interface Repository {
@@ -94,8 +94,8 @@ export default function Repositories() {
       </main>
 
       <Modal isOpen={showAddModal} title="Add Application" onClose={closeAddModal} size="large">
-        <RepositoryForm 
-          onSubmit={handleAddRepository} 
+        <RepositoryForm
+          onSubmit={handleAddRepository}
           onCancel={closeAddModal}
           domains={domains}
           templates={templates}
@@ -103,8 +103,8 @@ export default function Repositories() {
       </Modal>
 
       <Modal isOpen={showEditModal} title="Edit Application" onClose={closeEditModal} size="large">
-        <RepositoryForm 
-          onSubmit={handleUpdateRepository} 
+        <RepositoryForm
+          onSubmit={handleUpdateRepository}
           onCancel={closeEditModal}
           domains={domains}
           templates={templates}

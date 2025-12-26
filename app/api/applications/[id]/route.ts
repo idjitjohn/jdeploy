@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
-import RepositoryModel from '@/app/api/models/Repository'
+import ApplicationModel from '@/app/api/models/Application'
 import DeploymentLogModel from '@/app/api/models/DeploymentLog'
 import ConfigurationModel from '@/app/api/models/Configuration'
 import { verifyAuth } from '@/app/api/middleware/auth'
@@ -28,35 +28,36 @@ export async function GET(
 
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
-        { error: 'Invalid repository ID' },
+        { error: 'Invalid application ID' },
         { status: 400 }
       )
     }
 
-    const repository = await RepositoryModel.findById(id)
+    const application = await ApplicationModel.findById(id)
 
-    if (!repository) {
+    if (!application) {
       return NextResponse.json(
-        { error: 'Repository not found' },
+        { error: 'Application not found' },
         { status: 404 }
       )
     }
 
     return NextResponse.json(
       {
-        repository: {
-          ...repository,
-          id: repository._id?.toString() || id,
+        application: {
+          ...application.toObject(),
+          id: application._id?.toString() || id,
           _id: undefined,
-          nginxConfig: repository.nginx || '',
-          env: repository.env || '',
-          branches: repository.branches instanceof Map ? Object.fromEntries(repository.branches) : (repository.branches || {}),
+          nginxConfig: application.nginx || '',
+          env: application.env || '',
+          envFilePath: application.envFilePath || '.env',
+          branch: application.branch || 'main',
         },
       },
       { status: 200 }
     )
   } catch (error) {
-    console.error('Get repository error:', error)
+    console.error('Get application error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -91,14 +92,14 @@ export async function PUT(
 
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
-        { error: 'Invalid repository ID' },
+        { error: 'Invalid application ID' },
         { status: 400 }
       )
     }
 
     const data = await request.json()
 
-    const repository = await RepositoryModel.findByIdAndUpdate(
+    const application = await ApplicationModel.findByIdAndUpdate(
       id,
       {
         $set: {
@@ -112,40 +113,42 @@ export async function PUT(
           postDeploy: data.postDeploy || [],
           nginx: data.nginxConfig || '',
           env: data.env || '',
-          branches: data.branches || new Map(),
+          envFilePath: data.envFilePath || '.env',
+          branch: data.branch || 'main',
         },
       },
       { new: true, runValidators: false }
     )
 
-    if (!repository) {
+    if (!application) {
       return NextResponse.json(
-        { error: 'Repository not found' },
+        { error: 'Application not found' },
         { status: 404 }
       )
     }
 
     return NextResponse.json(
       {
-        repository: {
-          id: repository._id.toString(),
-          name: repository.name,
-          repoUrl: repository.repoUrl,
-          template: repository.template,
-          domain: repository.domain,
-          port: repository.port,
-          commands: repository.commands,
-          preDeploy: repository.preDeploy,
-          postDeploy: repository.postDeploy,
-          nginxConfig: repository.nginx || '',
-          env: repository.env || '',
-          branches: repository.branches instanceof Map ? Object.fromEntries(repository.branches) : (repository.branches || {}),
+        application: {
+          id: application._id.toString(),
+          name: application.name,
+          repoUrl: application.repoUrl,
+          template: application.template,
+          domain: application.domain,
+          port: application.port,
+          commands: application.commands,
+          preDeploy: application.preDeploy,
+          postDeploy: application.postDeploy,
+          nginxConfig: application.nginx || '',
+          env: application.env || '',
+          envFilePath: application.envFilePath || '.env',
+          branch: application.branch || 'main',
         },
       },
       { status: 200 }
     )
   } catch (error) {
-    console.error('Update repository error:', error)
+    console.error('Update application error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -180,27 +183,27 @@ export async function DELETE(
 
     if (!ObjectId.isValid(id)) {
       return NextResponse.json(
-        { error: 'Invalid repository ID' },
+        { error: 'Invalid application ID' },
         { status: 400 }
       )
     }
 
-    const repository = await RepositoryModel.findById(id)
+    const application = await ApplicationModel.findById(id)
 
-    if (!repository) {
+    if (!application) {
       return NextResponse.json(
-        { error: 'Repository not found' },
+        { error: 'Application not found' },
         { status: 404 }
       )
     }
 
-    const repoName = repository.name
+    const appName = application.name
 
     // Delete from database
-    await RepositoryModel.findByIdAndDelete(id)
+    await ApplicationModel.findByIdAndDelete(id)
     
-    // Delete all deployment logs for this repository
-    await DeploymentLogModel.deleteMany({ repository: repoName })
+    // Delete all deployment logs for this application
+    await DeploymentLogModel.deleteMany({ application: appName })
 
     // Get configuration to know where files are stored
     const config = await ConfigurationModel.findOne()
@@ -209,29 +212,29 @@ export async function DELETE(
     const logsPath = config?.paths?.logs || '/var/webhooks/logs'
 
     // Delete code folder
-    const codeRepoPath = path.join(codePath, repoName)
-    if (fs.existsSync(codeRepoPath)) {
-      fs.rmSync(codeRepoPath, { recursive: true, force: true })
+    const codeAppPath = path.join(codePath, appName)
+    if (fs.existsSync(codeAppPath)) {
+      fs.rmSync(codeAppPath, { recursive: true, force: true })
     }
 
     // Delete release folder
-    const releaseRepoPath = path.join(releasePath, repoName)
-    if (fs.existsSync(releaseRepoPath)) {
-      fs.rmSync(releaseRepoPath, { recursive: true, force: true })
+    const releaseAppPath = path.join(releasePath, appName)
+    if (fs.existsSync(releaseAppPath)) {
+      fs.rmSync(releaseAppPath, { recursive: true, force: true })
     }
 
     // Delete logs folder
-    const logsRepoPath = path.join(logsPath, repoName)
-    if (fs.existsSync(logsRepoPath)) {
-      fs.rmSync(logsRepoPath, { recursive: true, force: true })
+    const logsAppPath = path.join(logsPath, appName)
+    if (fs.existsSync(logsAppPath)) {
+      fs.rmSync(logsAppPath, { recursive: true, force: true })
     }
 
     return NextResponse.json(
-      { message: 'Repository and all associated files deleted successfully' },
+      { message: 'Application and all associated files deleted successfully' },
       { status: 200 }
     )
   } catch (error) {
-    console.error('Delete repository error:', error)
+    console.error('Delete application error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

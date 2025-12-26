@@ -20,7 +20,7 @@ export function useHeader() {
 
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard' },
-    { href: '/repositories', label: 'Applications' },
+    { href: '/applications', label: 'Applications' },
     { href: '/domains', label: 'Domains' },
     { href: '/templates', label: 'Templates' },
     { href: '/logs', label: 'Logs' },

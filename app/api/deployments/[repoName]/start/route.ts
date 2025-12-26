@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
 import DeploymentLogModel from '@/app/api/models/DeploymentLog'
-import RepositoryModel from '@/app/api/models/Repository'
+import ApplicationModel from '@/app/api/models/Application'
 import ConfigurationModel from '@/app/api/models/Configuration'
 import { verifyAuth } from '@/app/api/middleware/auth'
 import { runDeployment, getLogPath, setDeploymentConfig } from '@/lib/deployment'
@@ -34,7 +34,7 @@ export async function POST(
 
     const { repoName } = await params
 
-    const repo = await RepositoryModel.findOne({ name: repoName })
+    const repo = await ApplicationModel.findOne({ name: repoName })
     if (!repo) {
       return NextResponse.json(
         { error: 'Repository not found' },
@@ -43,8 +43,7 @@ export async function POST(
     }
 
     const logPath = getLogPath(repoName)
-    const branchConfig = repo.branches.get(branch)
-    const env = Object.fromEntries(repo.env || [])
+    const env = {}
 
     const log = new DeploymentLogModel({
       repository: repoName,
@@ -64,11 +63,13 @@ export async function POST(
       logPath,
       port: repo.port,
       env,
+      envFileContent: repo.env || '',
+      envFilePath: repo.envFilePath || '.env',
       commands: repo.commands || [],
       preDeploy: repo.preDeploy || [],
       postDeploy: repo.postDeploy || [],
     }).then(async (result) => {
-      const pm2Name = branchConfig?.pm2Name || `${repoName}-${branch}`
+      const pm2Name = `${repoName}-${branch}`
 
       if (result.success) {
         startProcess(pm2Name, 'npm start', {

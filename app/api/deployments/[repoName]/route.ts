@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
-import RepositoryModel from '@/app/api/models/Repository'
+import ApplicationModel from '@/app/api/models/Application'
 import { verifyAuth } from '@/app/api/middleware/auth'
 
 export async function DELETE(
@@ -28,7 +28,7 @@ export async function DELETE(
 
     const { repoName } = await params
 
-    const repository = await RepositoryModel.findOneAndDelete({ name: repoName })
+    const repository = await ApplicationModel.findOneAndDelete({ name: repoName })
 
     if (!repository) {
       return NextResponse.json(

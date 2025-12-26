@@ -40,18 +40,18 @@ export const api = {
     me: () => apiRequest('/api/auth/me')
   },
 
-  repositories: {
-    list: () => apiRequest('/api/repositories'),
-    get: (id: string) => apiRequest(`/api/repositories/${id}`),
-    create: (data: any) => apiRequest('/api/repositories', {
+  applications: {
+    list: () => apiRequest('/api/applications'),
+    get: (id: string) => apiRequest(`/api/applications/${id}`),
+    create: (data: any) => apiRequest('/api/applications', {
       method: 'POST',
       body: JSON.stringify(data)
     }),
-    update: (id: string, data: any) => apiRequest(`/api/repositories/${id}`, {
+    update: (id: string, data: any) => apiRequest(`/api/applications/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data)
     }),
-    delete: (id: string) => apiRequest(`/api/repositories/${id}`, {
+    delete: (id: string) => apiRequest(`/api/applications/${id}`, {
       method: 'DELETE'
     })
   },

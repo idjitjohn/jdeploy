@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/db'
-import RepositoryModel from '@/app/api/models/Repository'
+import ApplicationModel from '@/app/api/models/Application'
 import DeploymentLogModel from '@/app/api/models/DeploymentLog'
 import { verifyAuth } from '@/app/api/middleware/auth'
 import { runDeployment, getLogPath, setDeploymentConfig } from '@/lib/deployment'
@@ -19,23 +19,24 @@ export async function GET(request: NextRequest) {
 
     await connectDB()
 
-    const repositories = await RepositoryModel.find().lean()
+    const applications = await ApplicationModel.find().lean()
 
     return NextResponse.json(
       {
-        repositories: repositories.map((repo: any) => ({
+        applications: applications.map((repo: any) => ({
           ...repo,
           id: repo._id.toString(),
           _id: undefined,
           nginxConfig: repo.nginx || '',
           env: repo.env || '',
-          branches: repo.branches instanceof Map ? Object.fromEntries(repo.branches) : (repo.branches || {}),
+          envFilePath: repo.envFilePath || '.env',
+          branch: repo.branch || 'main',
         })),
       },
       { status: 200 }
     )
   } catch (error) {
-    console.error('List repositories error:', error)
+    console.error('List applications error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -78,15 +79,15 @@ export async function POST(request: NextRequest) {
       setDeploymentConfig(config.paths)
     }
 
-    const existingRepo = await RepositoryModel.findOne({ name: data.name })
-    if (existingRepo) {
+    const existingApp = await ApplicationModel.findOne({ name: data.name })
+    if (existingApp) {
       return NextResponse.json(
-        { error: 'Repository with this name already exists' },
+        { error: 'Application with this name already exists' },
         { status: 409 }
       )
     }
 
-    const repository = new RepositoryModel({
+    const application = new ApplicationModel({
       name: data.name,
       repoUrl: data.repoUrl,
       template: data.template,
@@ -97,16 +98,17 @@ export async function POST(request: NextRequest) {
       postDeploy: data.postDeploy || [],
       nginx: data.nginxConfig || '',
       env: data.env || '',
-      branches: data.branches || new Map(),
+      envFilePath: data.envFilePath || '.env',
+      branch: data.branch || 'main',
     })
 
-    await repository.save()
+    await application.save()
 
     const logPath = getLogPath(data.name)
 
-    // Create a deployment log record for the initial deployment
+    // Create a deployment log record for preparation
     const log = new DeploymentLogModel({
-      repository: data.name,
+      application: data.name,
       branch: 'main',
       type: 'initial',
       status: 'running',
@@ -116,16 +118,19 @@ export async function POST(request: NextRequest) {
     })
     await log.save()
 
+    // Only run pre-deploy commands (preparation)
     runDeployment({
       repoName: data.name,
       branch: 'main',
       repoUrl: data.repoUrl,
       logPath,
       port: data.port,
-      env: data.env ? Object.fromEntries(Object.entries(data.env)) : {},
-      commands: data.commands || [],
+      env: {},
+      envFileContent: data.env || '',
+      envFilePath: data.envFilePath || '.env',
+      commands: [], // Don't run build commands
       preDeploy: data.preDeploy || [],
-      postDeploy: data.postDeploy || [],
+      postDeploy: [], // Don't run post-deploy commands
     }).then(async (result) => {
       if (result.success) {
         await DeploymentLogModel.findByIdAndUpdate(log._id, {
@@ -142,30 +147,31 @@ export async function POST(request: NextRequest) {
         })
       }
     }).catch((error) => {
-      console.error('Background deployment error:', error)
+      console.error('Background preparation error:', error)
     })
 
     return NextResponse.json(
       {
-        repository: {
-          id: repository._id.toString(),
-          name: repository.name,
-          repoUrl: repository.repoUrl,
-          template: repository.template,
-          domain: repository.domain,
-          port: repository.port,
-          commands: repository.commands,
-          preDeploy: repository.preDeploy,
-          postDeploy: repository.postDeploy,
-          nginx: repository.nginx,
-          env: repository.env instanceof Map ? Object.fromEntries(repository.env) : (repository.env || {}),
-          branches: repository.branches instanceof Map ? Object.fromEntries(repository.branches) : (repository.branches || {}),
+        application: {
+          id: application._id.toString(),
+          name: application.name,
+          repoUrl: application.repoUrl,
+          template: application.template,
+          domain: application.domain,
+          port: application.port,
+          commands: application.commands,
+          preDeploy: application.preDeploy,
+          postDeploy: application.postDeploy,
+          nginx: application.nginx,
+          env: application.env || '',
+          envFilePath: application.envFilePath || '.env',
+          branch: application.branch || 'main',
         },
       },
       { status: 201 }
     )
   } catch (error) {
-    console.error('Create repository error:', error)
+    console.error('Create application error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

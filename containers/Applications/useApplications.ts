@@ -55,7 +55,7 @@ export function useRepositories() {
 
   const loadRepositories = async () => {
     try {
-      const data = await api.repositories.list() as any
+      const data = await api.applications.list() as any
       setRepositories(data.repositories || [])
     } catch (error) {
       showNotification('Failed to load repositories: ' + (error as Error).message, 'error')
@@ -82,7 +82,7 @@ export function useRepositories() {
 
   const handleAddRepository = async (formData: any) => {
     try {
-      await api.repositories.create({
+      await api.applications.create({
         name: formData.name,
         repoUrl: formData.repoUrl,
         domain: formData.domain,
@@ -91,7 +91,9 @@ export function useRepositories() {
         commands: formData.commands || [],
         preDeploy: formData.preDeploy || [],
         postDeploy: formData.postDeploy || [],
-        nginxConfig: formData.nginxConfig || ''
+        nginxConfig: formData.nginxConfig || '',
+        env: formData.env || '',
+        envFilePath: formData.envFilePath || '.env'
       })
       showNotification('Repository created successfully', 'success')
       setShowAddModal(false)
@@ -105,7 +107,7 @@ export function useRepositories() {
     if (!editingRepo) return
 
     try {
-      await api.repositories.update(editingRepo.id, {
+      await api.applications.update(editingRepo.id, {
         name: formData.name,
         repoUrl: formData.repoUrl,
         domain: formData.domain,
@@ -114,7 +116,9 @@ export function useRepositories() {
         commands: formData.commands || [],
         preDeploy: formData.preDeploy || [],
         postDeploy: formData.postDeploy || [],
-        nginxConfig: formData.nginxConfig || ''
+        nginxConfig: formData.nginxConfig || '',
+        env: formData.env || '',
+        envFilePath: formData.envFilePath || '.env'
       })
       showNotification('Repository updated successfully', 'success')
       setShowEditModal(false)
@@ -131,7 +135,7 @@ export function useRepositories() {
     }
 
     try {
-      await api.repositories.delete(id)
+      await api.applications.delete(id)
       showNotification(`Repository ${name} deleted`, 'success')
       await loadRepositories()
     } catch (error) {
@@ -146,7 +150,7 @@ export function useRepositories() {
 
     try {
       showNotification(`Redeploying ${name}...`, 'info')
-      await fetch(`/api/repositories/${id}/redeploy`, {
+      await fetch(`/api/applications/${id}/redeploy`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       })

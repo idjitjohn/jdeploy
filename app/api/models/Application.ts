@@ -1,27 +1,12 @@
 import { Schema, model, Document, models } from 'mongoose'
 
-interface BranchConfig extends Document {
-  type: 'prod' | 'staging' | 'dev' | 'production' | 'development'
-  pm2Name: string
-  preDeploy: string[]
-  postDeploy: string[]
+export enum ApplicationStatus {
+  STOPPED = 'stopped',
+  DEPLOYING = 'deploying',
+  RUNNING = 'running'
 }
 
-const branchConfigSchema = new Schema<BranchConfig>({
-  type: {
-    type: String,
-    enum: ['prod', 'staging', 'dev', 'production', 'development'],
-    required: true,
-  },
-  pm2Name: {
-    type: String,
-    required: true,
-  },
-  preDeploy: [String],
-  postDeploy: [String],
-}, { _id: false })
-
-interface Repository extends Document {
+interface Application extends Document {
   name: string
   repoUrl: string
   template: string
@@ -32,13 +17,14 @@ interface Repository extends Document {
   postDeploy: string[]
   nginx: string
   env: string
-  envPath: string
-  branches: Map<string, BranchConfig>
+  envFilePath: string
+  branch?: string
+  status: ApplicationStatus
   createdAt: Date
   updatedAt: Date
 }
 
-const repositorySchema = new Schema<Repository>({
+const applicationSchema = new Schema<Application>({
   name: {
     type: String,
     required: true,
@@ -79,21 +65,25 @@ const repositorySchema = new Schema<Repository>({
     type: String,
     default: '',
   },
-  envPath: {
+  envFilePath: {
     type: String,
     default: '.env',
   },
-  branches: {
-    type: Map,
-    of: branchConfigSchema,
-    default: () => new Map(),
+  branch: {
+    type: String,
+    required: false,
+  },
+  status: {
+    type: String,
+    enum: Object.values(ApplicationStatus),
+    default: ApplicationStatus.STOPPED,
   },
 }, {
   timestamps: true,
 })
 
-repositorySchema.index({ domain: 1 })
+applicationSchema.index({ domain: 1 })
 
-const RepositoryModel = models.Repository || model<Repository>('Repository', repositorySchema)
+const ApplicationModel = models.Application || model<Application>('Application', applicationSchema)
 
-export default RepositoryModel
+export default ApplicationModel

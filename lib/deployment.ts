@@ -8,6 +8,8 @@ export interface DeploymentContext {
   repoUrl: string
   logPath: string
   env: Record<string, string>
+  envFileContent?: string
+  envFilePath?: string
   commands: string[]
   preDeploy: string[]
   postDeploy: string[]
@@ -58,7 +60,7 @@ export function interpolateVariables(command: string, context: { repoName: strin
   const codePath = getDeploymentPath(context.repoName, context.branch)
   const releasePath = getReleasePath(context.repoName)
   const certificatePath = path.join(deploymentConfig.certificate, context.repoName)
-  
+
   return command
     .replace(/\$cf\$/g, codePath)
     .replace(/\$rf\$/g, releasePath)
@@ -74,8 +76,13 @@ export function executeCommand(cmd: string, cwd: string, env?: Record<string, st
     const result = execSync(cmd, {
       cwd,
       encoding: 'utf-8',
-      env: { ...process.env, ...env },
-      stdio: 'pipe'
+      env: {
+        ...process.env,
+        ...env,
+        PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'
+      },
+      stdio: 'pipe',
+      shell: '/bin/bash'
     })
     return result
   } catch (error: any) {
@@ -115,6 +122,14 @@ export async function runDeployment(context: DeploymentContext): Promise<{
       console.log(`[${context.repoName}] Executing pre-deploy: ${interpolated}`)
       const result = executeCommand(interpolated, deployPath, context.env)
       output.push(result)
+    }
+
+    if (context.envFileContent) {
+      const envFilePath = path.join(deployPath, context.envFilePath || '.env')
+      output.push(`[${new Date().toISOString()}] Creating/updating environment file: ${context.envFilePath || '.env'}`)
+      fs.writeFileSync(envFilePath, context.envFileContent, 'utf-8')
+      output.push(`✓ Environment file created/updated`)
+      console.log(`[${context.repoName}] Environment file created: ${envFilePath}`)
     }
 
     output.push(`[${new Date().toISOString()}] Running deployment commands...`)

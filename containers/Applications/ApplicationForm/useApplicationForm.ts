@@ -11,6 +11,8 @@ interface FormDataType {
   preDeploy?: string[]
   postDeploy?: string[]
   nginxConfig?: string
+  env?: string
+  envFilePath?: string
 }
 
 interface UseRepositoryFormProps {
@@ -26,6 +28,8 @@ interface UseRepositoryFormProps {
     preDeploy?: string[]
     postDeploy?: string[]
     nginxConfig?: string
+    env?: string
+    envFilePath?: string
   }
 }
 
@@ -41,7 +45,9 @@ export function useRepositoryForm({ onSubmit, initialData }: UseRepositoryFormPr
     commands: initialData?.commands || [],
     preDeploy: initialData?.preDeploy || [],
     postDeploy: initialData?.postDeploy || [],
-    nginxConfig: initialData?.nginxConfig || ''
+    nginxConfig: initialData?.nginxConfig || '',
+    env: initialData?.env || '',
+    envFilePath: initialData?.envFilePath || '.env'
   })
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
