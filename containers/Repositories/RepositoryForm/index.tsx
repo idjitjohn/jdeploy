@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import Input from '@/components/Input'
 import Select from '@/components/Select'
 import Button from '@/components/Button'
@@ -17,6 +17,10 @@ interface Props {
     id: string
     displayName: string
     commands?: string[]
+    preDeploy?: string[]
+    postDeploy?: string[]
+    nginxConfig?: string
+    env?: string
     description?: string
   }>
   initialData?: {
@@ -30,12 +34,14 @@ interface Props {
     preDeploy?: string[]
     postDeploy?: string[]
     nginxConfig?: string
+    env?: string
   }
 }
 
 export default function RepositoryForm({ onSubmit, onCancel, domains, templates, initialData }: Props) {
   const isEdit = !!initialData?.id
   const [currentStep, setCurrentStep] = useState(0)
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
   const commandListRef = useRef<CommandListHandle>(null)
   const preDeployListRef = useRef<CommandListHandle>(null)
   const postDeployListRef = useRef<CommandListHandle>(null)
@@ -46,6 +52,14 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
     handleSubmit,
     setFormData
   } = useRepositoryForm({ onSubmit, initialData })
+
+  // Check if form data has changed from initial state
+  const hasChanges = useMemo(() => {
+    if (!initialData && !selectedTemplateId) {
+      return formData.name !== '' || formData.repoUrl !== '' || formData.domain !== '' || formData.port !== ''
+    }
+    return true
+  }, [formData, initialData, selectedTemplateId])
 
   const onFormSubmit = (e: React.FormEvent) => {
     commandListRef.current?.flushAllEdits()
@@ -133,29 +147,26 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
   }
 
   const handleTemplateSelect = (templateId: string) => {
-    const selectedTemplate = templates.find(t => t.id === templateId)
-    if (!selectedTemplate) return
-
-    // Check if there are changes in the commands field
-    const originalTemplate = templates.find(t => t.id === formData.template)
-    const originalCommands = originalTemplate?.commands || []
-    const currentCommands = formData.commands || []
-
-    // Compare if commands have been modified from the original template
-    const commandsChanged = JSON.stringify(originalCommands) !== JSON.stringify(currentCommands)
-
-    if (commandsChanged && formData.template) {
+    if (hasChanges) {
       const proceed = window.confirm(
-        'Changing the template will replace the current commands with the new template\'s commands. Your current changes will be lost. Continue?'
+        'Selecting a template will overwrite all current changes. Continue?'
       )
       if (!proceed) return
     }
 
-    setFormData(prev => ({
-      ...prev,
-      template: templateId,
-      commands: selectedTemplate.commands || []
-    }))
+    const selectedTemplate = templates.find(t => t.id === templateId)
+    if (selectedTemplate) {
+      setSelectedTemplateId(templateId)
+      setFormData(prev => ({
+        ...prev,
+        template: templateId,
+        commands: selectedTemplate.commands || [],
+        preDeploy: selectedTemplate.preDeploy || [],
+        postDeploy: selectedTemplate.postDeploy || [],
+        nginxConfig: selectedTemplate.nginxConfig || '',
+        env: selectedTemplate.env || ''
+      }))
+    }
   }
 
   // Edit mode with tabs
@@ -183,6 +194,13 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
             onClick={() => setCurrentStep(2)}
           >
             Nginx Config
+          </button>
+          <button
+            type="button"
+            className={`tab ${currentStep === 3 ? 'active' : ''}`}
+            onClick={() => setCurrentStep(3)}
+          >
+            Environment
           </button>
         </div>
 
@@ -288,6 +306,18 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
               />
             </div>
           )}
+
+          {currentStep === 3 && (
+            <div className="command-section">
+              <label>Environment Variables</label>
+              <CodeEditor
+                value={formData.env || ''}
+                onChange={(value) => setFormData(prev => ({ ...prev, env: value }))}
+                placeholder="KEY=VALUE (environment variables)..."
+                language="env"
+              />
+            </div>
+          )}
         </div>
 
         <div className="actions">
@@ -352,6 +382,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
               name="template"
               value={formData.template}
               onChange={(e) => handleTemplateSelect(e.target.value)}
+              disabled={hasChanges}
               required
             >
               <option value="">Select a template</option>
@@ -361,6 +392,11 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                 </option>
               ))}
             </Select>
+            {hasChanges && selectedTemplateId && (
+              <p className="hint" style={{ marginTop: '-1em', color: '#9ca3af', fontSize: '0.75em' }}>
+                Template selector is disabled after making changes
+              </p>
+            )}
           </>
         )}
 
@@ -411,16 +447,27 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
         )}
 
         {currentStep === 2 && (
-          <div className="command-section">
-            <h3>Nginx Configuration</h3>
-            <textarea
-              className="nginx-config"
-              value={formData.nginxConfig || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, nginxConfig: e.target.value }))}
-              placeholder="Enter nginx configuration..."
-              rows={12}
-            />
-          </div>
+          <>
+            <div className="command-section">
+              <label>Nginx Configuration</label>
+              <CodeEditor
+                value={formData.nginxConfig || ''}
+                onChange={(value) => setFormData(prev => ({ ...prev, nginxConfig: value }))}
+                placeholder="Enter nginx configuration..."
+                language="nginx"
+              />
+            </div>
+
+            <div className="command-section" style={{ marginTop: '1.5em' }}>
+              <label>Environment Variables</label>
+              <CodeEditor
+                value={formData.env || ''}
+                onChange={(value) => setFormData(prev => ({ ...prev, env: value }))}
+                placeholder="KEY=VALUE (environment variables)..."
+                language="env"
+              />
+            </div>
+          </>
         )}
       </div>
 

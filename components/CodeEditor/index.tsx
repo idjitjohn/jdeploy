@@ -32,19 +32,57 @@ export default function CodeEditor({
     return match ? match[1] : ''
   }
 
-  useEffect(() => {
-    if (!lineNumbersRef.current) return
-    const lineCount = value.split('\n').length
+  const updateLineNumbers = () => {
+    if (!lineNumbersRef.current || !textareaRef.current) return
+
+    const textarea = textareaRef.current
     const container = lineNumbersRef.current
+    const lines = value.split('\n')
 
     container.innerHTML = ''
 
-    for (let i = 1; i <= lineCount; i++) {
+    // Create a hidden div to measure line heights
+    const measureDiv = document.createElement('div')
+    measureDiv.style.cssText = window.getComputedStyle(textarea).cssText
+    measureDiv.style.position = 'absolute'
+    measureDiv.style.visibility = 'hidden'
+    measureDiv.style.height = 'auto'
+    measureDiv.style.width = `${textarea.clientWidth}px`
+    measureDiv.style.whiteSpace = window.getComputedStyle(textarea).whiteSpace
+    measureDiv.style.wordWrap = window.getComputedStyle(textarea).wordWrap
+    measureDiv.style.overflowWrap = window.getComputedStyle(textarea).overflowWrap
+    document.body.appendChild(measureDiv)
+
+    // Get the base line height from computed style
+    const computedStyle = window.getComputedStyle(textarea)
+    const baseLineHeight = parseFloat(computedStyle.lineHeight)
+
+    lines.forEach((line, i) => {
+      // Measure the actual height of this line when rendered
+      measureDiv.textContent = line || ' '
+      const actualHeight = measureDiv.offsetHeight
+
+      // Calculate how many visual lines this logical line takes
+      const visualLineCount = Math.round(actualHeight / baseLineHeight)
+
       const lineDiv = document.createElement('div')
       lineDiv.className = 'line-number'
-      lineDiv.textContent = String(i)
+      lineDiv.textContent = String(i + 1)
+      for (let i = 1; i < visualLineCount; i++) lineDiv.appendChild(document.createElement('br'))
       container.appendChild(lineDiv)
-    }
+    })
+
+    document.body.removeChild(measureDiv)
+  }
+
+  useEffect(() => {
+    updateLineNumbers()
+  }, [value])
+
+  useEffect(() => {
+    const handleResize = () => updateLineNumbers()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [value])
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {

@@ -1,11 +1,11 @@
 .CodeEditor {
   border: 1px solid #d1d5db;
   border-radius: 0.375em;
-  min-height: 12em;
   overflow-y: auto;
   .ce-container{
     display: flex;
     position: relative;
+    min-height: 12em;
     .line-numbers {
       /* background: linear-gradient(90deg, #f9fafb 0%, #f3f4f6 100%); */
       border-right: 1px solid #e5e7eb;
@@ -21,7 +21,6 @@
       flex-shrink: 0;
       .line-number {
         padding: 0 0.75em;
-        height: 1.6em;
         transition: color 0.2s ease;
       }
     }
@@ -39,6 +38,8 @@
       resize: none;
       outline: none;
       overflow: hidden;
+      white-space: pre-wrap;
+      word-wrap: break-word;
       &::placeholder {
         color: #d1d5db;
       }

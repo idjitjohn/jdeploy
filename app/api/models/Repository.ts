@@ -32,6 +32,7 @@ interface Repository extends Document {
   postDeploy: string[]
   nginx: string
   env: string
+  envPath: string
   branches: Map<string, BranchConfig>
   createdAt: Date
   updatedAt: Date
@@ -77,6 +78,10 @@ const repositorySchema = new Schema<Repository>({
   env: {
     type: String,
     default: '',
+  },
+  envPath: {
+    type: String,
+    default: '.env',
   },
   branches: {
     type: Map,

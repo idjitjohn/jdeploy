@@ -141,17 +141,17 @@
 
   .ci-actions {
     position: absolute;
-    right: 100%;
+    left: 0%;
+    background-color: inherit;
     display: flex;
     align-items: center;
-    gap: .4em;
     opacity: 0;
     transition: opacity 0.2s ease;
     pointer-events: auto;
 
     .ci-delete {
-      width: 1.8em;
-      height: 1.5em;
+      width: 1.3em;
+      height: 1.4em;
       border-radius: .2em;
       background: transparent;
       border: none;
