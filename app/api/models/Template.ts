@@ -4,9 +4,10 @@ interface Template extends Document {
   name: string
   displayName: string
   description: string
-  commands: string[]
-  preDeploy: string[]
-  postDeploy: string[]
+  prebuild: string[]
+  build: string[]
+  deployment: string[]
+  launch: string[]
   nginx: string
   env: string
   isSystem: boolean
@@ -29,12 +30,19 @@ const templateSchema = new Schema<Template>({
     type: String,
     required: true,
   },
-  commands: [String],
-  preDeploy: {
+  prebuild: {
     type: [String],
     default: [],
   },
-  postDeploy: {
+  build: {
+    type: [String],
+    default: [],
+  },
+  deployment: {
+    type: [String],
+    default: [],
+  },
+  launch: {
     type: [String],
     default: [],
   },

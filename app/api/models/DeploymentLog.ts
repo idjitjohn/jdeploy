@@ -1,7 +1,7 @@
 import { Schema, model, Document, models } from 'mongoose'
 
 interface DeploymentLog extends Document {
-  repository: string
+  application: string
   branch: string
   type: 'webhook' | 'manual' | 'cli' | 'initial'
   status: 'pending' | 'running' | 'success' | 'failed'
@@ -17,7 +17,7 @@ interface DeploymentLog extends Document {
 }
 
 const deploymentLogSchema = new Schema<DeploymentLog>({
-  repository: {
+  application: {
     type: String,
     required: true,
   },
@@ -62,7 +62,7 @@ const deploymentLogSchema = new Schema<DeploymentLog>({
   timestamps: true,
 })
 
-deploymentLogSchema.index({ repository: 1, branch: 1 })
+deploymentLogSchema.index({ application: 1, branch: 1 })
 deploymentLogSchema.index({ status: 1 })
 deploymentLogSchema.index({ startedAt: -1 })
 

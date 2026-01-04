@@ -48,7 +48,7 @@ export async function POST(
     }
 
     const logPath = getLogPath(repo.name)
-    const branch = 'main'
+    const branch = repo.branch || 'main'
     const env = {}
 
     // Create deployment log record
@@ -64,7 +64,7 @@ export async function POST(
     await log.save()
 
     // Run deployment in background
-    runDeployment({
+    const result = await runDeployment({
       repoName: repo.name,
       branch,
       repoUrl: repo.repoUrl,
@@ -73,27 +73,25 @@ export async function POST(
       env,
       envFileContent: repo.env || '',
       envFilePath: repo.envFilePath || '.env',
-      commands: repo.commands || [],
-      preDeploy: repo.preDeploy || [],
-      postDeploy: repo.postDeploy || [],
-    }).then(async (result) => {
-      if (result.success) {
-        await DeploymentLogModel.findByIdAndUpdate(log._id, {
-          status: 'success',
-          completedAt: new Date(),
-          exitCode: 0
-        })
-      } else {
-        await DeploymentLogModel.findByIdAndUpdate(log._id, {
-          status: 'failed',
-          completedAt: new Date(),
-          exitCode: 1,
-          errorMessage: result.error
-        })
-      }
+      prebuild: repo.prebuild || [], build: repo.build || [], deployment: repo.deployment || [], launch: repo.launch || [],
     }).catch((error) => {
       console.error('Background deployment error:', error)
     })
+
+    if (result?.success) {
+      await DeploymentLogModel.findByIdAndUpdate(log._id, {
+        status: 'success',
+        completedAt: new Date(),
+        exitCode: 0
+      })
+    } else {
+      await DeploymentLogModel.findByIdAndUpdate(log._id, {
+        status: 'failed',
+        completedAt: new Date(),
+        exitCode: 1,
+        errorMessage: result?.error
+      })
+    }
 
     return NextResponse.json(
       {

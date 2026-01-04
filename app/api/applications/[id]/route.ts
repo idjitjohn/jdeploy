@@ -108,9 +108,9 @@ export async function PUT(
           template: data.template,
           domain: data.domain,
           port: data.port,
-          commands: data.commands || [],
-          preDeploy: data.preDeploy || [],
-          postDeploy: data.postDeploy || [],
+          prebuild: data.prebuild || [], build: data.build || [], deployment: data.deployment || [], launch: data.launch || [],
+          
+          
           nginx: data.nginxConfig || '',
           env: data.env || '',
           envFilePath: data.envFilePath || '.env',
@@ -136,9 +136,9 @@ export async function PUT(
           template: application.template,
           domain: application.domain,
           port: application.port,
-          commands: application.commands,
-          preDeploy: application.preDeploy,
-          postDeploy: application.postDeploy,
+          prebuild: application.prebuild, build: application.build, deployment: application.deployment, launch: application.launch,
+          
+          
           nginxConfig: application.nginx || '',
           env: application.env || '',
           envFilePath: application.envFilePath || '.env',
@@ -198,6 +198,7 @@ export async function DELETE(
     }
 
     const appName = application.name
+    const branch = application.branch || 'main'
 
     // Delete from database
     await ApplicationModel.findByIdAndDelete(id)
@@ -211,10 +212,19 @@ export async function DELETE(
     const releasePath = config?.paths?.release || '/var/webhooks/release'
     const logsPath = config?.paths?.logs || '/var/webhooks/logs'
 
-    // Delete code folder
-    const codeAppPath = path.join(codePath, appName)
+    // Delete code folder (includes branch subfolder)
+    const codeAppPath = path.join(codePath, appName, branch)
     if (fs.existsSync(codeAppPath)) {
       fs.rmSync(codeAppPath, { recursive: true, force: true })
+    }
+    
+    // Also delete parent folder if it's empty
+    const codeAppParent = path.join(codePath, appName)
+    if (fs.existsSync(codeAppParent)) {
+      const files = fs.readdirSync(codeAppParent)
+      if (files.length === 0) {
+        fs.rmdirSync(codeAppParent)
+      }
     }
 
     // Delete release folder

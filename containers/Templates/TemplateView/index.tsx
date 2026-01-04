@@ -30,11 +30,11 @@ export default function TemplateView({ template }: TemplateViewProps) {
         <p>{escapeHtml(template.description)}</p>
       </div>
 
-      {template.commands && template.commands.length > 0 && (
+      {template.build && template.build.length > 0 && (
         <div className="view-section">
           <h5>Build Commands</h5>
           <ul className="commands-list">
-            {template.commands.map((cmd, idx) => (
+            {template.build.map((cmd, idx) => (
               <li key={idx}>{escapeHtml(cmd)}</li>
             ))}
           </ul>

@@ -56,7 +56,7 @@ export function useRepositories() {
   const loadRepositories = async () => {
     try {
       const data = await api.applications.list() as any
-      setRepositories(data.repositories || [])
+      setRepositories(data.applications || [])
     } catch (error) {
       showNotification('Failed to load repositories: ' + (error as Error).message, 'error')
     }
@@ -88,9 +88,9 @@ export function useRepositories() {
         domain: formData.domain,
         port: formData.port,
         template: formData.template,
-        commands: formData.commands || [],
-        preDeploy: formData.preDeploy || [],
-        postDeploy: formData.postDeploy || [],
+        prebuild: formData.prebuild || [],
+        prebuild: formData.prebuild || [],
+        launch: formData.launch || [],
         nginxConfig: formData.nginxConfig || '',
         env: formData.env || '',
         envFilePath: formData.envFilePath || '.env'
@@ -113,9 +113,9 @@ export function useRepositories() {
         domain: formData.domain,
         port: formData.port,
         template: formData.template,
-        commands: formData.commands || [],
-        preDeploy: formData.preDeploy || [],
-        postDeploy: formData.postDeploy || [],
+        prebuild: formData.prebuild || [],
+        prebuild: formData.prebuild || [],
+        launch: formData.launch || [],
         nginxConfig: formData.nginxConfig || '',
         env: formData.env || '',
         envFilePath: formData.envFilePath || '.env'

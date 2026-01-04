@@ -50,7 +50,7 @@ export function useTemplates() {
         name: formData.name,
         displayName: formData.displayName,
         description: formData.description,
-        commands: formData.commands
+        prebuild: formData.prebuild
       })
       showNotification('Template created successfully', 'success')
       setShowAddModal(false)
@@ -66,9 +66,9 @@ export function useTemplates() {
         name: formData.name,
         displayName: formData.displayName,
         description: formData.description,
-        commands: formData.commands,
-        preDeploy: formData.preDeploy,
-        postDeploy: formData.postDeploy,
+        prebuild: formData.prebuild,
+        prebuild: formData.prebuild,
+        launch: formData.launch,
         nginxConfig: formData.nginxConfig,
         env: formData.env
       })

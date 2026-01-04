@@ -45,9 +45,9 @@ export async function GET(
           name: template.name,
           displayName: template.displayName,
           description: template.description,
-          commands: template.commands,
-          preDeploy: template.preDeploy,
-          postDeploy: template.postDeploy,
+          prebuild: template.prebuild, build: template.build, deployment: template.deployment, launch: template.launch,
+          
+          
           nginxConfig: template.nginx || '',
           env: template.env || '',
           isSystem: template.isSystem,
@@ -107,9 +107,9 @@ export async function PUT(
           name: data.name,
           displayName: data.displayName,
           description: data.description,
-          commands: data.commands || [],
-          preDeploy: data.preDeploy || [],
-          postDeploy: data.postDeploy || [],
+          prebuild: data.prebuild || [], build: data.build || [], deployment: data.deployment || [], launch: data.launch || [],
+          
+          
           nginx: data.nginxConfig || '',
           env: data.env || '',
           isSystem: data.isSystem || false,
@@ -132,9 +132,9 @@ export async function PUT(
           name: template.name,
           displayName: template.displayName,
           description: template.description,
-          commands: template.commands,
-          preDeploy: template.preDeploy,
-          postDeploy: template.postDeploy,
+          prebuild: template.prebuild, build: template.build, deployment: template.deployment, launch: template.launch,
+          
+          
           nginxConfig: template.nginx || '',
           env: template.env || '',
           isSystem: template.isSystem,

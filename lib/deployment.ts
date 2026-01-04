@@ -10,9 +10,10 @@ export interface DeploymentContext {
   env: Record<string, string>
   envFileContent?: string
   envFilePath?: string
-  commands: string[]
-  preDeploy: string[]
-  postDeploy: string[]
+  prebuild: string[]
+  build: string[]
+  deployment: string[]
+  launch: string[]
   port?: number
 }
 
@@ -73,80 +74,216 @@ export function interpolateVariables(command: string, context: { repoName: strin
 
 export function executeCommand(cmd: string, cwd: string, env?: Record<string, string>): string {
   try {
+    console.log(`[executeCommand] cwd: ${cwd}, cmd: ${cmd}`)
+
+    // Create minimal clean environment - only essential vars, let .env files load naturally
+    const cleanEnv = {
+      HOME: process.env.HOME || '',
+      PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
+      USER: process.env.USER || '',
+    } as any
+
     const result = execSync(cmd, {
       cwd,
       encoding: 'utf-8',
-      env: {
-        ...process.env,
-        ...env,
-        PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin'
-      },
+      env: cleanEnv,
       stdio: 'pipe',
       shell: '/bin/bash'
     })
-    return result
+    return result.toString()
   } catch (error: any) {
-    throw new Error(`Command failed: ${cmd}\n${error.message}`)
+    const stderr = error.stderr?.toString() || error.message
+    const stdout = error.stdout?.toString() || ''
+    throw new Error(`Command failed: ${cmd}\n${stdout}\n${stderr}`)
   }
 }
 
-export async function runDeployment(context: DeploymentContext): Promise<{
+// Run only prebuild commands in config.paths.code directory (for initial application setup)
+export async function prepare(context: DeploymentContext): Promise<{
   success: boolean
   output: string
   error?: string
 }> {
   const output: string[] = []
-  const deployPath = getDeploymentPath(context.repoName, context.branch)
+  const codePath = deploymentConfig.code
+
+  console.log(`\n🔧 [${context.repoName}] Running preparation in ${codePath}`)
+  try {
+    output.push(`[${new Date().toISOString()}] Running prebuild for ${context.repoName}`)
+
+    // Ensure code directory exists
+    if (!fs.existsSync(codePath)) {
+      fs.mkdirSync(codePath, { recursive: true })
+    }
+
+    output.push(`[${new Date().toISOString()}] Running prebuild scripts in ${codePath}...`)
+    for (const script of context.prebuild) {
+      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port })
+      output.push(`> ${interpolated}`)
+      console.log(`[${context.repoName}] Executing prebuild: ${interpolated}`)
+      const result = executeCommand(interpolated, codePath, context.env)
+      output.push(result)
+    }
+
+    output.push(`[${new Date().toISOString()}] ✅ Prebuild completed successfully`)
+
+    const fullOutput = output.join('\n')
+    fs.writeFileSync(context.logPath, fullOutput)
+
+    console.log(`✅ [${context.repoName}] Prebuild completed successfully\n`)
+    return {
+      success: true,
+      output: fullOutput
+    }
+  } catch (error: any) {
+    const errorMsg = error.message
+    output.push(`[${new Date().toISOString()}] ❌ Prebuild failed: ${errorMsg}`)
+
+    const fullOutput = output.join('\n')
+    fs.writeFileSync(context.logPath, fullOutput)
+
+    console.error(`❌ [${context.repoName}] Prebuild failed: ${errorMsg}\n`)
+    return {
+      success: false,
+      output: fullOutput,
+      error: errorMsg
+    }
+  }
+}
+
+// Run only prebuild commands in config.paths.code directory (for initial application setup)
+export async function runPrebuild(context: DeploymentContext): Promise<{
+  success: boolean
+  output: string
+  error?: string
+}> {
+  const output: string[] = []
+  const codePath = deploymentConfig.code
+
+  console.log(`\n🔧 [${context.repoName}] Running prebuild in ${codePath}`)
+  try {
+    output.push(`[${new Date().toISOString()}] Running prebuild for ${context.repoName}`)
+
+    // Ensure code directory exists
+    if (!fs.existsSync(codePath)) {
+      fs.mkdirSync(codePath, { recursive: true })
+    }
+
+    output.push(`[${new Date().toISOString()}] Running prebuild scripts in ${codePath}...`)
+    for (const script of context.prebuild) {
+      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port })
+      output.push(`> ${interpolated}`)
+      console.log(`[${context.repoName}] Executing prebuild: ${interpolated}`)
+      const result = executeCommand(interpolated, codePath, context.env)
+      output.push(result)
+    }
+
+    output.push(`[${new Date().toISOString()}] ✅ Prebuild completed successfully`)
+
+    const fullOutput = output.join('\n')
+    fs.writeFileSync(context.logPath, fullOutput)
+
+    console.log(`✅ [${context.repoName}] Prebuild completed successfully\n`)
+    return {
+      success: true,
+      output: fullOutput
+    }
+  } catch (error: any) {
+    const errorMsg = error.message
+    output.push(`[${new Date().toISOString()}] ❌ Prebuild failed: ${errorMsg}`)
+
+    const fullOutput = output.join('\n')
+    fs.writeFileSync(context.logPath, fullOutput)
+
+    console.error(`❌ [${context.repoName}] Prebuild failed: ${errorMsg}\n`)
+    return {
+      success: false,
+      output: fullOutput,
+      error: errorMsg
+    }
+  }
+}
+
+// Full deployment: prebuild (code folder) -> build (app code folder) -> deployment (app code folder) -> launch (release folder)
+export async function runDeployment(context: DeploymentContext): Promise<{
+  success: boolean, output: string, error?: string
+}> {
+  const output: string[] = []
+  const codePath = deploymentConfig.code
+  const appCodePath = getDeploymentPath(context.repoName, context.branch)
+  const releasePath = getReleasePath(context.repoName)
 
   console.log(`\n🚀 [${context.repoName}] Starting deployment for branch: ${context.branch}`)
   try {
     output.push(`[${new Date().toISOString()}] Starting deployment for ${context.repoName}/${context.branch}`)
 
-    if (!fs.existsSync(deployPath)) {
-      fs.mkdirSync(deployPath, { recursive: true })
+    // Clone or update repository
+
+    if (!fs.existsSync(appCodePath)) {
+      fs.mkdirSync(appCodePath, { recursive: true })
       output.push(`[${new Date().toISOString()}] Cloning repository...`)
       const cloneCmd = `git clone --depth 1 --branch ${context.branch} ${context.repoUrl} .`
-      executeCommand(cloneCmd, deployPath, context.env)
+      executeCommand(cloneCmd, appCodePath, context.env)
       output.push(`✓ Repository cloned`)
-    } else {
-      output.push(`[${new Date().toISOString()}] Pulling latest changes...`)
-      executeCommand('git fetch origin', deployPath)
-      executeCommand(`git reset --hard origin/${context.branch}`, deployPath)
-      output.push(`✓ Repository updated`)
     }
 
-    output.push(`[${new Date().toISOString()}] Running pre-deploy scripts...`)
-    for (const script of context.preDeploy) {
+    // 1. Prebuild - runs in config.paths.code
+    output.push(`[${new Date().toISOString()}] Running prebuild scripts in ${appCodePath}...`)
+    for (const script of context.prebuild) {
       const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port })
       output.push(`> ${interpolated}`)
-      console.log(`[${context.repoName}] Executing pre-deploy: ${interpolated}`)
-      const result = executeCommand(interpolated, deployPath, context.env)
+      console.log(`[${context.repoName}] Executing prebuild in code folder: ${interpolated}`)
+      const result = executeCommand(interpolated, appCodePath, context.env)
       output.push(result)
     }
 
+    // Write env file to app code folder
     if (context.envFileContent) {
-      const envFilePath = path.join(deployPath, context.envFilePath || '.env')
-      output.push(`[${new Date().toISOString()}] Creating/updating environment file: ${context.envFilePath || '.env'}`)
-      fs.writeFileSync(envFilePath, context.envFileContent, 'utf-8')
-      output.push(`✓ Environment file created/updated`)
-      console.log(`[${context.repoName}] Environment file created: ${envFilePath}`)
+      const envFilePath = context.envFilePath || '.env'
+      const fullEnvPath = path.join(appCodePath, envFilePath)
+      output.push(`[${new Date().toISOString()}] Creating environment file: ${envFilePath}`)
+      fs.writeFileSync(fullEnvPath, context.envFileContent, 'utf-8')
+      output.push(`✓ Environment file created at ${envFilePath}`)
+      console.log(`[${context.repoName}] Environment file created: ${fullEnvPath}`)
     }
 
-    output.push(`[${new Date().toISOString()}] Running deployment commands...`)
-    for (const cmd of context.commands) {
+    // Create release folder before build commands
+    if (!fs.existsSync(releasePath)) {
+      output.push(`[${new Date().toISOString()}] Creating release folder...`)
+      fs.mkdirSync(releasePath, { recursive: true })
+      output.push(`✓ Release folder created at ${releasePath}`)
+      console.log(`[${context.repoName}] Release folder created: ${releasePath}`)
+    } else {
+      output.push(`[${new Date().toISOString()}] Release folder already exists`)
+    }
+
+    // 2. Build - runs in application code folder
+    output.push(`[${new Date().toISOString()}] Running build commands in ${appCodePath}...`)
+    for (const cmd of context.build) {
       const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port })
       output.push(`> ${interpolated}`)
-      console.log(`[${context.repoName}] Executing command: ${interpolated}`)
-      const result = executeCommand(interpolated, deployPath, context.env)
+      console.log(`[${context.repoName}] Executing build in app code folder: ${interpolated}`)
+      const result = executeCommand(interpolated, appCodePath, context.env)
       output.push(result)
     }
 
-    output.push(`[${new Date().toISOString()}] Running post-deploy scripts...`)
-    for (const script of context.postDeploy) {
+    // 3. Deployment - runs in application code folder
+    output.push(`[${new Date().toISOString()}] Running deployment commands in ${appCodePath}...`)
+    for (const cmd of context.deployment) {
+      const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port })
+      output.push(`> ${interpolated}`)
+      console.log(`[${context.repoName}] Executing deployment in app code folder: ${interpolated}`)
+      const result = executeCommand(interpolated, appCodePath, context.env)
+      output.push(result)
+    }
+
+    // 4. Launch - runs in release folder
+    output.push(`[${new Date().toISOString()}] Running launch commands in ${releasePath}...`)
+    for (const script of context.launch) {
       const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port })
       output.push(`> ${interpolated}`)
-      console.log(`[${context.repoName}] Executing post-deploy: ${interpolated}`)
-      const result = executeCommand(interpolated, deployPath, context.env)
+      console.log(`[${context.repoName}] Executing launch in release folder: ${interpolated}`)
+      const result = executeCommand(interpolated, releasePath, context.env)
       output.push(result)
     }
 

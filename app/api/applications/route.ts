@@ -3,7 +3,7 @@ import connectDB from '@/lib/db'
 import ApplicationModel from '@/app/api/models/Application'
 import DeploymentLogModel from '@/app/api/models/DeploymentLog'
 import { verifyAuth } from '@/app/api/middleware/auth'
-import { runDeployment, getLogPath, setDeploymentConfig } from '@/lib/deployment'
+import { runPrebuild, getLogPath, setDeploymentConfig } from '@/lib/deployment'
 import ConfigurationModel from '@/app/api/models/Configuration'
 
 export async function GET(request: NextRequest) {
@@ -64,7 +64,8 @@ export async function POST(request: NextRequest) {
 
     const data = await request.json()
 
-    if (!data.name || !data.repoUrl || !data.template || !data.domain || data.port === undefined) {
+    const requiredFields = ['name', 'repoUrl', 'template', 'domain']
+    if (requiredFields.some(field => !data[field])) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -87,29 +88,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const application = new ApplicationModel({
+    const application = await ApplicationModel.create({
       name: data.name,
       repoUrl: data.repoUrl,
       template: data.template,
       domain: data.domain,
       port: data.port,
-      commands: data.commands || [],
-      preDeploy: data.preDeploy || [],
-      postDeploy: data.postDeploy || [],
+      prebuild: data.prebuild,
+      build: data.build || [],
+      deployment: data.deployment || [],
+      launch: data.launch || [],
       nginx: data.nginxConfig || '',
       env: data.env || '',
       envFilePath: data.envFilePath || '.env',
       branch: data.branch || 'main',
     })
 
-    await application.save()
 
     const logPath = getLogPath(data.name)
 
-    // Create a deployment log record for preparation
+    const branch = data.branch || 'main'
+
+    // Create a deployment log record for prebuild
     const log = new DeploymentLogModel({
       application: data.name,
-      branch: 'main',
+      branch,
       type: 'initial',
       status: 'running',
       triggeredBy: auth.username,
@@ -118,19 +121,18 @@ export async function POST(request: NextRequest) {
     })
     await log.save()
 
-    // Only run pre-deploy commands (preparation)
-    runDeployment({
+    // Run only prebuild on application creation
+    runPrebuild({
       repoName: data.name,
-      branch: 'main',
+      branch: data.branch || 'main',
       repoUrl: data.repoUrl,
       logPath,
       port: data.port,
       env: {},
-      envFileContent: data.env || '',
-      envFilePath: data.envFilePath || '.env',
-      commands: [], // Don't run build commands
-      preDeploy: data.preDeploy || [],
-      postDeploy: [], // Don't run post-deploy commands
+      prebuild: data.prebuild || [],
+      build: [],
+      deployment: [],
+      launch: [],
     }).then(async (result) => {
       if (result.success) {
         await DeploymentLogModel.findByIdAndUpdate(log._id, {
@@ -159,9 +161,9 @@ export async function POST(request: NextRequest) {
           template: application.template,
           domain: application.domain,
           port: application.port,
-          commands: application.commands,
-          preDeploy: application.preDeploy,
-          postDeploy: application.postDeploy,
+          prebuild: application.prebuild, build: application.build, deployment: application.deployment, launch: application.launch,
+
+
           nginx: application.nginx,
           env: application.env || '',
           envFilePath: application.envFilePath || '.env',

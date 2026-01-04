@@ -36,7 +36,7 @@ export function useDashboard() {
   const loadStats = async () => {
     try {
       const [repos, domains, templates] = await Promise.all([
-        api.repositories.list(),
+        api.applications.list(),
         api.domains.list(),
         api.templates.list()
       ]) as any[]

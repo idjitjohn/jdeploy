@@ -83,14 +83,15 @@ async function mockTemplates() {
       name: 'node',
       displayName: 'Node.js',
       description: 'Standard Node.js project with yarn',
-      commands: ['yarn install', 'yarn build'],
-      preDeploy: [
-        'cd $cf$',
+      prebuild: [
         'git fetch origin $branch$',
         'git reset --hard origin/$branch$',
-        'git checkout $branch$'
+        'git checkout $branch$',
+        'rm -rf .next'
       ],
-      postDeploy: [
+      build: ['yarn install'],
+      deployment: ['yarn build'],
+      launch: [
         'pm2 restart $pm2Name$',
         'sudo systemctl restart nginx'
       ],
@@ -102,15 +103,23 @@ async function mockTemplates() {
       name: 'nextjs',
       displayName: 'Next.js',
       description: 'Next.js SSR/SSG application',
-      commands: ['yarn install', 'yarn build'],
-      preDeploy: [
-        'cd $cf$',
+      prebuild: [
         'git fetch origin $branch$',
         'git reset --hard origin/$branch$',
-        'git checkout $branch$'
+        'git checkout $branch$',
+        'yarn install'
       ],
-      postDeploy: [
-        'pm2 restart $pm2Name$',
+      build: [
+        'yarn build'
+      ],
+      deployment: [
+        'rm -rf $rf$/.next',
+        'mv $cf$/.next $rf$',
+        'cp -r $cf$/package.json $cf$/public $cf$/.env* $rf$/',
+        'ln -s $cf$/node_modules $rf$/node_modules'
+      ],
+      launch: [
+        'pm2 startOrRestart yarn --name $pm2Name$ -- start',
         'sudo systemctl restart nginx'
       ],
       nginx: '',
@@ -121,14 +130,15 @@ async function mockTemplates() {
       name: 'react',
       displayName: 'React',
       description: 'React SPA with yarn and build output',
-      commands: ['yarn install', 'yarn build'],
-      preDeploy: [
-        'cd $cf$',
+      prebuild: [
         'git fetch origin $branch$',
         'git reset --hard origin/$branch$',
-        'git checkout $branch$'
+        'git checkout $branch$',
+        'rm -rf .next'
       ],
-      postDeploy: [
+      build: ['yarn install'],
+      deployment: ['yarn build'],
+      launch: [
         'pm2 restart $pm2Name$',
         'sudo systemctl restart nginx'
       ],

@@ -12,9 +12,10 @@ interface Application extends Document {
   template: string
   domain: string
   port: number
-  commands: string[]
-  preDeploy: string[]
-  postDeploy: string[]
+  prebuild: string[]
+  build: string[]
+  deployment: string[]
+  launch: string[]
   nginx: string
   env: string
   envFilePath: string
@@ -48,12 +49,19 @@ const applicationSchema = new Schema<Application>({
     type: Number,
     required: true,
   },
-  commands: [String],
-  preDeploy: {
+  prebuild: {
     type: [String],
     default: [],
   },
-  postDeploy: {
+  build: {
+    type: [String],
+    default: [],
+  },
+  deployment: {
+    type: [String],
+    default: [],
+  },
+  launch: {
     type: [String],
     default: [],
   },

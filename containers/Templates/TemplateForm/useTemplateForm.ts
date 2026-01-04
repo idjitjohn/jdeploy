@@ -5,7 +5,7 @@ interface FormData {
   name: string
   displayName: string
   description: string
-  commands: string[]
+  prebuild: string[]
   preDeploy?: string[]
   postDeploy?: string[]
   nginxConfig?: string
@@ -25,9 +25,9 @@ export function useTemplateForm(initialData?: any) {
     name: initialData?.name || '',
     displayName: initialData?.displayName || '',
     description: initialData?.description || '',
-    commands: initialData?.commands || [],
-    preDeploy: initialData?.preDeploy || [],
-    postDeploy: initialData?.postDeploy || [],
+    prebuild: initialData?.prebuild || [],
+    prebuild: initialData?.prebuild || [],
+    launch: initialData?.launch || [],
     nginxConfig: initialData?.nginxConfig || '',
     env: initialData?.env || ''
   })
@@ -63,14 +63,14 @@ export function useTemplateForm(initialData?: any) {
 
     setIsSubmitting(true)
     try {
-      const filteredCommands = formData.commands.filter(c => c.trim())
-      const filteredPreDeploy = formData.preDeploy?.filter(c => c.trim()) || []
-      const filteredPostDeploy = formData.postDeploy?.filter(c => c.trim()) || []
+      const filteredCommands = formData.prebuild.filter(c => c.trim())
+      const filteredPreDeploy = formData.prebuild?.filter(c => c.trim()) || []
+      const filteredPostDeploy = formData.launch?.filter(c => c.trim()) || []
       const submitData = {
         ...formData,
-        commands: filteredCommands,
-        preDeploy: filteredPreDeploy,
-        postDeploy: filteredPostDeploy
+        prebuild: filteredCommands,
+        prebuild: filteredPreDeploy,
+        launch: filteredPostDeploy
       }
       console.log('Submitting template data:', submitData)
       await onSubmit(submitData)

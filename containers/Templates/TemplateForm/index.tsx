@@ -41,8 +41,8 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
   const { formData, errors, isSubmitting, setFormData, handleSubmit } = useTemplateForm(initialData)
   const commandListRef = useRef<CommandListHandle>(null)
-  const preDeployListRef = useRef<CommandListHandle>(null)
-  const postDeployListRef = useRef<CommandListHandle>(null)
+  const prebuildListRef = useRef<CommandListHandle>(null)
+  const launchListRef = useRef<CommandListHandle>(null)
 
   // Check if form data has changed from initial state
   const hasChanges = useMemo(() => {
@@ -75,25 +75,26 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
         name: selectedTemplate.name,
         displayName: selectedTemplate.displayName,
         description: selectedTemplate.description,
-        commands: selectedTemplate.commands || [],
-        preDeploy: selectedTemplate.preDeploy || [],
-        postDeploy: selectedTemplate.postDeploy || [],
+        prebuild: selectedTemplate.prebuild || [],
+        build: selectedTemplate.build || [],
+        deployment: selectedTemplate.deployment || [],
+        launch: selectedTemplate.launch || [],
         nginxConfig: selectedTemplate.nginxConfig || '',
         env: selectedTemplate.env || ''
       })
     }
   }
 
-  const handleCommandsChange = (commands: string[]) => {
+  const handleBuildChange = (build: string[]) => {
     setFormData(prev => ({
       ...prev,
       commands
     }))
   }
 
-  const handleAddCommand = (afterIndex?: number) => {
+  const handleAddBuild = (afterIndex?: number) => {
     setFormData(prev => {
-      const newCommands = [...(prev.commands || [])]
+      const newCommands = [...(prev.build || [])]
       if (afterIndex !== undefined) {
         newCommands.splice(afterIndex + 1, 0, '')
       } else {
@@ -101,28 +102,28 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
       }
       return {
         ...prev,
-        commands: newCommands
+        build: newCommands
       }
     })
   }
 
-  const handleDeleteCommand = (index: number) => {
+  const handleDeleteBuild = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      commands: (prev.commands || []).filter((_, i) => i !== index)
+      build: (prev.build || []).filter((_, i) => i !== index)
     }))
   }
 
-  const handlePreDeployChange = (commands: string[]) => {
+  const handlePrebuildChange = (build: string[]) => {
     setFormData(prev => ({
       ...prev,
-      preDeploy: commands
+      prebuild: commands
     }))
   }
 
-  const handleAddPreDeploy = (afterIndex?: number) => {
+  const handleAddPrebuild = (afterIndex?: number) => {
     setFormData(prev => {
-      const newCommands = [...(prev.preDeploy || [])]
+      const newCommands = [...(prev.prebuild || [])]
       if (afterIndex !== undefined) {
         newCommands.splice(afterIndex + 1, 0, '')
       } else {
@@ -130,28 +131,28 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
       }
       return {
         ...prev,
-        preDeploy: newCommands
+        prebuild: newCommands
       }
     })
   }
 
-  const handleDeletePreDeploy = (index: number) => {
+  const handleDeletePrebuild = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      preDeploy: (prev.preDeploy || []).filter((_, i) => i !== index)
+      prebuild: (prev.prebuild || []).filter((_, i) => i !== index)
     }))
   }
 
-  const handlePostDeployChange = (commands: string[]) => {
+  const handleLaunchChange = (build: string[]) => {
     setFormData(prev => ({
       ...prev,
-      postDeploy: commands
+      launch: commands
     }))
   }
 
-  const handleAddPostDeploy = (afterIndex?: number) => {
+  const handleAddLaunch = (afterIndex?: number) => {
     setFormData(prev => {
-      const newCommands = [...(prev.postDeploy || [])]
+      const newCommands = [...(prev.launch || [])]
       if (afterIndex !== undefined) {
         newCommands.splice(afterIndex + 1, 0, '')
       } else {
@@ -159,23 +160,23 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
       }
       return {
         ...prev,
-        postDeploy: newCommands
+        launch: newCommands
       }
     })
   }
 
-  const handleDeletePostDeploy = (index: number) => {
+  const handleDeleteLaunch = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      postDeploy: (prev.postDeploy || []).filter((_, i) => i !== index)
+      launch: (prev.launch || []).filter((_, i) => i !== index)
     }))
   }
 
   const onFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     commandListRef.current?.flushAllEdits()
-    preDeployListRef.current?.flushAllEdits()
-    postDeployListRef.current?.flushAllEdits()
+    prebuildListRef.current?.flushAllEdits()
+    launchListRef.current?.flushAllEdits()
     await handleSubmit(onSubmit)
   }
 
@@ -256,14 +257,14 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
           {currentStep === 1 && (
             <>
               <div className="command-section">
-                <label>Pre-Deploy Commands</label>
+                <label>Prebuild Commands</label>
                 <CommandList
-                  commands={formData.preDeploy || []}
-                  onCommandsChange={handlePreDeployChange}
-                  onAddCommand={handleAddPreDeploy}
-                  onDeleteCommand={handleDeletePreDeploy}
+                  commands={formData.prebuild || []}
+                  onCommandsChange={handlePrebuildChange}
+                  onAddCommand={handleAddPrebuild}
+                  onDeleteCommand={handleDeletePrebuild}
                   listRef={(handle) => {
-                    preDeployListRef.current = handle
+                    prebuildListRef.current = handle
                   }}
                 />
                 <p className="hint">Commands run before deployment</p>
@@ -272,10 +273,10 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
               <div className="command-section">
                 <label>Build Commands</label>
                 <CommandList
-                  commands={formData.commands || []}
-                  onCommandsChange={handleCommandsChange}
-                  onAddCommand={handleAddCommand}
-                  onDeleteCommand={handleDeleteCommand}
+                  commands={formData.build || []}
+                  onCommandsChange={handleBuildChange}
+                  onAddCommand={handleAddBuild}
+                  onDeleteCommand={handleDeleteBuild}
                   listRef={(handle) => {
                     commandListRef.current = handle
                   }}
@@ -284,14 +285,14 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
               </div>
 
               <div className="command-section">
-                <label>Post-Deploy Commands</label>
+                <label>Launch Commands</label>
                 <CommandList
-                  commands={formData.postDeploy || []}
-                  onCommandsChange={handlePostDeployChange}
-                  onAddCommand={handleAddPostDeploy}
-                  onDeleteCommand={handleDeletePostDeploy}
+                  commands={formData.launch || []}
+                  onCommandsChange={handleLaunchChange}
+                  onAddCommand={handleAddLaunch}
+                  onDeleteCommand={handleDeleteLaunch}
                   listRef={(handle) => {
-                    postDeployListRef.current = handle
+                    launchListRef.current = handle
                   }}
                 />
                 <p className="hint">Commands run after deployment</p>
@@ -439,10 +440,10 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
             <div className="command-section">
               <label>Build Commands</label>
               <CommandList
-                commands={formData.commands || []}
-                onCommandsChange={handleCommandsChange}
-                onAddCommand={handleAddCommand}
-                onDeleteCommand={handleDeleteCommand}
+                commands={formData.build || []}
+                onCommandsChange={handleBuildChange}
+                onAddCommand={handleAddBuild}
+                onDeleteCommand={handleDeleteBuild}
                 listRef={(handle) => {
                   commandListRef.current = handle
                 }}
@@ -451,28 +452,28 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
             </div>
 
             <div className="command-section" style={{ marginTop: '1.5em' }}>
-              <label>Pre-Deploy Commands</label>
+              <label>Prebuild Commands</label>
               <CommandList
-                commands={formData.preDeploy || []}
-                onCommandsChange={handlePreDeployChange}
-                onAddCommand={handleAddPreDeploy}
-                onDeleteCommand={handleDeletePreDeploy}
+                commands={formData.prebuild || []}
+                onCommandsChange={handlePrebuildChange}
+                onAddCommand={handleAddPrebuild}
+                onDeleteCommand={handleDeletePrebuild}
                 listRef={(handle) => {
-                  preDeployListRef.current = handle
+                  prebuildListRef.current = handle
                 }}
               />
               <p className="hint">Commands run before deployment</p>
             </div>
 
             <div className="command-section" style={{ marginTop: '1.5em' }}>
-              <label>Post-Deploy Commands</label>
+              <label>Launch Commands</label>
               <CommandList
-                commands={formData.postDeploy || []}
-                onCommandsChange={handlePostDeployChange}
-                onAddCommand={handleAddPostDeploy}
-                onDeleteCommand={handleDeletePostDeploy}
+                commands={formData.launch || []}
+                onCommandsChange={handleLaunchChange}
+                onAddCommand={handleAddLaunch}
+                onDeleteCommand={handleDeleteLaunch}
                 listRef={(handle) => {
-                  postDeployListRef.current = handle
+                  launchListRef.current = handle
                 }}
               />
               <p className="hint">Commands run after deployment</p>

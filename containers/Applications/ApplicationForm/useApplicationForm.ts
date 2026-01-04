@@ -42,9 +42,9 @@ export function useRepositoryForm({ onSubmit, initialData }: UseRepositoryFormPr
     domain: initialData?.domain || '',
     port: initialData?.port?.toString() || '',
     template: initialData?.template || '',
-    commands: initialData?.commands || [],
-    preDeploy: initialData?.preDeploy || [],
-    postDeploy: initialData?.postDeploy || [],
+    prebuild: initialData?.prebuild || [],
+    prebuild: initialData?.prebuild || [],
+    launch: initialData?.launch || [],
     nginxConfig: initialData?.nginxConfig || '',
     env: initialData?.env || '',
     envFilePath: initialData?.envFilePath || '.env'
