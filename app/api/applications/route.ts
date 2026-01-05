@@ -27,6 +27,7 @@ export async function GET(request: NextRequest) {
           ...repo,
           id: repo._id.toString(),
           _id: undefined,
+          files: repo.files || [],
           nginxConfig: repo.nginx || '',
           env: repo.env || '',
           envFilePath: repo.envFilePath || '.env',
@@ -94,10 +95,11 @@ export async function POST(request: NextRequest) {
       template: data.template,
       domain: data.domain,
       port: data.port,
-      prebuild: data.prebuild,
+      prebuild: data.prebuild || [],
       build: data.build || [],
       deployment: data.deployment || [],
       launch: data.launch || [],
+      files: data.files || [],
       nginx: data.nginxConfig || '',
       env: data.env || '',
       envFilePath: data.envFilePath || '.env',
@@ -133,6 +135,8 @@ export async function POST(request: NextRequest) {
       build: [],
       deployment: [],
       launch: [],
+      files: [],
+      appId: application._id.toString()
     }).then(async (result) => {
       if (result.success) {
         await DeploymentLogModel.findByIdAndUpdate(log._id, {
@@ -161,9 +165,11 @@ export async function POST(request: NextRequest) {
           template: application.template,
           domain: application.domain,
           port: application.port,
-          prebuild: application.prebuild, build: application.build, deployment: application.deployment, launch: application.launch,
-
-
+          prebuild: application.prebuild,
+          build: application.build,
+          deployment: application.deployment,
+          launch: application.launch,
+          files: application.files,
           nginx: application.nginx,
           env: application.env || '',
           envFilePath: application.envFilePath || '.env',

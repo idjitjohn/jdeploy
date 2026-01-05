@@ -7,8 +7,17 @@ import Select from '@/components/Select'
 import Button from '@/components/Button'
 import CodeEditor from '@/components/CodeEditor'
 import CommandList, { CommandListHandle } from './CommandList'
+import FileTransferList from '@/containers/Applications/ApplicationForm/FileTransferList'
 import { useTemplateForm } from './useTemplateForm'
 import './TemplateForm.scss'
+
+type FileOperation = 'cp' | 'mv' | 'ln'
+
+interface FileTransfer {
+  src: string
+  dest: string
+  op: FileOperation
+}
 
 interface TemplateFormProps {
   initialData?: {
@@ -16,7 +25,11 @@ interface TemplateFormProps {
     name: string
     displayName: string
     description: string
-    commands?: string[]
+    prebuild?: string[]
+    build?: string[]
+    deployment?: string[]
+    launch?: string[]
+    files?: FileTransfer[]
     nginxConfig?: string
     env?: string
   }
@@ -27,9 +40,11 @@ interface TemplateFormProps {
     name: string
     displayName: string
     description: string
-    commands?: string[]
-    preDeploy?: string[]
-    postDeploy?: string[]
+    prebuild?: string[]
+    build?: string[]
+    deployment?: string[]
+    launch?: string[]
+    files?: FileTransfer[]
     nginxConfig?: string
     env?: string
   }>
@@ -40,14 +55,14 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
   const { formData, errors, isSubmitting, setFormData, handleSubmit } = useTemplateForm(initialData)
-  const commandListRef = useRef<CommandListHandle>(null)
   const prebuildListRef = useRef<CommandListHandle>(null)
+  const buildListRef = useRef<CommandListHandle>(null)
+  const deploymentListRef = useRef<CommandListHandle>(null)
   const launchListRef = useRef<CommandListHandle>(null)
 
   // Check if form data has changed from initial state
   const hasChanges = useMemo(() => {
     if (!initialData && !selectedTemplateId) {
-      // Adding new template with no selection yet
       return formData.name !== '' || formData.displayName !== '' || formData.description !== ''
     }
     return true
@@ -79,60 +94,26 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
         build: selectedTemplate.build || [],
         deployment: selectedTemplate.deployment || [],
         launch: selectedTemplate.launch || [],
+        files: selectedTemplate.files || [],
         nginxConfig: selectedTemplate.nginxConfig || '',
         env: selectedTemplate.env || ''
       })
     }
   }
 
-  const handleBuildChange = (build: string[]) => {
-    setFormData(prev => ({
-      ...prev,
-      commands
-    }))
-  }
-
-  const handleAddBuild = (afterIndex?: number) => {
-    setFormData(prev => {
-      const newCommands = [...(prev.build || [])]
-      if (afterIndex !== undefined) {
-        newCommands.splice(afterIndex + 1, 0, '')
-      } else {
-        newCommands.push('')
-      }
-      return {
-        ...prev,
-        build: newCommands
-      }
-    })
-  }
-
-  const handleDeleteBuild = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      build: (prev.build || []).filter((_, i) => i !== index)
-    }))
-  }
-
-  const handlePrebuildChange = (build: string[]) => {
-    setFormData(prev => ({
-      ...prev,
-      prebuild: commands
-    }))
+  const handlePrebuildChange = (commands: string[]) => {
+    setFormData(prev => ({ ...prev, prebuild: commands }))
   }
 
   const handleAddPrebuild = (afterIndex?: number) => {
     setFormData(prev => {
-      const newCommands = [...(prev.prebuild || [])]
+      const prebuild = [...(prev.prebuild || [])]
       if (afterIndex !== undefined) {
-        newCommands.splice(afterIndex + 1, 0, '')
+        prebuild.splice(afterIndex + 1, 0, '')
       } else {
-        newCommands.push('')
+        prebuild.push('')
       }
-      return {
-        ...prev,
-        prebuild: newCommands
-      }
+      return { ...prev, prebuild }
     })
   }
 
@@ -143,25 +124,65 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
     }))
   }
 
-  const handleLaunchChange = (build: string[]) => {
+  const handleBuildChange = (commands: string[]) => {
+    setFormData(prev => ({ ...prev, build: commands }))
+  }
+
+  const handleAddBuild = (afterIndex?: number) => {
+    setFormData(prev => {
+      const build = [...(prev.build || [])]
+      if (afterIndex !== undefined) {
+        build.splice(afterIndex + 1, 0, '')
+      } else {
+        build.push('')
+      }
+      return { ...prev, build }
+    })
+  }
+
+  const handleDeleteBuild = (index: number) => {
     setFormData(prev => ({
       ...prev,
-      launch: commands
+      build: (prev.build || []).filter((_, i) => i !== index)
     }))
+  }
+
+  const handleDeploymentChange = (commands: string[]) => {
+    setFormData(prev => ({ ...prev, deployment: commands }))
+  }
+
+  const handleAddDeployment = (afterIndex?: number) => {
+    setFormData(prev => {
+      const deployment = [...(prev.deployment || [])]
+      if (afterIndex !== undefined) {
+        deployment.splice(afterIndex + 1, 0, '')
+      } else {
+        deployment.push('')
+      }
+      return { ...prev, deployment }
+    })
+  }
+
+  const handleDeleteDeployment = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      deployment: (prev.deployment || []).filter((_, i) => i !== index)
+    }))
+  }
+
+  const handleLaunchChange = (commands: string[]) => {
+    setFormData(prev => ({ ...prev, launch: commands }))
   }
 
   const handleAddLaunch = (afterIndex?: number) => {
     setFormData(prev => {
-      const newCommands = [...(prev.launch || [])]
+      const launch = [...(prev.launch || [])]
       if (afterIndex !== undefined) {
-        newCommands.splice(afterIndex + 1, 0, '')
+        launch.splice(afterIndex + 1, 0, '')
       } else {
-        newCommands.push('')
+        launch.push('')
       }
-      return {
-        ...prev,
-        launch: newCommands
-      }
+      return { ...prev, launch }
     })
   }
 
@@ -174,8 +195,9 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
 
   const onFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    commandListRef.current?.flushAllEdits()
     prebuildListRef.current?.flushAllEdits()
+    buildListRef.current?.flushAllEdits()
+    deploymentListRef.current?.flushAllEdits()
     launchListRef.current?.flushAllEdits()
     await handleSubmit(onSubmit)
   }
@@ -267,7 +289,7 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
                     prebuildListRef.current = handle
                   }}
                 />
-                <p className="hint">Commands run before deployment</p>
+                <p className="hint">Git operations and cleanup (runs in code folder)</p>
               </div>
 
               <div className="command-section">
@@ -278,10 +300,33 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
                   onAddCommand={handleAddBuild}
                   onDeleteCommand={handleDeleteBuild}
                   listRef={(handle) => {
-                    commandListRef.current = handle
+                    buildListRef.current = handle
                   }}
                 />
-                <p className="hint">Click to edit, drag to reorder, or delete commands</p>
+                <p className="hint">Install dependencies (runs in code folder)</p>
+              </div>
+
+              <div className="command-section">
+                <label>Deployment Files</label>
+                <FileTransferList
+                  items={formData.files || []}
+                  onChange={(items) => setFormData(prev => ({ ...prev, files: items }))}
+                />
+                <p className="hint">Files to copy/move for the deployment</p>
+              </div>
+
+              <div className="command-section">
+                <label>Deployment Commands</label>
+                <CommandList
+                  commands={formData.deployment || []}
+                  onCommandsChange={handleDeploymentChange}
+                  onAddCommand={handleAddDeployment}
+                  onDeleteCommand={handleDeleteDeployment}
+                  listRef={(handle) => {
+                    deploymentListRef.current = handle
+                  }}
+                />
+                <p className="hint">Build and copy to release folder (runs in code folder)</p>
               </div>
 
               <div className="command-section">
@@ -295,7 +340,7 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
                     launchListRef.current = handle
                   }}
                 />
-                <p className="hint">Commands run after deployment</p>
+                <p className="hint">Service restart and finalization (runs in release folder)</p>
               </div>
             </>
           )}
@@ -438,20 +483,6 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
         {currentStep === 1 && (
           <>
             <div className="command-section">
-              <label>Build Commands</label>
-              <CommandList
-                commands={formData.build || []}
-                onCommandsChange={handleBuildChange}
-                onAddCommand={handleAddBuild}
-                onDeleteCommand={handleDeleteBuild}
-                listRef={(handle) => {
-                  commandListRef.current = handle
-                }}
-              />
-              <p className="hint">Click to edit, drag to reorder, or delete commands</p>
-            </div>
-
-            <div className="command-section" style={{ marginTop: '1.5em' }}>
               <label>Prebuild Commands</label>
               <CommandList
                 commands={formData.prebuild || []}
@@ -462,10 +493,47 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
                   prebuildListRef.current = handle
                 }}
               />
-              <p className="hint">Commands run before deployment</p>
+              <p className="hint">Git operations and cleanup (runs in code folder)</p>
             </div>
 
-            <div className="command-section" style={{ marginTop: '1.5em' }}>
+            <div className="command-section">
+              <label>Build Commands</label>
+              <CommandList
+                commands={formData.build || []}
+                onCommandsChange={handleBuildChange}
+                onAddCommand={handleAddBuild}
+                onDeleteCommand={handleDeleteBuild}
+                listRef={(handle) => {
+                  buildListRef.current = handle
+                }}
+              />
+              <p className="hint">Install dependencies (runs in code folder)</p>
+            </div>
+
+            <div className="command-section">
+              <label>Deployment Files</label>
+              <FileTransferList
+                items={formData.files || []}
+                onChange={(items) => setFormData(prev => ({ ...prev, files: items }))}
+              />
+              <p className="hint">Files to copy/move for the deployment</p>
+            </div>
+
+            <div className="command-section">
+              <label>Deployment Commands</label>
+              <CommandList
+                commands={formData.deployment || []}
+                onCommandsChange={handleDeploymentChange}
+                onAddCommand={handleAddDeployment}
+                onDeleteCommand={handleDeleteDeployment}
+                listRef={(handle) => {
+                  deploymentListRef.current = handle
+                }}
+              />
+              <p className="hint">Build and copy to release folder (runs in code folder)</p>
+            </div>
+
+            <div className="command-section">
               <label>Launch Commands</label>
               <CommandList
                 commands={formData.launch || []}
@@ -476,7 +544,7 @@ export default function TemplateForm({ initialData, onSubmit, onCancel, availabl
                   launchListRef.current = handle
                 }}
               />
-              <p className="hint">Commands run after deployment</p>
+              <p className="hint">Service restart and finalization (runs in release folder)</p>
             </div>
           </>
         )}

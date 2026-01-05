@@ -6,8 +6,17 @@ import Select from '@/components/Select'
 import Button from '@/components/Button'
 import CodeEditor from '@/components/CodeEditor'
 import CommandList, { CommandListHandle } from '@/containers/Templates/TemplateForm/CommandList'
+import FileTransferList from './FileTransferList'
 import { useRepositoryForm } from './useApplicationForm'
 import './RepositoryForm.scss'
+
+type FileOperation = 'cp' | 'mv' | 'ln'
+
+interface FileTransfer {
+  src: string
+  dest: string
+  op: FileOperation
+}
 
 interface Props {
   onSubmit: (data: any) => void
@@ -16,9 +25,11 @@ interface Props {
   templates: Array<{
     id: string
     displayName: string
-    commands?: string[]
-    preDeploy?: string[]
-    postDeploy?: string[]
+    prebuild?: string[]
+    build?: string[]
+    deployment?: string[]
+    launch?: string[]
+    files?: FileTransfer[]
     nginxConfig?: string
     env?: string
     description?: string
@@ -30,9 +41,11 @@ interface Props {
     domain?: string
     port?: number
     template?: string
-    commands?: string[]
-    preDeploy?: string[]
-    postDeploy?: string[]
+    prebuild?: string[]
+    build?: string[]
+    deployment?: string[]
+    launch?: string[]
+    files?: FileTransfer[]
     nginxConfig?: string
     env?: string
     envFilePath?: string
@@ -195,6 +208,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
         build: selectedTemplate.build || [],
         deployment: selectedTemplate.deployment || [],
         launch: selectedTemplate.launch || [],
+        files: selectedTemplate.files || [],
         nginxConfig: selectedTemplate.nginxConfig || '',
         env: selectedTemplate.env || ''
       }))
@@ -309,6 +323,15 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                   }}
                 />
                 <p className="hint">Install dependencies (runs in code folder)</p>
+              </div>
+
+              <div className="command-section">
+                <label>Deployment Files</label>
+                <FileTransferList
+                  items={formData.files || []}
+                  onChange={(items) => setFormData(prev => ({ ...prev, files: items }))}
+                />
+                <p className="hint">Files to copy/move for the deployment</p>
               </div>
 
               <div className="command-section">
@@ -484,6 +507,15 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                 }}
               />
               <p className="hint">Install dependencies (runs in code folder)</p>
+            </div>
+
+            <div className="command-section">
+              <label>Deployment Files</label>
+              <FileTransferList
+                items={formData.files || []}
+                onChange={(items) => setFormData(prev => ({ ...prev, files: items }))}
+              />
+              <p className="hint">Files to copy/move for the deployment</p>
             </div>
 
             <div className="command-section">

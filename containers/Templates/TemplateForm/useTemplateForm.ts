@@ -1,22 +1,31 @@
 import { useState, useCallback } from 'react'
 
+type FileOperation = 'cp' | 'mv' | 'ln'
+
+interface FileTransfer {
+  src: string
+  dest: string
+  op: FileOperation
+}
+
 interface FormData {
   id?: string
   name: string
   displayName: string
   description: string
   prebuild: string[]
-  preDeploy?: string[]
-  postDeploy?: string[]
-  nginxConfig?: string
-  env?: string
+  build: string[]
+  deployment: string[]
+  launch: string[]
+  files: FileTransfer[]
+  nginxConfig: string
+  env: string
 }
 
 interface Errors {
   name?: string
   displayName?: string
   description?: string
-  commands?: string
 }
 
 export function useTemplateForm(initialData?: any) {
@@ -26,8 +35,10 @@ export function useTemplateForm(initialData?: any) {
     displayName: initialData?.displayName || '',
     description: initialData?.description || '',
     prebuild: initialData?.prebuild || [],
-    prebuild: initialData?.prebuild || [],
+    build: initialData?.build || [],
+    deployment: initialData?.deployment || [],
     launch: initialData?.launch || [],
+    files: initialData?.files || [],
     nginxConfig: initialData?.nginxConfig || '',
     env: initialData?.env || ''
   })
@@ -63,16 +74,14 @@ export function useTemplateForm(initialData?: any) {
 
     setIsSubmitting(true)
     try {
-      const filteredCommands = formData.prebuild.filter(c => c.trim())
-      const filteredPreDeploy = formData.prebuild?.filter(c => c.trim()) || []
-      const filteredPostDeploy = formData.launch?.filter(c => c.trim()) || []
       const submitData = {
         ...formData,
-        prebuild: filteredCommands,
-        prebuild: filteredPreDeploy,
-        launch: filteredPostDeploy
+        prebuild: formData.prebuild.filter(c => c.trim()),
+        build: formData.build.filter(c => c.trim()),
+        deployment: formData.deployment.filter(c => c.trim()),
+        launch: formData.launch.filter(c => c.trim()),
+        files: formData.files
       }
-      console.log('Submitting template data:', submitData)
       await onSubmit(submitData)
     } finally {
       setIsSubmitting(false)

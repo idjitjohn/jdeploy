@@ -2,7 +2,16 @@ import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
+export type FileOperation = 'cp' | 'mv' | 'ln'
+
+export interface FileTransfer {
+  src: string
+  dest: string
+  op: FileOperation
+}
+
 export interface DeploymentContext {
+  appId: string
   repoName: string
   branch: string
   repoUrl: string
@@ -14,6 +23,7 @@ export interface DeploymentContext {
   build: string[]
   deployment: string[]
   launch: string[]
+  files: FileTransfer[]
   port?: number
 }
 
@@ -57,17 +67,19 @@ export function getReleasePath(repoName: string): string {
   return path.join(deploymentConfig.release, repoName)
 }
 
-export function interpolateVariables(command: string, context: { repoName: string; branch: string; port?: number }): string {
+export function interpolateVariables(command: string, context: { repoName: string; branch: string; port?: number, appId?: string }): string {
   const codePath = getDeploymentPath(context.repoName, context.branch)
   const releasePath = getReleasePath(context.repoName)
   const certificatePath = path.join(deploymentConfig.certificate, context.repoName)
 
   return command
+    .replace(/\$id\$/g, context.appId || '')
     .replace(/\$cf\$/g, codePath)
     .replace(/\$rf\$/g, releasePath)
     .replace(/\$certsf\$/g, certificatePath)
     .replace(/\$logsf\$/g, path.join(deploymentConfig.logs, context.repoName))
     .replace(/\$branch\$/g, context.branch)
+    .replace(/\$name\$/g, context.repoName)
     .replace(/\$repoName\$/g, context.repoName)
     .replace(/\$port\$/g, context.port?.toString() || '')
 }
@@ -100,9 +112,7 @@ export function executeCommand(cmd: string, cwd: string, env?: Record<string, st
 
 // Run only prebuild commands in config.paths.code directory (for initial application setup)
 export async function prepare(context: DeploymentContext): Promise<{
-  success: boolean
-  output: string
-  error?: string
+  success: boolean, output: string, error?: string
 }> {
   const output: string[] = []
   const codePath = deploymentConfig.code
@@ -118,7 +128,7 @@ export async function prepare(context: DeploymentContext): Promise<{
 
     output.push(`[${new Date().toISOString()}] Running prebuild scripts in ${codePath}...`)
     for (const script of context.prebuild) {
-      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port })
+      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
       output.push(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing prebuild: ${interpolated}`)
       const result = executeCommand(interpolated, codePath, context.env)
@@ -171,7 +181,7 @@ export async function runPrebuild(context: DeploymentContext): Promise<{
 
     output.push(`[${new Date().toISOString()}] Running prebuild scripts in ${codePath}...`)
     for (const script of context.prebuild) {
-      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port })
+      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
       output.push(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing prebuild: ${interpolated}`)
       const result = executeCommand(interpolated, codePath, context.env)
@@ -209,7 +219,6 @@ export async function runDeployment(context: DeploymentContext): Promise<{
   success: boolean, output: string, error?: string
 }> {
   const output: string[] = []
-  const codePath = deploymentConfig.code
   const appCodePath = getDeploymentPath(context.repoName, context.branch)
   const releasePath = getReleasePath(context.repoName)
 
@@ -229,8 +238,11 @@ export async function runDeployment(context: DeploymentContext): Promise<{
 
     // 1. Prebuild - runs in config.paths.code
     output.push(`[${new Date().toISOString()}] Running prebuild scripts in ${appCodePath}...`)
+    const result = executeCommand("which yarn", appCodePath, context.env)
+    console.log("Ito za zao:", {result})
+
     for (const script of context.prebuild) {
-      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port })
+      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
       output.push(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing prebuild in code folder: ${interpolated}`)
       const result = executeCommand(interpolated, appCodePath, context.env)
@@ -260,17 +272,44 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     // 2. Build - runs in application code folder
     output.push(`[${new Date().toISOString()}] Running build commands in ${appCodePath}...`)
     for (const cmd of context.build) {
-      const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port })
+      const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
       output.push(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing build in app code folder: ${interpolated}`)
       const result = executeCommand(interpolated, appCodePath, context.env)
       output.push(result)
     }
 
+    // 2.5. File transfers - copy/move/symlink files after build
+    if (context.files && context.files.length > 0) {
+      output.push(`[${new Date().toISOString()}] Processing file transfers...`)
+      for (const file of context.files) {
+        const srcPath = interpolateVariables(file.src, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
+        const destPath = interpolateVariables(file.dest, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
+        let cmd: string
+        switch (file.op) {
+          case 'mv':
+            cmd = `mv -f ${srcPath} ${destPath}`
+            break
+          case 'ln':
+            cmd = `ln -sf ${srcPath} ${destPath}`
+            break
+          case 'cp':
+          default:
+            cmd = `cp -rf ${srcPath} ${destPath}`
+            break
+        }
+        output.push(`> ${cmd}`)
+        console.log(`[${context.repoName}] File transfer: ${cmd}`)
+        const result = executeCommand(cmd, appCodePath, context.env)
+        output.push(result)
+      }
+      output.push(`✓ File transfers completed`)
+    }
+
     // 3. Deployment - runs in application code folder
     output.push(`[${new Date().toISOString()}] Running deployment commands in ${appCodePath}...`)
     for (const cmd of context.deployment) {
-      const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port })
+      const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
       output.push(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing deployment in app code folder: ${interpolated}`)
       const result = executeCommand(interpolated, appCodePath, context.env)
@@ -280,7 +319,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     // 4. Launch - runs in release folder
     output.push(`[${new Date().toISOString()}] Running launch commands in ${releasePath}...`)
     for (const script of context.launch) {
-      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port })
+      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
       output.push(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing launch in release folder: ${interpolated}`)
       const result = executeCommand(interpolated, releasePath, context.env)

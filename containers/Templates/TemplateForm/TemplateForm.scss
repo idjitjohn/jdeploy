@@ -46,10 +46,9 @@
   }
 
   .tab-content {
-    display: flex;
-    flex-direction: column;
+    flex: 1;
     gap: 1.5em;
-    overflow: hidden;
+    overflow-y: auto;
     .command-section {
       display: flex;
       flex-direction: column;

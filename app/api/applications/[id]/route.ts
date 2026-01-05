@@ -98,27 +98,33 @@ export async function PUT(
     }
 
     const data = await request.json()
+    console.log('[PUT /api/applications] Received data.files:', JSON.stringify(data.files))
+
+    const updateData = {
+      name: data.name,
+      repoUrl: data.repoUrl,
+      template: data.template,
+      domain: data.domain,
+      port: data.port,
+      prebuild: data.prebuild || [],
+      build: data.build || [],
+      deployment: data.deployment || [],
+      launch: data.launch || [],
+      files: data.files || [],
+      nginx: data.nginxConfig || '',
+      env: data.env || '',
+      envFilePath: data.envFilePath || '.env',
+      branch: data.branch || 'main',
+    }
+    console.log('[PUT /api/applications] updateData.files:', JSON.stringify(updateData.files))
 
     const application = await ApplicationModel.findByIdAndUpdate(
       id,
-      {
-        $set: {
-          name: data.name,
-          repoUrl: data.repoUrl,
-          template: data.template,
-          domain: data.domain,
-          port: data.port,
-          prebuild: data.prebuild || [], build: data.build || [], deployment: data.deployment || [], launch: data.launch || [],
-          
-          
-          nginx: data.nginxConfig || '',
-          env: data.env || '',
-          envFilePath: data.envFilePath || '.env',
-          branch: data.branch || 'main',
-        },
-      },
+      { $set: updateData },
       { new: true, runValidators: false }
     )
+
+    console.log('[PUT /api/applications] Saved application.files:', JSON.stringify(application?.files))
 
     if (!application) {
       return NextResponse.json(
@@ -136,9 +142,11 @@ export async function PUT(
           template: application.template,
           domain: application.domain,
           port: application.port,
-          prebuild: application.prebuild, build: application.build, deployment: application.deployment, launch: application.launch,
-          
-          
+          prebuild: application.prebuild,
+          build: application.build,
+          deployment: application.deployment,
+          launch: application.launch,
+          files: application.files,
           nginxConfig: application.nginx || '',
           env: application.env || '',
           envFilePath: application.envFilePath || '.env',

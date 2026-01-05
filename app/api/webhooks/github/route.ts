@@ -91,6 +91,7 @@ async function handlePush(event: any) {
     await log.save()
 
     runDeployment({
+      appId: repo._id.toString(),
       repoName,
       branch,
       repoUrl,
@@ -98,9 +99,11 @@ async function handlePush(event: any) {
       env,
       envFileContent: repo.env || '',
       envFilePath: repo.envFilePath || '.env',
-      commands: repo.commands || [],
-      preDeploy: repo.preDeploy || [],
-      postDeploy: repo.postDeploy || [],
+      prebuild: repo.prebuild || [],
+      build: repo.build || [],
+      deployment: repo.deployment || [],
+      launch: repo.launch || [],
+      files: repo.files || [],
     }).then(async (result) => {
       const pm2Name = `${repoName}-${branch}`
 

@@ -25,6 +25,7 @@ const domainSchema = new Schema<Domain>({
   },
 }, {
   timestamps: true,
+  versionKey: false,
 })
 
 const DomainModel = models.Domain || model<Domain>('Domain', domainSchema)

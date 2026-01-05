@@ -60,6 +60,7 @@ const deploymentLogSchema = new Schema<DeploymentLog>({
   },
 }, {
   timestamps: true,
+  versionKey: false,
 })
 
 deploymentLogSchema.index({ application: 1, branch: 1 })

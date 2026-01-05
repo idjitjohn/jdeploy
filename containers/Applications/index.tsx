@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import Header from '@/components/Header'
 import Modal from '@/components/Modal'
 import Button from '@/components/Button'
@@ -19,6 +20,7 @@ interface Repository {
 }
 
 export default function Repositories() {
+  const router = useRouter()
   const {
     isLoading,
     repositories,
@@ -36,6 +38,10 @@ export default function Repositories() {
     handleDeleteRepository,
     handleRedeployRepository
   } = useRepositories()
+
+  const handleRowClick = (id: string) => {
+    router.push(`/applications/${id}`)
+  }
 
   if (isLoading) {
     return (
@@ -73,17 +79,16 @@ export default function Repositories() {
             </thead>
             <tbody>
               {repositories.map((repo: Repository) => (
-                <tr key={repo.id}>
+                <tr key={repo.id} onClick={() => handleRowClick(repo.id)} className="clickable-row">
                   <td><strong>{escapeHtml(repo.name)}</strong></td>
                   <td>{escapeHtml(repo.domain || 'N/A')}</td>
                   <td>{escapeHtml(String(repo.port || 'N/A'))}</td>
                   <td>{repo.branches ? Object.keys(repo.branches).length : 0}</td>
                   <td>{formatDate(repo.createdAt)}</td>
                   <td>
-                    <div className="actions-cell">
+                    <div className="actions-cell" onClick={(e) => e.stopPropagation()}>
                       <Button size="sm" onClick={() => handleRedeployRepository(repo.id, repo.name)}>Redeploy</Button>
                       <Button size="sm" variant="secondary" onClick={() => openEditModal(repo)}>Edit</Button>
-                      <Button size="sm" variant="danger" onClick={() => handleDeleteRepository(repo.id, repo.name)}>Delete</Button>
                     </div>
                   </td>
                 </tr>

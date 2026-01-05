@@ -59,6 +59,7 @@ const configurationSchema = new Schema<IConfiguration>(
   },
   {
     timestamps: true,
+    versionKey: false,
     collection: 'configurations'
   }
 )

@@ -1,5 +1,13 @@
 import { useState, FormEvent, ChangeEvent, Dispatch, SetStateAction } from 'react'
 
+type FileOperation = 'cp' | 'mv' | 'ln'
+
+interface FileTransfer {
+  src: string
+  dest: string
+  op: FileOperation
+}
+
 interface FormDataType {
   id?: string
   name: string
@@ -7,9 +15,11 @@ interface FormDataType {
   domain: string
   port: string
   template: string
-  commands?: string[]
-  preDeploy?: string[]
-  postDeploy?: string[]
+  prebuild?: string[]
+  build?: string[]
+  deployment?: string[]
+  launch?: string[]
+  files?: FileTransfer[]
   nginxConfig?: string
   env?: string
   envFilePath?: string
@@ -24,9 +34,11 @@ interface UseRepositoryFormProps {
     domain?: string
     port?: number
     template?: string
-    commands?: string[]
-    preDeploy?: string[]
-    postDeploy?: string[]
+    prebuild?: string[]
+    build?: string[]
+    deployment?: string[]
+    launch?: string[]
+    files?: FileTransfer[]
     nginxConfig?: string
     env?: string
     envFilePath?: string
@@ -34,6 +46,7 @@ interface UseRepositoryFormProps {
 }
 
 export function useRepositoryForm({ onSubmit, initialData }: UseRepositoryFormProps) {
+  console.log('[useRepositoryForm] initialData.files:', JSON.stringify(initialData?.files))
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState<FormDataType>({
     id: initialData?.id,
@@ -43,8 +56,10 @@ export function useRepositoryForm({ onSubmit, initialData }: UseRepositoryFormPr
     port: initialData?.port?.toString() || '',
     template: initialData?.template || '',
     prebuild: initialData?.prebuild || [],
-    prebuild: initialData?.prebuild || [],
+    build: initialData?.build || [],
+    deployment: initialData?.deployment || [],
     launch: initialData?.launch || [],
+    files: initialData?.files || [],
     nginxConfig: initialData?.nginxConfig || '',
     env: initialData?.env || '',
     envFilePath: initialData?.envFilePath || '.env'

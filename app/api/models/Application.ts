@@ -6,6 +6,14 @@ export enum ApplicationStatus {
   RUNNING = 'running'
 }
 
+type FileOperation = 'cp' | 'mv' | 'ln'
+
+interface FileTransfer {
+  src: string
+  dest: string
+  op: FileOperation
+}
+
 interface Application extends Document {
   name: string
   repoUrl: string
@@ -16,6 +24,7 @@ interface Application extends Document {
   build: string[]
   deployment: string[]
   launch: string[]
+  files: FileTransfer[]
   nginx: string
   env: string
   envFilePath: string
@@ -65,6 +74,15 @@ const applicationSchema = new Schema<Application>({
     type: [String],
     default: [],
   },
+  files: {
+    type: [{
+      _id: false,
+      src: { type: String, required: true },
+      dest: { type: String, default: '$rf$' },
+      op: { type: String, enum: ['cp', 'mv', 'ln'], default: 'cp' }
+    }],
+    default: [],
+  },
   nginx: {
     type: String,
     default: '',
@@ -88,6 +106,7 @@ const applicationSchema = new Schema<Application>({
   },
 }, {
   timestamps: true,
+  versionKey: false,
 })
 
 applicationSchema.index({ domain: 1 })

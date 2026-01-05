@@ -47,6 +47,15 @@
     tr:last-child td {
       border-bottom: none;
     }
+
+    tr.clickable-row {
+      cursor: pointer;
+      transition: background 0.15s ease;
+
+      &:hover {
+        background: rgba(59, 130, 246, 0.05);
+      }
+    }
   }
 
   .actions-cell {

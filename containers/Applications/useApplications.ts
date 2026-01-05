@@ -3,6 +3,14 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { checkAuth, showNotification } from '@/lib/utils'
 
+type FileOperation = 'cp' | 'mv' | 'ln'
+
+interface FileTransfer {
+  src: string
+  dest: string
+  op: FileOperation
+}
+
 interface Repository {
   id: string
   name: string
@@ -12,6 +20,14 @@ interface Repository {
   branches?: Record<string, any>
   repoUrl: string
   createdAt: string
+  prebuild?: string[]
+  build?: string[]
+  deployment?: string[]
+  launch?: string[]
+  files?: FileTransfer[]
+  nginxConfig?: string
+  env?: string
+  envFilePath?: string
 }
 
 interface Domain {
@@ -89,8 +105,10 @@ export function useRepositories() {
         port: formData.port,
         template: formData.template,
         prebuild: formData.prebuild || [],
-        prebuild: formData.prebuild || [],
+        build: formData.build || [],
+        deployment: formData.deployment || [],
         launch: formData.launch || [],
+        files: formData.files || [],
         nginxConfig: formData.nginxConfig || '',
         env: formData.env || '',
         envFilePath: formData.envFilePath || '.env'
@@ -106,20 +124,25 @@ export function useRepositories() {
   const handleUpdateRepository = async (formData: any) => {
     if (!editingRepo) return
 
-    try {
-      await api.applications.update(editingRepo.id, {
+    const payload = {
         name: formData.name,
         repoUrl: formData.repoUrl,
         domain: formData.domain,
         port: formData.port,
         template: formData.template,
         prebuild: formData.prebuild || [],
-        prebuild: formData.prebuild || [],
+        build: formData.build || [],
+        deployment: formData.deployment || [],
         launch: formData.launch || [],
+        files: formData.files || [],
         nginxConfig: formData.nginxConfig || '',
         env: formData.env || '',
         envFilePath: formData.envFilePath || '.env'
-      })
+      }
+    console.log('[handleUpdateRepository] payload:', JSON.stringify(payload, null, 2))
+
+    try {
+      await api.applications.update(editingRepo.id, payload)
       showNotification('Repository updated successfully', 'success')
       setShowEditModal(false)
       setEditingRepo(null)

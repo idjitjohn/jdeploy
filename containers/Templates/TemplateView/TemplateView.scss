@@ -64,6 +64,51 @@
         color: $text-dark;
       }
     }
+
+    .files-list {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+
+      li {
+        display: flex;
+        align-items: center;
+        gap: 0.5em;
+        margin-bottom: 0.5em;
+        font-family: monospace;
+        font-size: 0.875em;
+      }
+
+      .op-badge {
+        padding: 0.125em 0.5em;
+        background: $secondary-color;
+        color: white;
+        border-radius: 0.25em;
+        font-size: 0.75em;
+        font-weight: 500;
+      }
+
+      .src, .dest {
+        color: $text-dark;
+      }
+
+      .arrow {
+        color: $text-light;
+      }
+    }
+
+    .code-block {
+      margin: 0;
+      padding: 1em;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      border-radius: 0.25em;
+      font-family: monospace;
+      font-size: 0.875em;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
   }
 
   .view-actions {

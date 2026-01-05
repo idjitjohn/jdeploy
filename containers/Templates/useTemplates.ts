@@ -3,13 +3,27 @@ import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { checkAuth, showNotification } from '@/lib/utils'
 
+type FileOperation = 'cp' | 'mv' | 'ln'
+
+interface FileTransfer {
+  src: string
+  dest: string
+  op: FileOperation
+}
+
 interface Template {
   id: string
   name: string
   displayName: string
   description: string
   isSystem?: boolean
-  commands?: string[]
+  prebuild?: string[]
+  build?: string[]
+  deployment?: string[]
+  launch?: string[]
+  files?: FileTransfer[]
+  nginxConfig?: string
+  env?: string
 }
 
 export function useTemplates() {
@@ -50,7 +64,13 @@ export function useTemplates() {
         name: formData.name,
         displayName: formData.displayName,
         description: formData.description,
-        prebuild: formData.prebuild
+        prebuild: formData.prebuild || [],
+        build: formData.build || [],
+        deployment: formData.deployment || [],
+        launch: formData.launch || [],
+        files: formData.files || [],
+        nginxConfig: formData.nginxConfig || '',
+        env: formData.env || ''
       })
       showNotification('Template created successfully', 'success')
       setShowAddModal(false)
@@ -66,11 +86,13 @@ export function useTemplates() {
         name: formData.name,
         displayName: formData.displayName,
         description: formData.description,
-        prebuild: formData.prebuild,
-        prebuild: formData.prebuild,
-        launch: formData.launch,
-        nginxConfig: formData.nginxConfig,
-        env: formData.env
+        prebuild: formData.prebuild || [],
+        build: formData.build || [],
+        deployment: formData.deployment || [],
+        launch: formData.launch || [],
+        files: formData.files || [],
+        nginxConfig: formData.nginxConfig || '',
+        env: formData.env || ''
       })
       showNotification('Template updated successfully', 'success')
       setViewingId(null)

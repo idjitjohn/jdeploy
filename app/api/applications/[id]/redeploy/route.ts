@@ -73,7 +73,12 @@ export async function POST(
       env,
       envFileContent: repo.env || '',
       envFilePath: repo.envFilePath || '.env',
-      prebuild: repo.prebuild || [], build: repo.build || [], deployment: repo.deployment || [], launch: repo.launch || [],
+      prebuild: repo.prebuild || [],
+      build: repo.build || [],
+      deployment: repo.deployment || [],
+      launch: repo.launch || [],
+      files: repo.files || [],
+      appId: repo._id.toString()
     }).catch((error) => {
       console.error('Background deployment error:', error)
     })
