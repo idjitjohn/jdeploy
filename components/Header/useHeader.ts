@@ -23,7 +23,6 @@ export function useHeader() {
     { href: '/applications', label: 'Applications' },
     { href: '/domains', label: 'Domains' },
     { href: '/templates', label: 'Templates' },
-    { href: '/logs', label: 'Logs' },
     { href: '/settings', label: 'Settings' }
   ]
 
