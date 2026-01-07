@@ -1,4 +1,4 @@
-import ApplicationDetail from '@/containers/ApplicationDetail'
+import ApplicationDetail from '@/front/containers/ApplicationDetail'
 
 interface Props {
   params: Promise<{ id: string }>

@@ -1,4 +1,4 @@
-import Repositories from '@/containers/Applications'
+import Repositories from '@/front/containers/Applications'
 
 export default function RepositoriesPage() {
   return <Repositories />

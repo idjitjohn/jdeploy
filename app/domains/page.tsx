@@ -1,4 +1,4 @@
-import Domains from '@/containers/Domains'
+import Domains from '@/front/containers/Domains'
 
 export default function DomainsPage() {
   return <Domains />

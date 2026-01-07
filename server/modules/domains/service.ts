@@ -1,6 +1,6 @@
 import { createDomainsService } from './context'
 import { Auth } from '../../plugins/auth.types'
-import connectDB from '@/lib/db'
+import connectDB from '@/server/lib/db'
 import DomainModel from '@/server/models/Domain'
 
 export const list = createDomainsService(

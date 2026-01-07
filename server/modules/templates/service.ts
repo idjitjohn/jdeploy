@@ -1,6 +1,6 @@
 import { createTemplatesService } from './context'
 import { Auth } from '../../plugins/auth.types'
-import connectDB from '@/lib/db'
+import connectDB from '@/server/lib/db'
 import TemplateModel from '@/server/models/Template'
 
 export const list = createTemplatesService(

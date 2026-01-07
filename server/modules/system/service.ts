@@ -1,8 +1,8 @@
 import { createService } from '../../utils/base'
 import { systemContext } from './context'
 import { Auth } from '../../plugins/auth.types'
-import { getProcessList, isPM2Installed } from '@/lib/pm2'
-import { reloadNginx, testNginxConfig } from '@/lib/nginx'
+import { getProcessList, isPM2Installed } from '@/server/lib/pm2'
+import { reloadNginx, testNginxConfig } from '@/server/lib/nginx'
 
 const createSystemService = createService(systemContext)
 

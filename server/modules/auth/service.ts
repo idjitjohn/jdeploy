@@ -1,6 +1,6 @@
 import { createAuthService } from './context'
 import { Auth } from '../../plugins/auth.types'
-import connectDB from '@/lib/db'
+import connectDB from '@/server/lib/db'
 import User from '@/server/models/User'
 
 export const login = createAuthService(
