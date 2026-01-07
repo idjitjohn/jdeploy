@@ -39,6 +39,7 @@ interface Application extends Document {
   environment: ApplicationEnvironment
   branch?: string
   status: ApplicationStatus
+  mongoUri: string
   createdAt: Date
   updatedAt: Date
 }
@@ -123,6 +124,10 @@ const applicationSchema = new Schema<Application>({
     type: String,
     enum: Object.values(ApplicationStatus),
     default: ApplicationStatus.STOPPED,
+  },
+  mongoUri: {
+    type: String,
+    default: '',
   },
 }, {
   timestamps: true,

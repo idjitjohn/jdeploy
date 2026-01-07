@@ -104,7 +104,20 @@ async function mockTemplates() {
         { src: '$cf$/node_modules', dest: '$rf$/node_modules', op: 'ln' },
         { src: '$rf$/.next', dest: '', op: 'rm' }
       ],
-      nginx: '',
+      nginx: `ssl_certificate $crtf$/crt;
+ssl_certificate_key $crtf$/key;
+
+server {
+  listen 80;
+  listen 443 ssl;
+  client_max_body_size 500M;
+  server_name $subdomain$.$domain$;
+  location / {
+      proxy_set_header Host $host;
+      proxy_pass http://localhost:$port$;
+      proxy_redirect off;
+  }
+}`,
       env: '',
     },
     {
@@ -128,7 +141,21 @@ async function mockTemplates() {
         { src: '$cf$/dist', dest: '$rf$', op: 'mv' },
         { src: '$rf$/dist', dest: '', op: 'rm' }
       ],
-      nginx: '',
+      nginx: `ssl_certificate $crtf$/crt;
+ssl_certificate_key $crtf$/key;
+
+server {
+  listen 80;
+  listen 443 ssl;
+  server_name $subdomain$.$domain$;
+
+  root $rf$/dist;
+  index index.html index.htm;
+
+  location / {
+    try_files $uri /index.html;
+  }
+}`,
       env: '',
     },
     {
@@ -157,7 +184,20 @@ async function mockTemplates() {
         { src: '$cf$/node_modules', dest: '$rf$/node_modules', op: 'ln' },
         { src: '$rf$/dist', dest: '', op: 'rm' }
       ],
-      nginx: '',
+      nginx: `ssl_certificate $crtf$/crt;
+ssl_certificate_key $crtf$/key;
+
+server {
+  listen 80;
+  listen 443 ssl;
+  client_max_body_size 500M;
+  server_name $subdomain$.$domain$;
+  location / {
+      proxy_set_header Host $host;
+      proxy_pass http://localhost:$port$;
+      proxy_redirect off;
+  }
+}`,
       env: '',
     }
   ]

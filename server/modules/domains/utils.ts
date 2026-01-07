@@ -1,10 +1,9 @@
-import ConfigurationModel, { getPathsFromHome } from '@/server/models/Configuration'
+import { getPaths } from '@/server/utils/paths'
 import fs from 'fs'
 import path from 'path'
 
 export async function writeCertificateFiles(domainName: string, certificate: string, privateKey: string) {
-  const config = await ConfigurationModel.findOne().lean()
-  const paths = getPathsFromHome(config?.home || '/var/webhooks')
+  const paths = await getPaths()
   const certPath = path.join(paths.certificate, domainName)
   
   if (!fs.existsSync(certPath)) {

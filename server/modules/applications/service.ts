@@ -3,7 +3,8 @@ import { Auth } from '../../plugins/auth.types'
 import connectDB from '@/server/lib/db'
 import ApplicationModel from '@/server/models/Application'
 import DeploymentLogModel from '@/server/models/DeploymentLog'
-import ConfigurationModel, { IConfiguration, getPathsFromHome } from '@/server/models/Configuration'
+import { getPaths } from '@/server/utils/paths'
+import { createAppDatabase, dropAppDatabase } from '@/server/utils/mongo'
 import { runDeployment, getLogPath, setDeploymentConfig, initializeApplication } from '@/server/lib/deployment'
 import { writeNginxConfigFile } from './utils'
 import { execSync } from 'child_process'
@@ -137,14 +138,21 @@ export const create = createApplicationsService(
     })
 
     // Create folders and clone repository
-    const config = await ConfigurationModel.findOne()
-    if (config?.home) {
-      setDeploymentConfig({ home: config.home })
-    }
+    const paths = await getPaths()
+    setDeploymentConfig({ home: paths.home })
     initializeApplication(application.name, application.repoUrl, application.branch || 'main')
 
+    // Create isolated database for the application
+    const dbResult = createAppDatabase(application.name)
+    if (dbResult.success && dbResult.connectionString) {
+      application.mongoUri = dbResult.connectionString
+      await application.save()
+      console.log(`Database created for ${application.name}`)
+    } else {
+      console.warn(`Failed to create database for ${application.name}: ${dbResult.error}`)
+    }
+
     // Create certificate folder and files for the domain
-    const paths = getPathsFromHome(config?.home || '/var/webhooks')
     const certPath = path.join(paths.certificate, application.domain)
     if (!fs.existsSync(certPath)) {
       fs.mkdirSync(certPath, { recursive: true })
@@ -242,8 +250,7 @@ export const update = createApplicationsService(
       throw new Error('Application not found')
     }
 
-    const config = await ConfigurationModel.findOne().lean() as IConfiguration | null
-    const paths = getPathsFromHome(config?.home || '/var/webhooks')
+    const paths = await getPaths()
     const appCodePath = path.join(paths.code, application.name)
 
     // If repository URL changed, remove old code and clone new repo
@@ -255,9 +262,7 @@ export const update = createApplicationsService(
         fs.rmSync(appCodePath, { recursive: true, force: true })
       }
       // Clone new repository
-      if (config?.home) {
-        setDeploymentConfig({ home: config.home })
-      }
+      setDeploymentConfig({ home: paths.home })
       initializeApplication(application.name, application.repoUrl, application.branch || 'main')
     }
 
@@ -350,20 +355,27 @@ export const remove = createApplicationsService(
     await ApplicationModel.findByIdAndDelete(params.id)
     await DeploymentLogModel.deleteMany({ application: appName })
 
-    const config = await ConfigurationModel.findOne()
-    const home = config?.home || '/var/webhooks'
+    // Drop application database
+    const dbResult = dropAppDatabase(appName)
+    if (dbResult.success) {
+      console.log(`Database dropped for ${appName}`)
+    } else {
+      console.warn(`Failed to drop database for ${appName}: ${dbResult.error}`)
+    }
 
-    const codeAppPath = path.join(home, 'code', appName)
+    const paths = await getPaths()
+
+    const codeAppPath = path.join(paths.code, appName)
     if (fs.existsSync(codeAppPath)) {
       fs.rmSync(codeAppPath, { recursive: true, force: true })
     }
 
-    const releaseAppPath = path.join(home, 'release', appName)
+    const releaseAppPath = path.join(paths.release, appName)
     if (fs.existsSync(releaseAppPath)) {
       fs.rmSync(releaseAppPath, { recursive: true, force: true })
     }
 
-    const logsAppPath = path.join(home, 'logs', appName)
+    const logsAppPath = path.join(paths.logs, appName)
     if (fs.existsSync(logsAppPath)) {
       fs.rmSync(logsAppPath, { recursive: true, force: true })
     }
@@ -388,9 +400,29 @@ export const redeploy = createApplicationsService(
       throw new Error('Application not found')
     }
 
-    const config = await ConfigurationModel.findOne()
-    if (config?.home) {
-      setDeploymentConfig({ home: config.home })
+    const paths = await getPaths()
+    setDeploymentConfig({ home: paths.home })
+
+    const appCodePath = path.join(paths.code, repo.name)
+
+    // Write nginx config file before deployment
+    if (repo.nginx) {
+      await writeNginxConfigFile(repo.nginx, {
+        appName: repo.name,
+        repoName: repo.name,
+        branch: repo.branch || 'main',
+        port: repo.port,
+        appId: repo._id.toString(),
+        subdomain: repo.subdomain || '',
+        domain: repo.domain
+      })
+    }
+
+    // Write env file before deployment
+    if (repo.env && fs.existsSync(appCodePath)) {
+      const envFilePath = repo.envFilePath || '.env'
+      const fullEnvPath = path.join(appCodePath, envFilePath)
+      fs.writeFileSync(fullEnvPath, repo.env, 'utf-8')
     }
 
     const logPath = getLogPath(repo.name)
@@ -485,9 +517,8 @@ export const getBranches = createApplicationsService(
       throw new Error('Application not found')
     }
 
-    const config = await ConfigurationModel.findOne().lean() as IConfiguration | null
-    const home = config?.home || '/var/webhooks'
-    const appCodePath = path.join(home, 'code', application.name)
+    const paths = await getPaths()
+    const appCodePath = path.join(paths.code, application.name)
 
     if (!fs.existsSync(appCodePath)) {
       set.status = 400
@@ -538,10 +569,9 @@ export const switchBranch = createApplicationsService(
       throw new Error('Application not found')
     }
 
-    const config = await ConfigurationModel.findOne().lean() as IConfiguration | null
-    const home = config?.home || '/var/webhooks'
+    const paths = await getPaths()
     const currentBranch = application.branch || 'main'
-    const appCodePath = path.join(home, 'code', application.name)
+    const appCodePath = path.join(paths.code, application.name)
 
     if (!fs.existsSync(appCodePath)) {
       set.status = 400
