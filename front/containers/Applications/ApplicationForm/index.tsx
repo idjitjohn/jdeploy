@@ -55,6 +55,9 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
   const {
     formData,
     isSubmitting,
+    errors,
+    isValidating,
+    hasErrors,
     handleChange,
     handleSubmit,
     setFormData
@@ -252,6 +255,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                 onChange={handleChange}
                 placeholder="my-app"
                 required
+                disabled
               />
               <Input
                 label="Repository URL"
@@ -261,29 +265,40 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                 placeholder="https://github.com/user/repo.git"
                 required
               />
-              <Select
-                label="Domain"
-                name="domain"
-                value={formData.domain}
-                onChange={handleChange}
-                required
-              >
-                <option value="">Select a domain</option>
-                {domains.map(domain => (
-                  <option key={domain.id} value={domain.name}>
-                    {domain.name}
-                  </option>
-                ))}
-              </Select>
-              <Input
-                label="Port"
-                name="port"
-                type="number"
-                value={formData.port}
-                onChange={handleChange}
-                placeholder="3000"
-                required
-              />
+              <div className="row">
+                <Input
+                  label="Subdomain"
+                  name="subdomain"
+                  value={formData.subdomain}
+                  onChange={handleChange}
+                  placeholder="www"
+                  error={errors.subdomain}
+                />
+                <Select
+                  label="Domain"
+                  name="domain"
+                  value={formData.domain}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select a domain</option>
+                  {domains.map(domain => (
+                    <option key={domain.id} value={domain.name}>
+                      {domain.name}
+                    </option>
+                  ))}
+                </Select>
+                <Input
+                  label="Port"
+                  name="port"
+                  type="number"
+                  value={formData.port}
+                  onChange={handleChange}
+                  placeholder="3000"
+                  required
+                  error={errors.port}
+                />
+              </div>
             </>
           )}
 
@@ -395,7 +410,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
           <Button type="button" variant="secondary" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary" loading={isSubmitting} disabled={isSubmitting}>
+          <Button type="submit" variant="primary" loading={isSubmitting} disabled={isSubmitting || hasErrors}>
             Update Application
           </Button>
         </div>
@@ -416,6 +431,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
               onChange={handleChange}
               placeholder="my-app"
               required
+              error={errors.name}
             />
             <Input
               label="Repository URL"
@@ -455,6 +471,14 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
               </Select>
             </div>
             <div className="row">
+              <Input
+                label="Subdomain"
+                name="subdomain"
+                value={formData.subdomain}
+                onChange={handleChange}
+                placeholder="api"
+                error={errors.subdomain}
+              />
               <Select
                 label="Domain"
                 name="domain"
@@ -477,6 +501,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                 onChange={handleChange}
                 placeholder="3000"
                 required
+                error={errors.port}
               />
             </div>
             {hasTemplateChanges && selectedTemplateId && (
@@ -615,7 +640,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
               type="submit"
               variant="primary"
               loading={isSubmitting}
-              disabled={isSubmitting}
+              disabled={isSubmitting || hasErrors}
             >
               Prepare
             </Button>

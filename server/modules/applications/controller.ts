@@ -34,4 +34,16 @@ export const applicationsController = getApplicationsController
     summary: 'Switch branch',
     description: 'Switch to a different git branch and update the application'
   })
+  .post('/check/name', applicationsService.checkName, {
+    summary: 'Check name availability',
+    description: 'Check if an application name is available'
+  })
+  .post('/check/subdomain', applicationsService.checkSubdomain, {
+    summary: 'Check subdomain availability',
+    description: 'Check if a subdomain is available for a domain'
+  })
+  .post('/check/port', applicationsService.checkPort, {
+    summary: 'Check port availability',
+    description: 'Check if a port is available'
+  })
   .build()

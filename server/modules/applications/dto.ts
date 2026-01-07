@@ -11,6 +11,7 @@ const ApplicationDTO = t.Object({
   name: t.String(),
   repoUrl: t.String(),
   template: t.String(),
+  subdomain: t.String(),
   domain: t.String(),
   port: t.Number(),
   prebuild: t.Array(t.String()),
@@ -31,6 +32,7 @@ const CreateApplicationReqDTO = t.Object({
   name: t.String({ minLength: 1 }),
   repoUrl: t.String({ minLength: 1 }),
   template: t.String(),
+  subdomain: t.Optional(t.String({ pattern: '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$' })),
   domain: t.String({ minLength: 1 }),
   port: t.Number({ minimum: 1, maximum: 65535 }),
   prebuild: t.Optional(t.Array(t.String())),
@@ -49,6 +51,7 @@ const UpdateApplicationReqDTO = t.Object({
   name: t.String({ minLength: 1 }),
   repoUrl: t.String({ minLength: 1 }),
   template: t.String(),
+  subdomain: t.Optional(t.String({ pattern: '^[a-z0-9]([a-z0-9-]*[a-z0-9])?$' })),
   domain: t.String({ minLength: 1 }),
   port: t.Number({ minimum: 1, maximum: 65535 }),
   prebuild: t.Optional(t.Array(t.String())),
@@ -113,6 +116,37 @@ const SwitchBranchResDTO = t.Object({
   branch: t.String()
 })
 
+const CheckNameReqDTO = t.Object({
+  name: t.String({ minLength: 1 }),
+  excludeId: t.Optional(t.String())
+})
+
+const CheckNameResDTO = t.Object({
+  available: t.Boolean(),
+  message: t.Optional(t.String())
+})
+
+const CheckSubdomainReqDTO = t.Object({
+  subdomain: t.String(),
+  domain: t.String({ minLength: 1 }),
+  excludeId: t.Optional(t.String())
+})
+
+const CheckSubdomainResDTO = t.Object({
+  available: t.Boolean(),
+  message: t.Optional(t.String())
+})
+
+const CheckPortReqDTO = t.Object({
+  port: t.Number({ minimum: 1, maximum: 65535 }),
+  excludeId: t.Optional(t.String())
+})
+
+const CheckPortResDTO = t.Object({
+  available: t.Boolean(),
+  message: t.Optional(t.String())
+})
+
 export const applicationsModels = {
   FileTransfer: FileTransferDTO,
   Application: ApplicationDTO,
@@ -127,5 +161,11 @@ export const applicationsModels = {
   GetBranchesRes: GetBranchesResDTO,
   SwitchBranchReq: SwitchBranchReqDTO,
   SwitchBranchRes: SwitchBranchResDTO,
-  IdParam: IdParamDTO
+  IdParam: IdParamDTO,
+  CheckNameReq: CheckNameReqDTO,
+  CheckNameRes: CheckNameResDTO,
+  CheckSubdomainReq: CheckSubdomainReqDTO,
+  CheckSubdomainRes: CheckSubdomainResDTO,
+  CheckPortReq: CheckPortReqDTO,
+  CheckPortRes: CheckPortResDTO
 } as const

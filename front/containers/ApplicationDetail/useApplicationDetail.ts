@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, RefObject } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/front/lib/api'
 import { checkAuth, showNotification } from '@/front/lib/utils'
@@ -56,6 +56,7 @@ export function useApplicationDetail(id: string) {
   const [isRedeploying, setIsRedeploying] = useState(false)
   const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const isPollingRef = useRef<boolean>(false)
+  const logContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     initDetail()
@@ -115,14 +116,22 @@ export function useApplicationDetail(id: string) {
     }
   }, [application?.name, loadLogsForApp])
 
+  const scrollLogToBottom = useCallback(() => {
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight
+    }
+  }, [])
+
   const fetchLogContent = useCallback(async (logId: string) => {
     try {
       const contentData = await fetch(`/api/logs/deployment/${logId}/content`).then(r => r.json())
       setLogContent(contentData.content || 'No log content available')
+      // Scroll to bottom after content update
+      setTimeout(scrollLogToBottom, 50)
     } catch (error) {
       setLogContent('Failed to load log content')
     }
-  }, [])
+  }, [scrollLogToBottom])
 
   const stopPolling = useCallback(() => {
     isPollingRef.current = false
@@ -292,6 +301,7 @@ export function useApplicationDetail(id: string) {
     logContent,
     isLoadingLog,
     isRedeploying,
+    logContainerRef,
     selectLog,
     handleRedeploy,
     handleDelete,

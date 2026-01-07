@@ -19,6 +19,7 @@ export default function ApplicationDetail({ id }: Props) {
     logContent,
     isLoadingLog,
     isRedeploying,
+    logContainerRef,
     selectLog,
     handleRedeploy,
     handleDelete,
@@ -171,7 +172,7 @@ export default function ApplicationDetail({ id }: Props) {
                 )}
               </h3>
             </div>
-            <div className="log-content">
+            <div className="log-content" ref={logContainerRef}>
               {isLoadingLog ? (
                 <div className="loading-log">Loading log content...</div>
               ) : selectedLog ? (

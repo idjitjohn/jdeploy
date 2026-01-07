@@ -1,17 +1,15 @@
-import { execSync } from 'child_process'
+import { execSync, spawn } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 import DeploymentLog from '@/server/models/DeploymentLog'
 
 // Log writer that appends to file in real-time
 class LogWriter {
-  private logPath: string
   private stream: fs.WriteStream
   private closed: boolean = false
   private buffer: string[] = []
 
   constructor(logPath: string) {
-    this.logPath = logPath
     // Ensure log directory exists
     const logDir = path.dirname(logPath)
     if (!fs.existsSync(logDir)) {
@@ -24,6 +22,13 @@ class LogWriter {
     if (this.closed) return
     this.buffer.push(message)
     this.stream.write(message + '\n')
+  }
+
+  // Append without newline (for streaming output)
+  append(text: string) {
+    if (this.closed) return
+    this.buffer.push(text)
+    this.stream.write(text)
   }
 
   close(): Promise<void> {
@@ -106,8 +111,7 @@ export interface DeploymentConfig {
   release: string
   certificate: string
   logs: string
-  nginxAvailable: string
-  nginxEnabled: string
+  nginx: string
 }
 
 function getConfigFromHome(home: string): DeploymentConfig {
@@ -117,8 +121,7 @@ function getConfigFromHome(home: string): DeploymentConfig {
     release: path.join(home, 'release'),
     certificate: path.join(home, 'certificate'),
     logs: path.join(home, 'logs'),
-    nginxAvailable: path.join(home, 'nginx', 'sites-available'),
-    nginxEnabled: path.join(home, 'nginx', 'sites-enabled')
+    nginx: path.join(home, 'nginx')
   }
 }
 
@@ -144,6 +147,23 @@ export function getLogPath(repoName: string): string {
   return path.join(logsDir, `${Date.now()}.log`)
 }
 
+// Returns current.log path for live streaming during deployment
+export function getCurrentLogPath(repoName: string): string {
+  const logsDir = path.join(deploymentConfig.logs, repoName)
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true })
+  }
+  return path.join(logsDir, 'current.log')
+}
+
+// Rename current.log to final timestamp-based name
+export function finalizeLog(repoName: string, finalPath: string): void {
+  const currentPath = getCurrentLogPath(repoName)
+  if (fs.existsSync(currentPath)) {
+    fs.renameSync(currentPath, finalPath)
+  }
+}
+
 export function getReleasePath(repoName: string): string {
   return path.join(deploymentConfig.release, repoName)
 }
@@ -163,38 +183,34 @@ export function initializeApplication(repoName: string, repoUrl: string, branch:
   execSync(cloneCmd, { cwd: codePath, encoding: 'utf-8', stdio: 'pipe' })
 }
 
-export function interpolateVariables(command: string, context: { repoName: string; branch: string; port?: number, appId?: string }): string {
+export function interpolateVariables(command: string, context: { repoName: string; branch: string; port?: number, appId?: string, subdomain?: string, domain?: string }): string {
   const codePath = getDeploymentPath(context.repoName)
   const releasePath = getReleasePath(context.repoName)
   const certificatePath = path.join(deploymentConfig.certificate, context.repoName)
+  const domainCertPath = context.domain ? path.join(deploymentConfig.certificate, context.domain) : ''
 
   return command
     .replace(/\$id\$/g, context.appId || '')
     .replace(/\$cf\$/g, codePath)
     .replace(/\$rf\$/g, releasePath)
     .replace(/\$certsf\$/g, certificatePath)
+    .replace(/\$crtf\$/g, domainCertPath)
     .replace(/\$logsf\$/g, path.join(deploymentConfig.logs, context.repoName))
     .replace(/\$branch\$/g, context.branch)
     .replace(/\$name\$/g, context.repoName)
     .replace(/\$repoName\$/g, context.repoName)
     .replace(/\$port\$/g, context.port?.toString() || '')
+    .replace(/\$subdomain\$/g, context.subdomain || '')
+    .replace(/\$domain\$/g, context.domain || '')
 }
 
-export function executeCommand(cmd: string, cwd: string, env?: Record<string, string>): string {
+export function executeCommand(cmd: string, cwd: string): string {
   try {
     console.log(`[executeCommand] cwd: ${cwd}, cmd: ${cmd}`)
-
-    // Create minimal clean environment - only essential vars, let .env files load naturally
-    const cleanEnv = {
-      HOME: process.env.HOME || '',
-      PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
-      USER: process.env.USER || '',
-    } as any
 
     const result = execSync(cmd, {
       cwd,
       encoding: 'utf-8',
-      env: cleanEnv,
       stdio: 'pipe',
       shell: '/bin/bash'
     })
@@ -204,6 +220,56 @@ export function executeCommand(cmd: string, cwd: string, env?: Record<string, st
     const stdout = error.stdout?.toString() || ''
     throw new Error(`Command failed: ${cmd}\n${stdout}\n${stderr}`)
   }
+}
+
+// Non-blocking async version using spawn
+export function executeCommandAsync(
+  cmd: string,
+  cwd: string,
+  logWriter: LogWriter
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    console.log(`[executeCommandAsync] cwd: ${cwd}, cmd: ${cmd}`)
+
+    const cleanEnv = {
+      HOME: process.env.HOME || '',
+      PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
+      USER: process.env.USER || '',
+    } as any
+
+    const child = spawn(cmd, [], {
+      cwd,
+      env: cleanEnv as NodeJS.ProcessEnv,
+      shell: '/bin/bash',
+    })
+
+    let stdout = ''
+    let stderr = ''
+
+    child.stdout?.on('data', (data: Buffer) => {
+      const text = data.toString()
+      stdout += text
+      logWriter.append(text)
+    })
+
+    child.stderr?.on('data', (data: Buffer) => {
+      const text = data.toString()
+      stderr += text
+      logWriter.append(text)
+    })
+
+    child.on('close', (code: number | null) => {
+      if (code === 0) {
+        resolve(stdout)
+      } else {
+        reject(new Error(`Command failed (exit ${code}): ${cmd}\n${stdout}\n${stderr}`))
+      }
+    })
+
+    child.on('error', (err: Error) => {
+      reject(new Error(`Command error: ${cmd}\n${err.message}`))
+    })
+  })
 }
 
 // Run only prebuild commands in config.paths.code directory (for initial application setup)
@@ -227,7 +293,7 @@ export async function prepare(context: DeploymentContext): Promise<{
       const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
       output.push(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing prebuild: ${interpolated}`)
-      const result = executeCommand(interpolated, codePath, context.env)
+      const result = executeCommand(interpolated, codePath)
       output.push(result)
     }
 
@@ -280,7 +346,7 @@ export async function runPrebuild(context: DeploymentContext): Promise<{
       const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
       output.push(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing prebuild: ${interpolated}`)
-      const result = executeCommand(interpolated, codePath, context.env)
+      const result = executeCommand(interpolated, codePath)
       output.push(result)
     }
 
@@ -320,7 +386,9 @@ export async function runDeployment(context: DeploymentContext): Promise<{
   // Cleanup old logs BEFORE creating new log file to avoid deleting current log
   await cleanupOldLogs(context.repoName, 10)
 
-  const log = new LogWriter(context.logPath)
+  // Use current.log during deployment, rename to final path when done
+  const currentLogPath = getCurrentLogPath(context.repoName)
+  const log = new LogWriter(currentLogPath)
 
   console.log(`\n🚀 [${context.repoName}] Starting deployment for branch: ${context.branch}`)
   try {
@@ -331,7 +399,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
       fs.mkdirSync(appCodePath, { recursive: true })
       log.write(`[${new Date().toISOString()}] Cloning repository...`)
       const cloneCmd = `git clone --depth 1 --no-single-branch ${context.repoUrl} .`
-      executeCommand(cloneCmd, appCodePath, context.env)
+      await executeCommandAsync(cloneCmd, appCodePath, log)
       log.write(`✓ Repository cloned`)
     }
 
@@ -342,8 +410,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
       const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
       log.write(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing prebuild in code folder: ${interpolated}`)
-      const result = executeCommand(interpolated, appCodePath, context.env)
-      log.write(result)
+      await executeCommandAsync(interpolated, appCodePath, log)
     }
 
     // Write env file to app code folder
@@ -372,8 +439,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
       const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
       log.write(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing build in app code folder: ${interpolated}`)
-      const result = executeCommand(interpolated, appCodePath, context.env)
-      log.write(result)
+      await executeCommandAsync(interpolated, appCodePath, log)
     }
 
     // 2.5. File transfers - copy/move/symlink files after build
@@ -401,8 +467,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
         log.write(`> ${cmd}`)
         console.log(`[${context.repoName}] File transfer: ${cmd}`)
         try {
-          const result = executeCommand(cmd, appCodePath, context.env)
-          log.write(result)
+          await executeCommandAsync(cmd, appCodePath, log)
         } catch (err: any) {
           // Log warning but continue with other file operations
           log.write(`⚠ File operation failed (continuing): ${err.message}`)
@@ -418,8 +483,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
       const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
       log.write(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing deployment in app code folder: ${interpolated}`)
-      const result = executeCommand(interpolated, appCodePath, context.env)
-      log.write(result)
+      await executeCommandAsync(interpolated, appCodePath, log)
     }
 
     // 4. Launch - runs in release folder
@@ -428,13 +492,15 @@ export async function runDeployment(context: DeploymentContext): Promise<{
       const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
       log.write(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing launch in release folder: ${interpolated}`)
-      const result = executeCommand(interpolated, releasePath, context.env)
-      log.write(result)
+      await executeCommandAsync(interpolated, releasePath, log)
     }
 
     log.write(`[${new Date().toISOString()}] ✅ Deployment completed successfully`)
     const output = log.getContent()
     await log.close()
+
+    // Rename current.log to final timestamp-based path
+    finalizeLog(context.repoName, context.logPath)
 
     console.log(`✅ [${context.repoName}] Deployment completed successfully\n`)
     return {
@@ -446,6 +512,9 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     log.write(`[${new Date().toISOString()}] ❌ Deployment failed: ${errorMsg}`)
     const output = log.getContent()
     await log.close()
+
+    // Rename current.log to final timestamp-based path
+    finalizeLog(context.repoName, context.logPath)
 
     console.error(`❌ [${context.repoName}] Deployment failed: ${errorMsg}\n`)
 

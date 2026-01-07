@@ -15,8 +15,7 @@ export function getPathsFromHome(home: string) {
     release: path.join(home, 'release'),
     certificate: path.join(home, 'certificate'),
     logs: path.join(home, 'logs'),
-    nginxAvailable: path.join(home, 'nginx', 'sites-available'),
-    nginxEnabled: path.join(home, 'nginx', 'sites-enabled')
+    nginx: path.join(home, 'nginx')
   }
 }
 

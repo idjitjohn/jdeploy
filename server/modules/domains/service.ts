@@ -2,6 +2,7 @@ import { createDomainsService } from './context'
 import { Auth } from '../../plugins/auth.types'
 import connectDB from '@/server/lib/db'
 import DomainModel from '@/server/models/Domain'
+import { writeCertificateFiles } from './utils'
 
 export const list = createDomainsService(
   {
@@ -91,6 +92,9 @@ export const create = createDomainsService(
       privateKey: body.privateKey
     })
 
+    // Write certificate files
+    await writeCertificateFiles(domain.name, domain.certificate || '', domain.privateKey || '')
+
     return {
       domain: {
         id: domain._id.toString(),
@@ -135,6 +139,9 @@ export const update = createDomainsService(
       set.status = 404
       throw new Error('Domain not found')
     }
+
+    // Write certificate files
+    await writeCertificateFiles(domain.name, domain.certificate || '', domain.privateKey || '')
 
     return {
       domain: {

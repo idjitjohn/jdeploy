@@ -43,8 +43,7 @@ export default function Settings() {
               <li><strong>Release:</strong> {paths.home}/release</li>
               <li><strong>Certificate:</strong> {paths.home}/certificate</li>
               <li><strong>Logs:</strong> {paths.home}/logs</li>
-              <li><strong>Nginx Available:</strong> {paths.home}/nginx/sites-available</li>
-              <li><strong>Nginx Enabled:</strong> {paths.home}/nginx/sites-enabled</li>
+              <li><strong>Nginx:</strong> {paths.home}/nginx</li>
             </ul>
           </div>
         </div>

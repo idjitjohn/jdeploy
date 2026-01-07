@@ -3,8 +3,9 @@ import { Auth } from '../../plugins/auth.types'
 import connectDB from '@/server/lib/db'
 import ApplicationModel from '@/server/models/Application'
 import DeploymentLogModel from '@/server/models/DeploymentLog'
-import ConfigurationModel, { IConfiguration } from '@/server/models/Configuration'
+import ConfigurationModel, { IConfiguration, getPathsFromHome } from '@/server/models/Configuration'
 import { runDeployment, getLogPath, setDeploymentConfig, initializeApplication } from '@/server/lib/deployment'
+import { writeNginxConfigFile } from './utils'
 import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
@@ -30,6 +31,7 @@ export const list = createApplicationsService(
         name: app.name,
         repoUrl: app.repoUrl,
         template: app.template,
+        subdomain: app.subdomain || '',
         domain: app.domain,
         port: app.port,
         prebuild: app.prebuild || [],
@@ -75,6 +77,7 @@ export const get = createApplicationsService(
         name: application.name,
         repoUrl: application.repoUrl,
         template: application.template,
+        subdomain: application.subdomain || '',
         domain: application.domain,
         port: application.port,
         prebuild: application.prebuild || [],
@@ -118,6 +121,7 @@ export const create = createApplicationsService(
       name: body.name,
       repoUrl: body.repoUrl,
       template: body.template,
+      subdomain: body.subdomain || '',
       domain: body.domain,
       port: body.port,
       prebuild: body.prebuild || [],
@@ -139,12 +143,35 @@ export const create = createApplicationsService(
     }
     initializeApplication(application.name, application.repoUrl, application.branch || 'main')
 
+    // Create certificate folder and files for the domain
+    const paths = getPathsFromHome(config?.home || '/var/webhooks')
+    const certPath = path.join(paths.certificate, application.domain)
+    if (!fs.existsSync(certPath)) {
+      fs.mkdirSync(certPath, { recursive: true })
+      fs.writeFileSync(path.join(certPath, 'key'), '', 'utf-8')
+      fs.writeFileSync(path.join(certPath, 'crt'), '', 'utf-8')
+    }
+
+    // Write nginx config file
+    if (application.nginx) {
+      await writeNginxConfigFile(application.nginx, {
+        appName: application.name,
+        repoName: application.name,
+        branch: application.branch || 'main',
+        port: application.port,
+        appId: application._id.toString(),
+        subdomain: application.subdomain || '',
+        domain: application.domain
+      })
+    }
+
     return {
       application: {
         id: application._id.toString(),
         name: application.name,
         repoUrl: application.repoUrl,
         template: application.template,
+        subdomain: application.subdomain || '',
         domain: application.domain,
         port: application.port,
         prebuild: application.prebuild || [],
@@ -192,6 +219,7 @@ export const update = createApplicationsService(
           name: body.name,
           repoUrl: body.repoUrl,
           template: body.template,
+          subdomain: body.subdomain || '',
           domain: body.domain,
           port: body.port,
           prebuild: body.prebuild || [],
@@ -214,18 +242,61 @@ export const update = createApplicationsService(
       throw new Error('Application not found')
     }
 
+    const config = await ConfigurationModel.findOne().lean() as IConfiguration | null
+    const paths = getPathsFromHome(config?.home || '/var/webhooks')
+    const appCodePath = path.join(paths.code, application.name)
+
+    // If repository URL changed, remove old code and clone new repo
+    const oldRepoUrl = oldApplication.repoUrl || ''
+    const newRepoUrl = body.repoUrl || ''
+    if (newRepoUrl && newRepoUrl !== oldRepoUrl) {
+      // Remove old code folder
+      if (fs.existsSync(appCodePath)) {
+        fs.rmSync(appCodePath, { recursive: true, force: true })
+      }
+      // Clone new repository
+      if (config?.home) {
+        setDeploymentConfig({ home: config.home })
+      }
+      initializeApplication(application.name, application.repoUrl, application.branch || 'main')
+    }
+
+    // If domain changed, create certificate folder and files
+    const oldDomain = oldApplication.domain || ''
+    const newDomain = body.domain || ''
+    if (newDomain && newDomain !== oldDomain) {
+      const certPath = path.join(paths.certificate, newDomain)
+      if (!fs.existsSync(certPath)) {
+        fs.mkdirSync(certPath, { recursive: true })
+        fs.writeFileSync(path.join(certPath, 'key'), '', 'utf-8')
+        fs.writeFileSync(path.join(certPath, 'crt'), '', 'utf-8')
+      }
+    }
+
     // Rewrite env file if env values changed
     const oldEnv = oldApplication.env || ''
     const newEnv = body.env || ''
     if (newEnv && newEnv !== oldEnv) {
-      const config = await ConfigurationModel.findOne().lean() as IConfiguration | null
-      const home = config?.home || '/var/webhooks'
-      const appCodePath = path.join(home, 'code', application.name)
       const envFilePath = body.envFilePath || '.env'
       const fullEnvPath = path.join(appCodePath, envFilePath)
       if (fs.existsSync(appCodePath)) {
         fs.writeFileSync(fullEnvPath, newEnv, 'utf-8')
       }
+    }
+
+    // Write nginx config file if changed
+    const oldNginx = oldApplication.nginx || ''
+    const newNginx = body.nginxConfig || ''
+    if (newNginx !== oldNginx) {
+      await writeNginxConfigFile(newNginx, {
+        appName: application.name,
+        repoName: application.name,
+        branch: application.branch || 'main',
+        port: application.port,
+        appId: application._id.toString(),
+        subdomain: application.subdomain || '',
+        domain: application.domain
+      })
     }
 
     return {
@@ -234,6 +305,7 @@ export const update = createApplicationsService(
         name: application.name,
         repoUrl: application.repoUrl,
         template: application.template,
+        subdomain: application.subdomain || '',
         domain: application.domain,
         port: application.port,
         prebuild: application.prebuild || [],
@@ -506,6 +578,95 @@ export const switchBranch = createApplicationsService(
   }
 )
 
+export const checkName = createApplicationsService(
+  {
+    body: 'CheckNameReq',
+    response: 'CheckNameRes',
+    auth: Auth.USER
+  },
+  async ({ body, authData, set }) => {
+    if (!authData) {
+      set.status = 401
+      throw new Error('Unauthorized')
+    }
+
+    await connectDB()
+
+    const query: any = { name: body.name }
+    if (body.excludeId) {
+      query._id = { $ne: body.excludeId }
+    }
+
+    const existing = await ApplicationModel.findOne(query)
+    if (existing) {
+      return { available: false, message: 'Application name is already taken' }
+    }
+
+    return { available: true }
+  }
+)
+
+export const checkSubdomain = createApplicationsService(
+  {
+    body: 'CheckSubdomainReq',
+    response: 'CheckSubdomainRes',
+    auth: Auth.USER
+  },
+  async ({ body, authData, set }) => {
+    if (!authData) {
+      set.status = 401
+      throw new Error('Unauthorized')
+    }
+
+    await connectDB()
+
+    // Empty subdomain is always valid
+    if (!body.subdomain) {
+      return { available: true }
+    }
+
+    const query: any = { subdomain: body.subdomain, domain: body.domain }
+    if (body.excludeId) {
+      query._id = { $ne: body.excludeId }
+    }
+
+    const existing = await ApplicationModel.findOne(query)
+    if (existing) {
+      return { available: false, message: 'Subdomain is already used for this domain' }
+    }
+
+    return { available: true }
+  }
+)
+
+export const checkPort = createApplicationsService(
+  {
+    body: 'CheckPortReq',
+    response: 'CheckPortRes',
+    auth: Auth.USER
+  },
+  async ({ body, authData, set }) => {
+    if (!authData) {
+      set.status = 401
+      throw new Error('Unauthorized')
+    }
+
+    await connectDB()
+
+    const query: any = { port: body.port }
+    if (body.excludeId) {
+      query._id = { $ne: body.excludeId }
+    }
+
+    const existing = await ApplicationModel.findOne(query)
+    if (existing) {
+      return { available: false, message: `Port ${body.port} is already used` }
+    }
+
+    return { available: true }
+  }
+)
+
 export const applicationsService = {
   list,
   get,
@@ -514,5 +675,8 @@ export const applicationsService = {
   remove,
   redeploy,
   getBranches,
-  switchBranch
+  switchBranch,
+  checkName,
+  checkSubdomain,
+  checkPort
 }

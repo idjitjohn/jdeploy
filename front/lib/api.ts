@@ -58,6 +58,18 @@ export const api = {
     switchBranch: (id: string, branch: string) => apiRequest(`/api/applications/${id}/branch`, {
       method: 'POST',
       body: JSON.stringify({ branch })
+    }),
+    checkName: (name: string, excludeId?: string) => apiRequest('/api/applications/check/name', {
+      method: 'POST',
+      body: JSON.stringify({ name, excludeId })
+    }),
+    checkSubdomain: (subdomain: string, domain: string, excludeId?: string) => apiRequest('/api/applications/check/subdomain', {
+      method: 'POST',
+      body: JSON.stringify({ subdomain, domain, excludeId })
+    }),
+    checkPort: (port: number, excludeId?: string) => apiRequest('/api/applications/check/port', {
+      method: 'POST',
+      body: JSON.stringify({ port, excludeId })
     })
   },
 

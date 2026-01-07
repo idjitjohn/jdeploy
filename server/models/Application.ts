@@ -25,6 +25,7 @@ interface Application extends Document {
   name: string
   repoUrl: string
   template: string
+  subdomain: string
   domain: string
   port: number
   prebuild: string[]
@@ -57,6 +58,12 @@ const applicationSchema = new Schema<Application>({
   template: {
     type: String,
     required: true,
+  },
+  subdomain: {
+    type: String,
+    default: '',
+    trim: true,
+    match: /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/,
   },
   domain: {
     type: String,
