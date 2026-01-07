@@ -221,13 +221,14 @@
         margin: 0;
         padding: 1.25em;
         font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-        font-size: 0.8em;
+        font-size: 0.6em;
         line-height: 1.6;
-        white-space: pre-wrap;
+        white-space: no-wrap;
         word-break: break-all;
         background: #1e1e1e;
         color: #d4d4d4;
         min-height: 100%;
+        overflow-x: auto;
       }
     }
   }

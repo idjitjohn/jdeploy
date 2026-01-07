@@ -6,6 +6,8 @@ import path from 'path'
 class LogWriter {
   private logPath: string
   private stream: fs.WriteStream
+  private closed: boolean = false
+  private buffer: string[] = []
 
   constructor(logPath: string) {
     this.logPath = logPath
@@ -18,11 +20,21 @@ class LogWriter {
   }
 
   write(message: string) {
+    if (this.closed) return
+    this.buffer.push(message)
     this.stream.write(message + '\n')
   }
 
-  close() {
-    this.stream.end()
+  close(): Promise<void> {
+    if (this.closed) return Promise.resolve()
+    this.closed = true
+    return new Promise((resolve) => {
+      this.stream.end(() => resolve())
+    })
+  }
+
+  getContent(): string {
+    return this.buffer.join('\n')
   }
 }
 
@@ -293,10 +305,11 @@ export async function runDeployment(context: DeploymentContext): Promise<{
 }> {
   const appCodePath = getDeploymentPath(context.repoName)
   const releasePath = getReleasePath(context.repoName)
-  const log = new LogWriter(context.logPath)
 
-  // Cleanup old logs, keep only 10
+  // Cleanup old logs BEFORE creating new log file to avoid deleting current log
   cleanupOldLogs(context.repoName, 10)
+
+  const log = new LogWriter(context.logPath)
 
   console.log(`\n🚀 [${context.repoName}] Starting deployment for branch: ${context.branch}`)
   try {
@@ -409,29 +422,21 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     }
 
     log.write(`[${new Date().toISOString()}] ✅ Deployment completed successfully`)
-    log.close()
+    const output = log.getContent()
+    await log.close()
 
     console.log(`✅ [${context.repoName}] Deployment completed successfully\n`)
     return {
       success: true,
-      output: fs.readFileSync(context.logPath, 'utf-8')
+      output
     }
   } catch (error: any) {
     const errorMsg = error.message
     log.write(`[${new Date().toISOString()}] ❌ Deployment failed: ${errorMsg}`)
-    log.close()
+    const output = log.getContent()
+    await log.close()
 
     console.error(`❌ [${context.repoName}] Deployment failed: ${errorMsg}\n`)
-
-    // Try to read log file, fallback to error message if not available
-    let output = `Deployment failed: ${errorMsg}`
-    try {
-      if (fs.existsSync(context.logPath)) {
-        output = fs.readFileSync(context.logPath, 'utf-8')
-      }
-    } catch {
-      // Keep fallback output
-    }
 
     return {
       success: false,

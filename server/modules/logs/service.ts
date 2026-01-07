@@ -4,7 +4,10 @@ import { Auth } from '../../plugins/auth.types'
 import { connectDB } from '@/server/lib/db'
 import DeploymentLog from '@/server/models/DeploymentLog'
 import fs from 'fs/promises'
-import { ObjectId } from 'mongoose'
+import { ObjectId, FlattenMaps } from 'mongoose'
+import { DeploymentLogDocument } from '@/server/models/DeploymentLog'
+
+type LeanDeploymentLog = FlattenMaps<DeploymentLogDocument> & { _id: ObjectId }
 
 const createLogsService = createService(logsContext)
 
@@ -25,11 +28,11 @@ export const list = createLogsService(
       id: (log._id as ObjectId).toString(),
       application: log.application,
       status: log.status,
-      logFile: log.logFile,
+      logFile: log.logFile || '',
       branch: log.branch,
       type: log.type,
       triggeredBy: log.triggeredBy,
-      startedAt: log.startedAt?.toISOString(),
+      startedAt: log.startedAt?.toISOString() || '',
       completedAt: log.completedAt?.toISOString(),
       errorMessage: log.errorMessage,
       createdAt: log.createdAt.toISOString(),
@@ -47,7 +50,7 @@ export const get = createLogsService(
   async ({ params, set }) => {
     await connectDB()
 
-    const log = await DeploymentLog.findById(params.logId).lean() as any
+    const log = await DeploymentLog.findById(params.logId).lean() as LeanDeploymentLog | null
 
     if (!log) {
       set.status = 404
@@ -58,11 +61,11 @@ export const get = createLogsService(
       id: log._id.toString(),
       application: log.application,
       status: log.status,
-      logFile: log.logFile,
+      logFile: log.logFile || '',
       branch: log.branch,
       type: log.type,
       triggeredBy: log.triggeredBy,
-      startedAt: log.startedAt?.toISOString(),
+      startedAt: log.startedAt?.toISOString() || '',
       completedAt: log.completedAt?.toISOString(),
       errorMessage: log.errorMessage,
       createdAt: log.createdAt.toISOString(),
@@ -80,7 +83,7 @@ export const getContent = createLogsService(
   async ({ params, set }) => {
     await connectDB()
 
-    const log = await DeploymentLog.findById(params.logId).lean() as any
+    const log = await DeploymentLog.findById(params.logId).lean() as LeanDeploymentLog | null
 
     if (!log) {
       set.status = 404
@@ -88,7 +91,7 @@ export const getContent = createLogsService(
     }
 
     try {
-      const content = await fs.readFile(log.logFile, 'utf-8')
+      const content = await fs.readFile(log.logFile || '', 'utf-8')
       return { content }
     } catch (error) {
       set.status = 404

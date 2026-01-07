@@ -126,10 +126,20 @@ async function setupMongoAuth(password) {
 
 async function setupSudoers(password) {
   const username = process.env.USER || exec('whoami').trim()
-  const sudoersLine = `${username} ALL=(ALL) NOPASSWD: /bin/systemctl * nginx`
+  
+  // Find systemctl path using which
+  let systemctlPath = '/bin/systemctl'
+  try {
+    systemctlPath = exec('which systemctl').trim()
+  } catch {
+    // Fallback to /bin/systemctl if which fails
+  }
+  
+  const sudoersLine = `${username} ALL=(ALL) NOPASSWD: ${systemctlPath} * nginx`
   const sudoersFile = `/etc/sudoers.d/${username}-nginx`
 
   console.log(`\nConfiguring sudoers for user: ${username}`)
+  console.log(`Found systemctl at: ${systemctlPath}`)
   console.log(`Adding rule: ${sudoersLine}`)
 
   try {
