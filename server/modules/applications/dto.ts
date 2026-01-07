@@ -3,7 +3,7 @@ import { t } from 'elysia'
 const FileTransferDTO = t.Object({
   src: t.String(),
   dest: t.String(),
-  op: t.Union([t.Literal('cp'), t.Literal('mv'), t.Literal('ln')])
+  op: t.Union([t.Literal('cp'), t.Literal('mv'), t.Literal('ln'), t.Literal('rm')])
 })
 
 const ApplicationDTO = t.Object({
@@ -21,6 +21,7 @@ const ApplicationDTO = t.Object({
   nginxConfig: t.String(),
   env: t.String(),
   envFilePath: t.String(),
+  environment: t.Union([t.Literal('dev'), t.Literal('prod'), t.Literal('stag'), t.Literal('test')]),
   branch: t.String(),
   createdAt: t.String(),
   updatedAt: t.String()
@@ -40,6 +41,7 @@ const CreateApplicationReqDTO = t.Object({
   nginxConfig: t.Optional(t.String()),
   env: t.Optional(t.String()),
   envFilePath: t.Optional(t.String()),
+  environment: t.Optional(t.Union([t.Literal('dev'), t.Literal('prod'), t.Literal('stag'), t.Literal('test')])),
   branch: t.Optional(t.String())
 })
 
@@ -57,6 +59,7 @@ const UpdateApplicationReqDTO = t.Object({
   nginxConfig: t.Optional(t.String()),
   env: t.Optional(t.String()),
   envFilePath: t.Optional(t.String()),
+  environment: t.Optional(t.Union([t.Literal('dev'), t.Literal('prod'), t.Literal('stag'), t.Literal('test')])),
   branch: t.Optional(t.String())
 })
 
@@ -97,6 +100,19 @@ const IdParamDTO = t.Object({
   id: t.String()
 }, { additionalProperties: true })
 
+const GetBranchesResDTO = t.Object({
+  branches: t.Array(t.String())
+})
+
+const SwitchBranchReqDTO = t.Object({
+  branch: t.String({ minLength: 1 })
+})
+
+const SwitchBranchResDTO = t.Object({
+  message: t.String(),
+  branch: t.String()
+})
+
 export const applicationsModels = {
   FileTransfer: FileTransferDTO,
   Application: ApplicationDTO,
@@ -108,5 +124,8 @@ export const applicationsModels = {
   UpdateApplicationRes: UpdateApplicationResDTO,
   DeleteApplicationRes: DeleteApplicationResDTO,
   RedeployApplicationRes: RedeployApplicationResDTO,
+  GetBranchesRes: GetBranchesResDTO,
+  SwitchBranchReq: SwitchBranchReqDTO,
+  SwitchBranchRes: SwitchBranchResDTO,
   IdParam: IdParamDTO
 } as const

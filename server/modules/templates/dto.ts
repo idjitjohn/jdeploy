@@ -3,7 +3,7 @@ import { t } from 'elysia'
 const FileTransferDTO = t.Object({
   src: t.String(),
   dest: t.String(),
-  op: t.Union([t.Literal('cp'), t.Literal('mv'), t.Literal('ln')])
+  op: t.Union([t.Literal('cp'), t.Literal('mv'), t.Literal('ln'), t.Literal('rm')])
 })
 
 const TemplateDTO = t.Object({
@@ -18,7 +18,6 @@ const TemplateDTO = t.Object({
   files: t.Array(FileTransferDTO),
   nginxConfig: t.String(),
   env: t.String(),
-  isSystem: t.Boolean(),
   createdAt: t.String(),
   updatedAt: t.String()
 })
@@ -33,8 +32,7 @@ const CreateTemplateReqDTO = t.Object({
   launch: t.Optional(t.Array(t.String())),
   files: t.Optional(t.Array(FileTransferDTO)),
   nginxConfig: t.Optional(t.String()),
-  env: t.Optional(t.String()),
-  isSystem: t.Optional(t.Boolean())
+  env: t.Optional(t.String())
 })
 
 const UpdateTemplateReqDTO = t.Object({
@@ -47,8 +45,7 @@ const UpdateTemplateReqDTO = t.Object({
   launch: t.Optional(t.Array(t.String())),
   files: t.Optional(t.Array(FileTransferDTO)),
   nginxConfig: t.Optional(t.String()),
-  env: t.Optional(t.String()),
-  isSystem: t.Optional(t.Boolean())
+  env: t.Optional(t.String())
 })
 
 const ListTemplatesResDTO = t.Object({

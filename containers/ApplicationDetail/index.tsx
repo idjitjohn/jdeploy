@@ -81,12 +81,12 @@ export default function ApplicationDetail({ id }: Props) {
             <span>Applications</span>
           </button>
           <div className="actions">
-            <Button 
-              onClick={handleRedeploy} 
+            <Button
+              onClick={handleRedeploy}
               disabled={isRedeploying}
               variant="primary"
             >
-              {isRedeploying ? 'Deploying...' : 'Redeploy'}
+              {isRedeploying ? 'Deploying...' : 'Deploy'}
             </Button>
             <Button onClick={() => window.location.href = `/applications?edit=${id}`} variant="secondary">
               Edit

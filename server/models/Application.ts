@@ -6,7 +6,14 @@ export enum ApplicationStatus {
   RUNNING = 'running'
 }
 
-type FileOperation = 'cp' | 'mv' | 'ln'
+export enum ApplicationEnvironment {
+  DEV = 'dev',
+  PROD = 'prod',
+  STAG = 'stag',
+  TEST = 'test'
+}
+
+type FileOperation = 'cp' | 'mv' | 'ln' | 'rm'
 
 interface FileTransfer {
   src: string
@@ -28,6 +35,7 @@ interface Application extends Document {
   nginx: string
   env: string
   envFilePath: string
+  environment: ApplicationEnvironment
   branch?: string
   status: ApplicationStatus
   createdAt: Date
@@ -79,7 +87,7 @@ const applicationSchema = new Schema<Application>({
       _id: false,
       src: { type: String, required: true },
       dest: { type: String, default: '$rf$' },
-      op: { type: String, enum: ['cp', 'mv', 'ln'], default: 'cp' }
+      op: { type: String, enum: ['cp', 'mv', 'ln', 'rm'], default: 'cp' }
     }],
     default: [],
   },
@@ -94,6 +102,11 @@ const applicationSchema = new Schema<Application>({
   envFilePath: {
     type: String,
     default: '.env',
+  },
+  environment: {
+    type: String,
+    enum: Object.values(ApplicationEnvironment),
+    default: ApplicationEnvironment.PROD,
   },
   branch: {
     type: String,

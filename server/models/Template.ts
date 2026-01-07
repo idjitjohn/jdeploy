@@ -1,6 +1,6 @@
 import { Schema, model, Document, models } from 'mongoose'
 
-type FileOperation = 'cp' | 'mv' | 'ln'
+type FileOperation = 'cp' | 'mv' | 'ln' | 'rm'
 
 interface FileTransfer {
   src: string
@@ -19,7 +19,6 @@ interface Template extends Document {
   files: FileTransfer[]
   nginx: string
   env: string
-  isSystem: boolean
   createdAt: Date
   updatedAt: Date
 }
@@ -60,7 +59,7 @@ const templateSchema = new Schema<Template>({
       _id: false,
       src: { type: String, required: true },
       dest: { type: String, default: '$rf$' },
-      op: { type: String, enum: ['cp', 'mv', 'ln'], default: 'cp' }
+      op: { type: String, enum: ['cp', 'mv', 'ln', 'rm'], default: 'cp' }
     }],
     default: [],
   },
@@ -71,10 +70,6 @@ const templateSchema = new Schema<Template>({
   env: {
     type: String,
     default: '',
-  },
-  isSystem: {
-    type: Boolean,
-    default: false,
   },
 }, {
   timestamps: true,

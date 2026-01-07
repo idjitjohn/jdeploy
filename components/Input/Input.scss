@@ -11,9 +11,10 @@
   }
 
   .field {
+    flex: 1;
     padding: 0.5em 0.75em;
     border: 1px solid #d1d5db;
-    border-radius: 0.25em;
+    border-radius: 0.4em;
     font-size: 1em;
     transition: all 0.2s ease;
 

@@ -58,6 +58,15 @@
     }
   }
 
+  .row {
+    display: flex;
+    gap: 1em;
+
+    > * {
+      flex: 1;
+    }
+  }
+
   .command-section {
     display: flex;
     flex-direction: column;

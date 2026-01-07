@@ -53,6 +53,11 @@ export const api = {
     }),
     delete: (id: string) => apiRequest(`/api/applications/${id}`, {
       method: 'DELETE'
+    }),
+    getBranches: (id: string) => apiRequest(`/api/applications/${id}/branches`),
+    switchBranch: (id: string, branch: string) => apiRequest(`/api/applications/${id}/branch`, {
+      method: 'POST',
+      body: JSON.stringify({ branch })
     })
   },
 

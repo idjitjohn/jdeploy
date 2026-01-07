@@ -17,7 +17,7 @@ interface Repository {
   domain?: string
   port?: number
   template?: string
-  branches?: Record<string, any>
+  branch?: string
   repoUrl: string
   createdAt: string
   prebuild?: string[]
@@ -152,38 +152,6 @@ export function useRepositories() {
     }
   }
 
-  const handleDeleteRepository = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete repository "${name}"?`)) {
-      return
-    }
-
-    try {
-      await api.applications.delete(id)
-      showNotification(`Repository ${name} deleted`, 'success')
-      await loadRepositories()
-    } catch (error) {
-      showNotification('Delete failed: ' + (error as Error).message, 'error')
-    }
-  }
-
-  const handleRedeployRepository = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to redeploy "${name}"?`)) {
-      return
-    }
-
-    try {
-      showNotification(`Redeploying ${name}...`, 'info')
-      await fetch(`/api/applications/${id}/redeploy`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      showNotification(`Repository ${name} redeployed`, 'success')
-      await loadRepositories()
-    } catch (error) {
-      showNotification('Redeploy failed: ' + (error as Error).message, 'error')
-    }
-  }
-
   const openAddModal = () => setShowAddModal(true)
   const closeAddModal = () => setShowAddModal(false)
 
@@ -211,7 +179,6 @@ export function useRepositories() {
     closeEditModal,
     handleAddRepository,
     handleUpdateRepository,
-    handleDeleteRepository,
-    handleRedeployRepository
+    loadRepositories
   }
 }

@@ -7,16 +7,8 @@ import Button from '@/components/Button'
 import CodeEditor from '@/components/CodeEditor'
 import CommandList, { CommandListHandle } from '@/containers/Templates/TemplateForm/CommandList'
 import FileTransferList from './FileTransferList'
-import { useRepositoryForm } from './useApplicationForm'
+import { useRepositoryForm, FileTransfer } from './useApplicationForm'
 import './RepositoryForm.scss'
-
-type FileOperation = 'cp' | 'mv' | 'ln'
-
-interface FileTransfer {
-  src: string
-  dest: string
-  op: FileOperation
-}
 
 interface Props {
   onSubmit: (data: any) => void
@@ -433,44 +425,60 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
               placeholder="https://github.com/user/repo.git"
               required
             />
-            <Select
-              label="Domain"
-              name="domain"
-              value={formData.domain}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select a domain</option>
-              {domains.map(domain => (
-                <option key={domain.id} value={domain.name}>
-                  {domain.name}
-                </option>
-              ))}
-            </Select>
-            <Input
-              label="Port"
-              name="port"
-              type="number"
-              value={formData.port}
-              onChange={handleChange}
-              placeholder="3000"
-              required
-            />
-            <Select
-              label="Template"
-              name="template"
-              value={formData.template}
-              onChange={(e) => handleTemplateSelect(e.target.value)}
-              disabled={hasTemplateChanges}
-              required
-            >
-              <option value="">Select a template</option>
-              {templates.map(template => (
-                <option key={template.id} value={template.id}>
-                  {template.displayName}
-                </option>
-              ))}
-            </Select>
+            <div className="row">
+              <Select
+                label="Template"
+                name="template"
+                value={formData.template}
+                onChange={(e) => handleTemplateSelect(e.target.value)}
+                disabled={hasTemplateChanges}
+                required
+              >
+                <option value="">Select a template</option>
+                {templates.map(template => (
+                  <option key={template.id} value={template.id}>
+                    {template.displayName}
+                  </option>
+                ))}
+              </Select>
+              <Select
+                label="Environment"
+                name="environment"
+                value={formData.environment}
+                onChange={handleChange}
+                required
+              >
+                <option value="dev">Development</option>
+                <option value="prod">Production</option>
+                <option value="stag">Staging</option>
+                <option value="test">Test</option>
+              </Select>
+            </div>
+            <div className="row">
+              <Select
+                label="Domain"
+                name="domain"
+                value={formData.domain}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select a domain</option>
+                {domains.map(domain => (
+                  <option key={domain.id} value={domain.name}>
+                    {domain.name}
+                  </option>
+                ))}
+              </Select>
+              <Input
+                label="Port"
+                name="port"
+                type="number"
+                value={formData.port}
+                onChange={handleChange}
+                placeholder="3000"
+                required
+              />
+            </div>
             {hasTemplateChanges && selectedTemplateId && (
               <p className="hint" style={{ marginTop: '-1em', color: '#9ca3af', fontSize: '0.75em' }}>
                 Template selector is disabled after making changes
@@ -559,16 +567,7 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                 language="nginx"
               />
             </div>
-
-            <Input
-              label="Environment File Path"
-              name="envFilePath"
-              value={formData.envFilePath || '.env'}
-              onChange={handleChange}
-              placeholder=".env"
-            />
-
-            <div className="command-section" style={{ marginTop: '1.5em' }}>
+            <div className="command-section">
               <label>Environment Variables</label>
               <CodeEditor
                 value={formData.env || ''}
@@ -577,6 +576,13 @@ export default function RepositoryForm({ onSubmit, onCancel, domains, templates,
                 language="env"
               />
             </div>
+            <Input
+              label="Environment File Path"
+              name="envFilePath"
+              value={formData.envFilePath || '.env'}
+              onChange={handleChange}
+              placeholder=".env"
+            />
           </>
         )}
       </div>

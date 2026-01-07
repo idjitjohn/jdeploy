@@ -26,4 +26,12 @@ export const applicationsController = getApplicationsController
     summary: 'Redeploy application',
     description: 'Trigger a new deployment for the application'
   })
+  .get('/:id/branches', applicationsService.getBranches, {
+    summary: 'Get branches',
+    description: 'Get all git branches for an application'
+  })
+  .post('/:id/branch', applicationsService.switchBranch, {
+    summary: 'Switch branch',
+    description: 'Switch to a different git branch and update the application'
+  })
   .build()

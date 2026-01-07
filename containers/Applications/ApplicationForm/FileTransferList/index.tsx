@@ -3,7 +3,7 @@
 import Button from '@/components/Button'
 import './FileTransferList.scss'
 
-type FileOperation = 'cp' | 'mv' | 'ln'
+type FileOperation = 'cp' | 'mv' | 'ln' | 'rm'
 
 interface FileTransfer {
   src: string
@@ -18,7 +18,7 @@ interface Props {
   defaultSrc?: string
 }
 
-const OPERATIONS: FileOperation[] = ['cp', 'mv', 'ln']
+const OPERATIONS: FileOperation[] = ['cp', 'mv', 'ln', 'rm']
 
 export default function FileTransferList({ items, onChange, defaultDest = '$rf$', defaultSrc = '$cf$' }: Props) {
   const handleAdd = () => {
@@ -36,7 +36,12 @@ export default function FileTransferList({ items, onChange, defaultDest = '$rf$'
     const currentOp = newItems[index].op || 'cp'
     const currentIndex = OPERATIONS.indexOf(currentOp)
     const nextIndex = (currentIndex + 1) % OPERATIONS.length
-    newItems[index] = { ...newItems[index], op: OPERATIONS[nextIndex] }
+    const nextOp = OPERATIONS[nextIndex]
+    newItems[index] = { 
+      ...newItems[index], 
+      op: nextOp,
+      dest: nextOp === 'rm' ? '' : (newItems[index].dest || defaultDest)
+    }
     onChange(newItems)
   }
 
@@ -68,16 +73,17 @@ export default function FileTransferList({ items, onChange, defaultDest = '$rf$'
               type="button"
               className={`mode-toggle ${item.op || 'cp'}`}
               onClick={() => handleToggleOp(index)}
-              title={item.op === 'cp' ? 'Copy file' : item.op === 'mv' ? 'Move file' : 'Symlink'}
+              title={item.op === 'cp' ? 'Copy file' : item.op === 'mv' ? 'Move file' : item.op === 'ln' ? 'Symlink' : 'Remove'}
             >
               {item.op || 'cp'}
             </button>
             <input
               type="text"
               className="dest-input"
-              placeholder="Destination path..."
-              value={item.dest}
+              placeholder={item.op === 'rm' ? '' : 'Destination path...'}
+              value={item.op === 'rm' ? '' : item.dest}
               onChange={(e) => handleUpdate(index, 'dest', e.target.value)}
+              disabled={item.op === 'rm'}
             />
           </div>
         ))}

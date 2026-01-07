@@ -3,10 +3,9 @@
 import 'dotenv/config'
 import mongoose from 'mongoose'
 import readline from 'readline'
-import User from '@/app/api/models/User'
-import ApplicationModel from '@/app/api/models/Application'
-import DomainModel from '@/app/api/models/Domain'
-import TemplateModel from '@/app/api/models/Template'
+import User from '@/server/models/User'
+import DomainModel from '@/server/models/Domain'
+import TemplateModel from '@/server/models/Template'
 import bcrypt from 'bcryptjs'
 
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/webhook-deployer'
@@ -22,7 +21,7 @@ function question(query: string): Promise<string> {
 
 async function mockUsers() {
   console.log('\n📋 Mocking Users...')
-  
+
   let adminUser = await User.findOne({ username: 'admin' })
   if (!adminUser) {
     const hashedPassword = await bcrypt.hash('admin123', 10)
@@ -59,7 +58,7 @@ async function mockUsers() {
 
 async function mockDomains() {
   console.log('\n📋 Mocking Domains...')
-  
+
   const domains = [
     { name: 'example.com' },
     { name: 'test.local' },
@@ -77,28 +76,8 @@ async function mockDomains() {
 
 async function mockTemplates() {
   console.log('\n📋 Mocking Templates...')
-  
+
   const templates = [
-    {
-      name: 'node',
-      displayName: 'Node.js',
-      description: 'Standard Node.js project with yarn',
-      prebuild: [
-        'git fetch origin $branch$',
-        'git reset --hard origin/$branch$',
-        'git checkout $branch$',
-        'rm -rf .next'
-      ],
-      build: ['yarn install'],
-      deployment: ['yarn build'],
-      launch: [
-        'pm2 restart $pm2Name$',
-        'sudo systemctl restart nginx'
-      ],
-      nginx: '',
-      env: '',
-      isSystem: true
-    },
     {
       name: 'nextjs',
       displayName: 'Next.js',
@@ -110,41 +89,76 @@ async function mockTemplates() {
         'yarn install'
       ],
       build: [
-        'yarn build'
+        'yarn build',
       ],
-      deployment: [
-        'rm -rf $rf$/.next',
-        'mv $cf$/.next $rf$',
-        'cp -r $cf$/package.json $cf$/public $cf$/.env* $rf$/',
-        'ln -s $cf$/node_modules $rf$/node_modules'
-      ],
+      deployment: [],
       launch: [
-        'pm2 startOrRestart yarn --name $pm2Name$ -- start',
+        'pm2 del "$name$:$id$:$port$" || true',
+        'pm2 start "yarn start -p $port$" --name "$name$:$id$:$port$"',
         'sudo systemctl restart nginx'
+      ],
+      files: [
+        { src: '$cf$/package.json', dest: '$rf$', op: 'cp' },
+        { src: '$cf$/.next', dest: '$rf$', op: 'mv' },
+        { src: '$cf$/.env*', dest: '$rf$', op: 'cp' },
+        { src: '$cf$/node_modules', dest: '$rf$/node_modules', op: 'ln' },
+        { src: '$rf$/.next', dest: '', op: 'rm' }
       ],
       nginx: '',
       env: '',
-      isSystem: true
     },
     {
       name: 'react',
       displayName: 'React',
-      description: 'React SPA with yarn and build output',
+      description: 'React SPA application (Vite/CRA)',
       prebuild: [
         'git fetch origin $branch$',
         'git reset --hard origin/$branch$',
         'git checkout $branch$',
-        'rm -rf .next'
+        'yarn install'
       ],
-      build: ['yarn install'],
-      deployment: ['yarn build'],
+      build: [
+        'yarn build',
+      ],
+      deployment: [],
       launch: [
-        'pm2 restart $pm2Name$',
         'sudo systemctl restart nginx'
+      ],
+      files: [
+        { src: '$cf$/dist', dest: '$rf$', op: 'mv' },
+        { src: '$rf$/dist', dest: '', op: 'rm' }
       ],
       nginx: '',
       env: '',
-      isSystem: true
+    },
+    {
+      name: 'node',
+      displayName: 'Node.js',
+      description: 'Node.js/Express backend application',
+      prebuild: [
+        'git fetch origin $branch$',
+        'git reset --hard origin/$branch$',
+        'git checkout $branch$',
+        'yarn install'
+      ],
+      build: [
+        'yarn build || true',
+      ],
+      deployment: [],
+      launch: [
+        'pm2 del "$name$:$id$:$port$" || true',
+        'pm2 start "yarn start" --name "$name$:$id$:$port$"',
+        'sudo systemctl restart nginx'
+      ],
+      files: [
+        { src: '$cf$/package.json', dest: '$rf$', op: 'cp' },
+        { src: '$cf$/dist', dest: '$rf$', op: 'mv' },
+        { src: '$cf$/.env*', dest: '$rf$', op: 'cp' },
+        { src: '$cf$/node_modules', dest: '$rf$/node_modules', op: 'ln' },
+        { src: '$rf$/dist', dest: '', op: 'rm' }
+      ],
+      nginx: '',
+      env: '',
     }
   ]
 
@@ -157,30 +171,6 @@ async function mockTemplates() {
   }
 }
 
-async function mockApplications() {
-  console.log('\n📋 Mocking Applications...')
-  
-  const existingApp = await ApplicationModel.findOne({ name: 'sample-app' })
-  if (!existingApp) {
-    await ApplicationModel.create({
-      name: 'sample-app',
-      repoUrl: 'https://github.com/example/sample-app.git',
-      template: 'node',
-      domain: 'example.com',
-      port: 3000,
-      commands: ['yarn install', 'yarn build'],
-      preDeploy: [],
-      postDeploy: [],
-      nginx: '',
-      env: 'NODE_ENV=production\nPORT=3000',
-      envFilePath: '.env',
-      branch: 'main',
-      status: 'stopped'
-    })
-    console.log('✓ Created sample application: sample-app')
-  }
-}
-
 async function mock() {
   try {
     console.log('\n🚀 Mock Data Generator')
@@ -189,25 +179,23 @@ async function mock() {
     console.log('  1. Users')
     console.log('  2. Domains')
     console.log('  3. Templates')
-    console.log('  4. Applications')
     console.log('  *. All\n')
 
     const answer = await question('Enter your choice (e.g., 1,3 or *): ')
-    
+
     console.log('\nConnecting to MongoDB...')
     await mongoose.connect(MONGODB_URI)
     console.log('✓ Connected to MongoDB')
 
     const choices = answer.trim()
-    
+
     if (choices === '*') {
       await mockUsers()
       await mockDomains()
       await mockTemplates()
-      await mockApplications()
     } else {
       const selected = choices.split(',').map(s => s.trim())
-      
+
       for (const choice of selected) {
         switch (choice) {
           case '1':
@@ -218,9 +206,6 @@ async function mock() {
             break
           case '3':
             await mockTemplates()
-            break
-          case '4':
-            await mockApplications()
             break
           default:
             console.log(`⚠ Unknown choice: ${choice}`)

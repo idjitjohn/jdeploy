@@ -63,9 +63,115 @@
     gap: 0.5em;
   }
 
+  .app-name{
+    display: flex;
+    align-items: center;
+    gap: .5em;
+    .env-badge {
+      display: inline-block;
+      padding: 0.2em 0.6em;
+      font-size: 0.55em;
+      font-weight: 600;
+      border-radius: .5em;
+      text-transform: uppercase;
+
+      &.dev {
+        background: #dbeafe;
+        color: #1d4ed8;
+      }
+
+      &.prod {
+        background: #dcfce7;
+        color: #15803d;
+      }
+
+      &.stag {
+        background: #fef3c7;
+        color: #b45309;
+      }
+
+      &.test {
+        background: #f3e8ff;
+        color: #7c3aed;
+      }
+    }
+  }
+
   .loading {
     text-align: center;
     padding: 3em;
     color: $text-light;
+  }
+
+  .branch-selector {
+    position: relative;
+    display: inline-block;
+
+    .branch-btn {
+      padding: 0.4em 0.8em;
+      font-size: 0.85em;
+      background: $header-bg;
+      border: 1px solid $border-color;
+      border-radius: 0.25em;
+      cursor: pointer;
+      color: $text-dark;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: darken($header-bg, 5%);
+        border-color: darken($border-color, 10%);
+      }
+    }
+
+    .branch-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 99;
+    }
+
+    .branch-popover {
+      min-width: 8em;
+      max-height: 12em;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid $border-color;
+      border-radius: 0.25em;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 100;
+    }
+
+    .branch-loading,
+    .branch-empty {
+      padding: 0.5em 0.75em;
+      color: $text-light;
+      font-size: 0.8em;
+      text-align: center;
+    }
+
+    .branch-list {
+      list-style: none;
+      margin: 0;
+      padding: 0.15em 0;
+
+      li {
+        padding: 0.1em 0.75em;
+        cursor: pointer;
+        font-size: 0.8em;
+        transition: background 0.1s ease;
+
+        &:hover {
+          background: rgba(59, 130, 246, 0.1);
+        }
+
+        &.active {
+          background: rgba(59, 130, 246, 0.15);
+          font-weight: 600;
+          color: #3b82f6;
+        }
+      }
+    }
   }
 }

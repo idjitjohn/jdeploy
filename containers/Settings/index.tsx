@@ -1,21 +1,11 @@
 'use client'
 
 import Header from '@/components/Header'
-import Button from '@/components/Button'
-import Input from '@/components/Input'
 import { useSettings } from './useSettings'
 import './Settings.scss'
 
 export default function Settings() {
-  const {
-    isLoading,
-    paths,
-    hasChanges,
-    isSaving,
-    handlePathChange,
-    handleSave,
-    handleReset
-  } = useSettings()
+  const { isLoading, paths } = useSettings()
 
   if (isLoading) {
     return (
@@ -38,120 +28,33 @@ export default function Settings() {
 
         <div className="section paths-section">
           <h3>Deployment Paths</h3>
-          <p className="description">Configure the base directories for code, releases, and certificates</p>
+          <p className="description">Configure the base directory for all deployments. Other paths are inferred from this.</p>
 
-          <form onSubmit={handleSave}>
-            <div className="form-grid">
-              <div className="form-group">
-                <Input
-                  label="Home Directory"
-                  name="home"
-                  type="text"
-                  value={paths.home}
-                  onChange={(e) => handlePathChange('home', e.target.value)}
-                  placeholder="/var/webhooks"
-                />
-                <p className="hint">Base directory for all deployments</p>
-              </div>
+          <div className="home-path">
+            <label>Home Directory</label>
+            <div className="path-value">{paths.home}</div>
+            <p className="hint">Base directory for all deployments</p>
+          </div>
 
-              <div className="form-group">
-                <Input
-                  label="Code Directory"
-                  name="code"
-                  type="text"
-                  value={paths.code}
-                  onChange={(e) => handlePathChange('code', e.target.value)}
-                  placeholder="/var/webhooks/code"
-                />
-                <p className="hint">Where to clone git repositories</p>
-              </div>
-
-              <div className="form-group">
-                <Input
-                  label="Release Directory"
-                  name="release"
-                  type="text"
-                  value={paths.release}
-                  onChange={(e) => handlePathChange('release', e.target.value)}
-                  placeholder="/var/webhooks/release"
-                />
-                <p className="hint">Where to store compiled/built releases</p>
-              </div>
-
-              <div className="form-group">
-                <Input
-                  label="Certificate Directory"
-                  name="certificate"
-                  type="text"
-                  value={paths.certificate}
-                  onChange={(e) => handlePathChange('certificate', e.target.value)}
-                  placeholder="/var/webhooks/certificate"
-                />
-                <p className="hint">Where to store SSL certificates</p>
-              </div>
-
-              <div className="form-group">
-                <Input
-                  label="Logs Directory"
-                  name="logs"
-                  type="text"
-                  value={paths.logs}
-                  onChange={(e) => handlePathChange('logs', e.target.value)}
-                  placeholder="/var/webhooks/logs"
-                />
-                <p className="hint">Where to store deployment logs</p>
-              </div>
-
-              <div className="form-group">
-                <Input
-                  label="Nginx Sites Available"
-                  name="nginxAvailable"
-                  type="text"
-                  value={paths.nginxAvailable}
-                  onChange={(e) => handlePathChange('nginxAvailable', e.target.value)}
-                  placeholder="/etc/nginx/sites-available"
-                />
-                <p className="hint">Nginx sites-available directory</p>
-              </div>
-
-              <div className="form-group">
-                <Input
-                  label="Nginx Sites Enabled"
-                  name="nginxEnabled"
-                  type="text"
-                  value={paths.nginxEnabled}
-                  onChange={(e) => handlePathChange('nginxEnabled', e.target.value)}
-                  placeholder="/etc/nginx/sites-enabled"
-                />
-                <p className="hint">Nginx sites-enabled directory</p>
-              </div>
-            </div>
-
-            <div className="form-actions">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={handleReset}
-                disabled={!hasChanges || isSaving}
-              >
-                Reset
-              </Button>
-              <Button
-                type="submit"
-                disabled={!hasChanges || isSaving}
-              >
-                {isSaving ? 'Saving...' : 'Save Configuration'}
-              </Button>
-            </div>
-          </form>
+          <div className="inferred-paths">
+            <h4>Inferred Paths</h4>
+            <ul>
+              <li><strong>Code:</strong> {paths.home}/code</li>
+              <li><strong>Release:</strong> {paths.home}/release</li>
+              <li><strong>Certificate:</strong> {paths.home}/certificate</li>
+              <li><strong>Logs:</strong> {paths.home}/logs</li>
+              <li><strong>Nginx Available:</strong> {paths.home}/nginx/sites-available</li>
+              <li><strong>Nginx Enabled:</strong> {paths.home}/nginx/sites-enabled</li>
+            </ul>
+          </div>
         </div>
 
         <div className="section info-section">
           <h3>Information</h3>
           <div className="info-box">
             <p>
-              <strong>Important:</strong> Changing these paths will affect where the system stores code repositories,
-              deployment releases, SSL certificates, and logs. Make sure these directories exist and have proper permissions
+              <strong>Important:</strong> Changing the home path will affect where the system stores code repositories,
+              deployment releases, SSL certificates, and logs. Make sure the directory exists and has proper permissions
               before saving.
             </p>
           </div>

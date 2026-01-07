@@ -1,60 +1,31 @@
 import mongoose, { Document, Schema } from 'mongoose'
+import path from 'path'
 
 export interface IConfiguration extends Document {
-  paths: {
-    home: string
-    code: string
-    release: string
-    certificate: string
-    logs: string
-    nginxAvailable: string
-    nginxEnabled: string
-  }
+  home: string
   createdAt?: Date
   updatedAt?: Date
 }
 
+// Helper to get all paths from home
+export function getPathsFromHome(home: string) {
+  return {
+    home,
+    code: path.join(home, 'code'),
+    release: path.join(home, 'release'),
+    certificate: path.join(home, 'certificate'),
+    logs: path.join(home, 'logs'),
+    nginxAvailable: path.join(home, 'nginx', 'sites-available'),
+    nginxEnabled: path.join(home, 'nginx', 'sites-enabled')
+  }
+}
+
 const configurationSchema = new Schema<IConfiguration>(
   {
-    paths: {
-      type: {
-        home: {
-          type: String,
-          required: true,
-          default: '/var/webhooks'
-        },
-        code: {
-          type: String,
-          required: true,
-          default: '/var/webhooks/code'
-        },
-        release: {
-          type: String,
-          required: true,
-          default: '/var/webhooks/release'
-        },
-        certificate: {
-          type: String,
-          required: true,
-          default: '/var/webhooks/certificate'
-        },
-        logs: {
-          type: String,
-          required: true,
-          default: '/var/webhooks/logs'
-        },
-        nginxAvailable: {
-          type: String,
-          required: true,
-          default: '/etc/nginx/sites-available'
-        },
-        nginxEnabled: {
-          type: String,
-          required: true,
-          default: '/etc/nginx/sites-enabled'
-        }
-      },
-      required: true
+    home: {
+      type: String,
+      required: true,
+      default: '/var/webhooks'
     }
   },
   {

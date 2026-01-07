@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/lib/api'
 import { checkAuth, showNotification } from '@/lib/utils'
@@ -54,6 +54,8 @@ export function useApplicationDetail(id: string) {
   const [logContent, setLogContent] = useState<string>('')
   const [isLoadingLog, setIsLoadingLog] = useState(false)
   const [isRedeploying, setIsRedeploying] = useState(false)
+  const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isPollingRef = useRef<boolean>(false)
 
   useEffect(() => {
     initDetail()
@@ -84,9 +86,10 @@ export function useApplicationDetail(id: string) {
     if (!application?.name) return
     try {
       const data = await api.logs.list(application.name, { limit: '20' }) as any
-      setLogs(data.logs || [])
-      if (data.logs?.length > 0 && !selectedLog) {
-        selectLog(data.logs[0])
+      const logsList = Array.isArray(data) ? data : (data.logs || [])
+      setLogs(logsList)
+      if (logsList.length > 0 && !selectedLog) {
+        selectLog(logsList[0])
       }
     } catch (error) {
       console.error('Failed to load logs:', error)
@@ -96,9 +99,10 @@ export function useApplicationDetail(id: string) {
   const loadLogsForApp = useCallback(async (appName: string) => {
     try {
       const data = await api.logs.list(appName, { limit: '20' }) as any
-      setLogs(data.logs || [])
-      if (data.logs?.length > 0) {
-        selectLog(data.logs[0])
+      const logsList = Array.isArray(data) ? data : (data.logs || [])
+      setLogs(logsList)
+      if (logsList.length > 0) {
+        selectLog(logsList[0])
       }
     } catch (error) {
       console.error('Failed to load logs:', error)
@@ -111,19 +115,78 @@ export function useApplicationDetail(id: string) {
     }
   }, [application?.name, loadLogsForApp])
 
+  const fetchLogContent = useCallback(async (logId: string) => {
+    try {
+      const contentData = await fetch(`/api/logs/deployment/${logId}/content`).then(r => r.json())
+      setLogContent(contentData.content || 'No log content available')
+    } catch (error) {
+      setLogContent('Failed to load log content')
+    }
+  }, [])
+
+  const stopPolling = useCallback(() => {
+    isPollingRef.current = false
+    if (pollingTimeoutRef.current) {
+      clearTimeout(pollingTimeoutRef.current)
+      pollingTimeoutRef.current = null
+    }
+  }, [])
+
+  const pollOnce = useCallback(async (logId: string, appName: string) => {
+    if (!isPollingRef.current) return
+
+    await fetchLogContent(logId)
+    
+    // Also refresh logs list to get updated status
+    try {
+      const data = await api.logs.list(appName, { limit: '20' }) as any
+      const logsList = Array.isArray(data) ? data : (data.logs || [])
+      setLogs(logsList)
+      // Update selected log status from refreshed list
+      const updatedLog = logsList.find((l: DeploymentLog) => l.id === logId)
+      if (updatedLog) {
+        setSelectedLog(updatedLog)
+        // Stop polling if no longer running
+        if (updatedLog.status !== 'running') {
+          stopPolling()
+          return
+        }
+      }
+    } catch (error) {
+      console.error('Failed to refresh logs:', error)
+    }
+
+    // Schedule next poll after response
+    if (isPollingRef.current) {
+      pollingTimeoutRef.current = setTimeout(() => pollOnce(logId, appName), 2000)
+    }
+  }, [fetchLogContent, stopPolling])
+
+  const startPolling = useCallback((logId: string, appName: string) => {
+    stopPolling()
+    isPollingRef.current = true
+    pollOnce(logId, appName)
+  }, [pollOnce, stopPolling])
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => stopPolling()
+  }, [stopPolling])
+
+  // Start/stop polling based on selected log status
+  useEffect(() => {
+    if (selectedLog?.status === 'running' && application?.name) {
+      startPolling(selectedLog.id, application.name)
+    } else {
+      stopPolling()
+    }
+  }, [selectedLog?.id, selectedLog?.status, application?.name, startPolling, stopPolling])
+
   const selectLog = async (log: DeploymentLog) => {
     setSelectedLog(log)
     setIsLoadingLog(true)
     try {
-      const data = await api.logs.get(log.id) as any
-      if (data.content) {
-        setLogContent(data.content)
-      } else {
-        const contentData = await fetch(`/api/logs/deployment/${log.id}/content`).then(r => r.json())
-        setLogContent(contentData.content || 'No log content available')
-      }
-    } catch (error) {
-      setLogContent('Failed to load log content')
+      await fetchLogContent(log.id)
     } finally {
       setIsLoadingLog(false)
     }

@@ -2,7 +2,57 @@ import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
-export type FileOperation = 'cp' | 'mv' | 'ln'
+// Log writer that appends to file in real-time
+class LogWriter {
+  private logPath: string
+  private stream: fs.WriteStream
+
+  constructor(logPath: string) {
+    this.logPath = logPath
+    // Ensure log directory exists
+    const logDir = path.dirname(logPath)
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true })
+    }
+    this.stream = fs.createWriteStream(logPath, { flags: 'a' })
+  }
+
+  write(message: string) {
+    this.stream.write(message + '\n')
+  }
+
+  close() {
+    this.stream.end()
+  }
+}
+
+// Cleanup old logs, keeping only the latest N files
+export function cleanupOldLogs(repoName: string, keepCount: number = 10): void {
+  const logsDir = path.join(deploymentConfig.logs, repoName)
+  if (!fs.existsSync(logsDir)) return
+
+  const files = fs.readdirSync(logsDir)
+    .filter(f => f.endsWith('.log'))
+    .map(f => ({
+      name: f,
+      path: path.join(logsDir, f),
+      time: fs.statSync(path.join(logsDir, f)).mtime.getTime()
+    }))
+    .sort((a, b) => b.time - a.time)
+
+  // Remove files beyond keepCount
+  const toDelete = files.slice(keepCount)
+  for (const file of toDelete) {
+    try {
+      fs.unlinkSync(file.path)
+      console.log(`[Cleanup] Deleted old log: ${file.name}`)
+    } catch (err) {
+      console.error(`[Cleanup] Failed to delete ${file.name}:`, err)
+    }
+  }
+}
+
+export type FileOperation = 'cp' | 'mv' | 'ln' | 'rm'
 
 export interface FileTransfer {
   src: string
@@ -37,22 +87,30 @@ export interface DeploymentConfig {
   nginxEnabled: string
 }
 
-let deploymentConfig: DeploymentConfig = {
-  home: '/var/webhooks',
-  code: '/var/webhooks/code',
-  release: '/var/webhooks/release',
-  certificate: '/var/webhooks/certificate',
-  logs: '/var/webhooks/logs',
-  nginxAvailable: '/etc/nginx/sites-available',
-  nginxEnabled: '/etc/nginx/sites-enabled'
+function getConfigFromHome(home: string): DeploymentConfig {
+  return {
+    home,
+    code: path.join(home, 'code'),
+    release: path.join(home, 'release'),
+    certificate: path.join(home, 'certificate'),
+    logs: path.join(home, 'logs'),
+    nginxAvailable: path.join(home, 'nginx', 'sites-available'),
+    nginxEnabled: path.join(home, 'nginx', 'sites-enabled')
+  }
 }
 
-export function setDeploymentConfig(config: DeploymentConfig) {
-  deploymentConfig = config
+let deploymentConfig: DeploymentConfig = getConfigFromHome('/var/webhooks')
+
+export function setDeploymentConfig(config: DeploymentConfig | { home: string }) {
+  if ('code' in config) {
+    deploymentConfig = config
+  } else {
+    deploymentConfig = getConfigFromHome(config.home)
+  }
 }
 
-export function getDeploymentPath(repoName: string, branch: string): string {
-  return path.join(deploymentConfig.code, repoName, branch)
+export function getDeploymentPath(repoName: string): string {
+  return path.join(deploymentConfig.code, repoName)
 }
 
 export function getLogPath(repoName: string): string {
@@ -67,8 +125,23 @@ export function getReleasePath(repoName: string): string {
   return path.join(deploymentConfig.release, repoName)
 }
 
+export function initializeApplication(repoName: string, repoUrl: string, branch: string): void {
+  const codePath = getDeploymentPath(repoName)
+  const releasePath = getReleasePath(repoName)
+  const logsPath = path.join(deploymentConfig.logs, repoName)
+
+  // Create directories
+  fs.mkdirSync(codePath, { recursive: true })
+  fs.mkdirSync(releasePath, { recursive: true })
+  fs.mkdirSync(logsPath, { recursive: true })
+
+  // Clone repository
+  const cloneCmd = `git clone --depth 1 --no-single-branch --branch ${branch} ${repoUrl} .`
+  execSync(cloneCmd, { cwd: codePath, encoding: 'utf-8', stdio: 'pipe' })
+}
+
 export function interpolateVariables(command: string, context: { repoName: string; branch: string; port?: number, appId?: string }): string {
-  const codePath = getDeploymentPath(context.repoName, context.branch)
+  const codePath = getDeploymentPath(context.repoName)
   const releasePath = getReleasePath(context.repoName)
   const certificatePath = path.join(deploymentConfig.certificate, context.repoName)
 
@@ -218,75 +291,78 @@ export async function runPrebuild(context: DeploymentContext): Promise<{
 export async function runDeployment(context: DeploymentContext): Promise<{
   success: boolean, output: string, error?: string
 }> {
-  const output: string[] = []
-  const appCodePath = getDeploymentPath(context.repoName, context.branch)
+  const appCodePath = getDeploymentPath(context.repoName)
   const releasePath = getReleasePath(context.repoName)
+  const log = new LogWriter(context.logPath)
+
+  // Cleanup old logs, keep only 10
+  cleanupOldLogs(context.repoName, 10)
 
   console.log(`\n🚀 [${context.repoName}] Starting deployment for branch: ${context.branch}`)
   try {
-    output.push(`[${new Date().toISOString()}] Starting deployment for ${context.repoName}/${context.branch}`)
+    log.write(`[${new Date().toISOString()}] Starting deployment for ${context.repoName}/${context.branch}`)
 
     // Clone or update repository
-
     if (!fs.existsSync(appCodePath)) {
       fs.mkdirSync(appCodePath, { recursive: true })
-      output.push(`[${new Date().toISOString()}] Cloning repository...`)
-      const cloneCmd = `git clone --depth 1 --branch ${context.branch} ${context.repoUrl} .`
+      log.write(`[${new Date().toISOString()}] Cloning repository...`)
+      const cloneCmd = `git clone --depth 1 --no-single-branch ${context.repoUrl} .`
       executeCommand(cloneCmd, appCodePath, context.env)
-      output.push(`✓ Repository cloned`)
+      log.write(`✓ Repository cloned`)
     }
 
     // 1. Prebuild - runs in config.paths.code
-    output.push(`[${new Date().toISOString()}] Running prebuild scripts in ${appCodePath}...`)
-    const result = executeCommand("which yarn", appCodePath, context.env)
-    console.log("Ito za zao:", {result})
+    log.write(`[${new Date().toISOString()}] Running prebuild scripts in ${appCodePath}...`)
 
     for (const script of context.prebuild) {
       const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
-      output.push(`> ${interpolated}`)
+      log.write(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing prebuild in code folder: ${interpolated}`)
       const result = executeCommand(interpolated, appCodePath, context.env)
-      output.push(result)
+      log.write(result)
     }
 
     // Write env file to app code folder
     if (context.envFileContent) {
       const envFilePath = context.envFilePath || '.env'
       const fullEnvPath = path.join(appCodePath, envFilePath)
-      output.push(`[${new Date().toISOString()}] Creating environment file: ${envFilePath}`)
+      log.write(`[${new Date().toISOString()}] Creating environment file: ${envFilePath}`)
       fs.writeFileSync(fullEnvPath, context.envFileContent, 'utf-8')
-      output.push(`✓ Environment file created at ${envFilePath}`)
+      log.write(`✓ Environment file created at ${envFilePath}`)
       console.log(`[${context.repoName}] Environment file created: ${fullEnvPath}`)
     }
 
     // Create release folder before build commands
     if (!fs.existsSync(releasePath)) {
-      output.push(`[${new Date().toISOString()}] Creating release folder...`)
+      log.write(`[${new Date().toISOString()}] Creating release folder...`)
       fs.mkdirSync(releasePath, { recursive: true })
-      output.push(`✓ Release folder created at ${releasePath}`)
+      log.write(`✓ Release folder created at ${releasePath}`)
       console.log(`[${context.repoName}] Release folder created: ${releasePath}`)
     } else {
-      output.push(`[${new Date().toISOString()}] Release folder already exists`)
+      log.write(`[${new Date().toISOString()}] Release folder already exists`)
     }
 
     // 2. Build - runs in application code folder
-    output.push(`[${new Date().toISOString()}] Running build commands in ${appCodePath}...`)
+    log.write(`[${new Date().toISOString()}] Running build commands in ${appCodePath}...`)
     for (const cmd of context.build) {
       const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
-      output.push(`> ${interpolated}`)
+      log.write(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing build in app code folder: ${interpolated}`)
       const result = executeCommand(interpolated, appCodePath, context.env)
-      output.push(result)
+      log.write(result)
     }
 
     // 2.5. File transfers - copy/move/symlink files after build
     if (context.files && context.files.length > 0) {
-      output.push(`[${new Date().toISOString()}] Processing file transfers...`)
+      log.write(`[${new Date().toISOString()}] Processing file transfers...`)
       for (const file of context.files) {
         const srcPath = interpolateVariables(file.src, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
         const destPath = interpolateVariables(file.dest, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
         let cmd: string
         switch (file.op) {
+          case 'rm':
+            cmd = `rm -rf ${srcPath}`
+            break
           case 'mv':
             cmd = `mv -f ${srcPath} ${destPath}`
             break
@@ -298,55 +374,68 @@ export async function runDeployment(context: DeploymentContext): Promise<{
             cmd = `cp -rf ${srcPath} ${destPath}`
             break
         }
-        output.push(`> ${cmd}`)
+        log.write(`> ${cmd}`)
         console.log(`[${context.repoName}] File transfer: ${cmd}`)
-        const result = executeCommand(cmd, appCodePath, context.env)
-        output.push(result)
+        try {
+          const result = executeCommand(cmd, appCodePath, context.env)
+          log.write(result)
+        } catch (err: any) {
+          // Log warning but continue with other file operations
+          log.write(`⚠ File operation failed (continuing): ${err.message}`)
+          console.warn(`[${context.repoName}] File operation failed (continuing): ${err.message}`)
+        }
       }
-      output.push(`✓ File transfers completed`)
+      log.write(`✓ File transfers completed`)
     }
 
     // 3. Deployment - runs in application code folder
-    output.push(`[${new Date().toISOString()}] Running deployment commands in ${appCodePath}...`)
+    log.write(`[${new Date().toISOString()}] Running deployment commands in ${appCodePath}...`)
     for (const cmd of context.deployment) {
       const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
-      output.push(`> ${interpolated}`)
+      log.write(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing deployment in app code folder: ${interpolated}`)
       const result = executeCommand(interpolated, appCodePath, context.env)
-      output.push(result)
+      log.write(result)
     }
 
     // 4. Launch - runs in release folder
-    output.push(`[${new Date().toISOString()}] Running launch commands in ${releasePath}...`)
+    log.write(`[${new Date().toISOString()}] Running launch commands in ${releasePath}...`)
     for (const script of context.launch) {
       const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
-      output.push(`> ${interpolated}`)
+      log.write(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing launch in release folder: ${interpolated}`)
       const result = executeCommand(interpolated, releasePath, context.env)
-      output.push(result)
+      log.write(result)
     }
 
-    output.push(`[${new Date().toISOString()}] ✅ Deployment completed successfully`)
-
-    const fullOutput = output.join('\n')
-    fs.writeFileSync(context.logPath, fullOutput)
+    log.write(`[${new Date().toISOString()}] ✅ Deployment completed successfully`)
+    log.close()
 
     console.log(`✅ [${context.repoName}] Deployment completed successfully\n`)
     return {
       success: true,
-      output: fullOutput
+      output: fs.readFileSync(context.logPath, 'utf-8')
     }
   } catch (error: any) {
     const errorMsg = error.message
-    output.push(`[${new Date().toISOString()}] ❌ Deployment failed: ${errorMsg}`)
-
-    const fullOutput = output.join('\n')
-    fs.writeFileSync(context.logPath, fullOutput)
+    log.write(`[${new Date().toISOString()}] ❌ Deployment failed: ${errorMsg}`)
+    log.close()
 
     console.error(`❌ [${context.repoName}] Deployment failed: ${errorMsg}\n`)
+
+    // Try to read log file, fallback to error message if not available
+    let output = `Deployment failed: ${errorMsg}`
+    try {
+      if (fs.existsSync(context.logPath)) {
+        output = fs.readFileSync(context.logPath, 'utf-8')
+      }
+    } catch {
+      // Keep fallback output
+    }
+
     return {
       success: false,
-      output: fullOutput,
+      output,
       error: errorMsg
     }
   }

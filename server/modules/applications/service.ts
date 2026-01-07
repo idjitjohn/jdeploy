@@ -3,8 +3,9 @@ import { Auth } from '../../plugins/auth.types'
 import connectDB from '@/lib/db'
 import ApplicationModel from '@/server/models/Application'
 import DeploymentLogModel from '@/server/models/DeploymentLog'
-import ConfigurationModel from '@/server/models/Configuration'
-import { runDeployment, getLogPath, setDeploymentConfig } from '@/lib/deployment'
+import ConfigurationModel, { IConfiguration } from '@/server/models/Configuration'
+import { runDeployment, getLogPath, setDeploymentConfig, initializeApplication } from '@/lib/deployment'
+import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
 
@@ -39,6 +40,7 @@ export const list = createApplicationsService(
         nginxConfig: app.nginx || '',
         env: app.env || '',
         envFilePath: app.envFilePath || '.env',
+        environment: app.environment || 'prod',
         branch: app.branch || 'main',
         createdAt: app.createdAt.toISOString(),
         updatedAt: app.updatedAt.toISOString()
@@ -49,11 +51,10 @@ export const list = createApplicationsService(
 
 export const get = createApplicationsService(
   {
-    params: 'IdParam',
     response: 'GetApplicationRes',
     auth: Auth.USER
   },
-  async ({ params, authData, set }) => {
+  async ({ params, authData, set }: any) => {
     if (!authData) {
       set.status = 401
       throw new Error('Unauthorized')
@@ -84,6 +85,7 @@ export const get = createApplicationsService(
         nginxConfig: application.nginx || '',
         env: application.env || '',
         envFilePath: application.envFilePath || '.env',
+        environment: application.environment || 'prod',
         branch: application.branch || 'main',
         createdAt: application.createdAt.toISOString(),
         updatedAt: application.updatedAt.toISOString()
@@ -126,8 +128,16 @@ export const create = createApplicationsService(
       nginx: body.nginxConfig || '',
       env: body.env || '',
       envFilePath: body.envFilePath || '.env',
+      environment: body.environment || 'prod',
       branch: body.branch || 'main'
     })
+
+    // Create folders and clone repository
+    const config = await ConfigurationModel.findOne()
+    if (config?.home) {
+      setDeploymentConfig({ home: config.home })
+    }
+    initializeApplication(application.name, application.repoUrl, application.branch || 'main')
 
     return {
       application: {
@@ -145,6 +155,7 @@ export const create = createApplicationsService(
         nginxConfig: application.nginx || '',
         env: application.env || '',
         envFilePath: application.envFilePath || '.env',
+        environment: application.environment || 'prod',
         branch: application.branch || 'main',
         createdAt: application.createdAt.toISOString(),
         updatedAt: application.updatedAt.toISOString()
@@ -155,18 +166,24 @@ export const create = createApplicationsService(
 
 export const update = createApplicationsService(
   {
-    params: 'IdParam',
     body: 'UpdateApplicationReq',
     response: 'UpdateApplicationRes',
     auth: Auth.ADMIN
   },
-  async ({ params, body, authData, set }) => {
+  async ({ params, body, authData, set }: any) => {
     if (!authData) {
       set.status = 401
       throw new Error('Unauthorized')
     }
 
     await connectDB()
+
+    // Get old values before update
+    const oldApplication = await ApplicationModel.findById(params.id).lean() as any
+    if (!oldApplication) {
+      set.status = 404
+      throw new Error('Application not found')
+    }
 
     const application = await ApplicationModel.findByIdAndUpdate(
       params.id,
@@ -185,6 +202,7 @@ export const update = createApplicationsService(
           nginx: body.nginxConfig || '',
           env: body.env || '',
           envFilePath: body.envFilePath || '.env',
+          environment: body.environment || 'prod',
           branch: body.branch || 'main'
         }
       },
@@ -194,6 +212,20 @@ export const update = createApplicationsService(
     if (!application) {
       set.status = 404
       throw new Error('Application not found')
+    }
+
+    // Rewrite env file if env values changed
+    const oldEnv = oldApplication.env || ''
+    const newEnv = body.env || ''
+    if (newEnv && newEnv !== oldEnv) {
+      const config = await ConfigurationModel.findOne().lean() as IConfiguration | null
+      const home = config?.home || '/var/webhooks'
+      const appCodePath = path.join(home, 'code', application.name)
+      const envFilePath = body.envFilePath || '.env'
+      const fullEnvPath = path.join(appCodePath, envFilePath)
+      if (fs.existsSync(appCodePath)) {
+        fs.writeFileSync(fullEnvPath, newEnv, 'utf-8')
+      }
     }
 
     return {
@@ -212,6 +244,7 @@ export const update = createApplicationsService(
         nginxConfig: application.nginx || '',
         env: application.env || '',
         envFilePath: application.envFilePath || '.env',
+        environment: application.environment || 'prod',
         branch: application.branch || 'main',
         createdAt: application.createdAt.toISOString(),
         updatedAt: application.updatedAt.toISOString()
@@ -222,11 +255,10 @@ export const update = createApplicationsService(
 
 export const remove = createApplicationsService(
   {
-    params: 'IdParam',
     response: 'DeleteApplicationRes',
     auth: Auth.ADMIN
   },
-  async ({ params, authData, set }) => {
+  async ({ params, authData, set }: any) => {
     if (!authData) {
       set.status = 401
       throw new Error('Unauthorized')
@@ -242,35 +274,24 @@ export const remove = createApplicationsService(
     }
 
     const appName = application.name
-    const branch = application.branch || 'main'
 
     await ApplicationModel.findByIdAndDelete(params.id)
     await DeploymentLogModel.deleteMany({ application: appName })
 
     const config = await ConfigurationModel.findOne()
-    const codePath = config?.paths?.code || '/var/webhooks/code'
-    const releasePath = config?.paths?.release || '/var/webhooks/release'
-    const logsPath = config?.paths?.logs || '/var/webhooks/logs'
+    const home = config?.home || '/var/webhooks'
 
-    const codeAppPath = path.join(codePath, appName, branch)
+    const codeAppPath = path.join(home, 'code', appName)
     if (fs.existsSync(codeAppPath)) {
       fs.rmSync(codeAppPath, { recursive: true, force: true })
     }
 
-    const codeAppParent = path.join(codePath, appName)
-    if (fs.existsSync(codeAppParent)) {
-      const files = fs.readdirSync(codeAppParent)
-      if (files.length === 0) {
-        fs.rmdirSync(codeAppParent)
-      }
-    }
-
-    const releaseAppPath = path.join(releasePath, appName)
+    const releaseAppPath = path.join(home, 'release', appName)
     if (fs.existsSync(releaseAppPath)) {
       fs.rmSync(releaseAppPath, { recursive: true, force: true })
     }
 
-    const logsAppPath = path.join(logsPath, appName)
+    const logsAppPath = path.join(home, 'logs', appName)
     if (fs.existsSync(logsAppPath)) {
       fs.rmSync(logsAppPath, { recursive: true, force: true })
     }
@@ -283,12 +304,10 @@ export const remove = createApplicationsService(
 
 export const redeploy = createApplicationsService(
   {
-    params: 'IdParam',
     response: 'RedeployApplicationRes',
     auth: Auth.ADMIN
   },
   async ({ params, authData, set }: any) => {
-    console.log("[Redeploy] params:", params)
     await connectDB()
     const repo = await ApplicationModel.findById(params.id)
 
@@ -298,8 +317,8 @@ export const redeploy = createApplicationsService(
     }
 
     const config = await ConfigurationModel.findOne()
-    if (config?.paths) {
-      setDeploymentConfig(config.paths)
+    if (config?.home) {
+      setDeploymentConfig({ home: config.home })
     }
 
     const logPath = getLogPath(repo.name)
@@ -374,11 +393,126 @@ export const redeploy = createApplicationsService(
   }
 )
 
+export const getBranches = createApplicationsService(
+  {
+    params: 'IdParam',
+    response: 'GetBranchesRes',
+    auth: Auth.USER
+  },
+  async ({ params, authData, set }) => {
+    if (!authData) {
+      set.status = 401
+      throw new Error('Unauthorized')
+    }
+
+    await connectDB()
+
+    const application = await ApplicationModel.findById(params.id).lean() as any
+    if (!application) {
+      set.status = 404
+      throw new Error('Application not found')
+    }
+
+    const config = await ConfigurationModel.findOne().lean() as IConfiguration | null
+    const home = config?.home || '/var/webhooks'
+    const appCodePath = path.join(home, 'code', application.name)
+
+    if (!fs.existsSync(appCodePath)) {
+      set.status = 400
+      throw new Error('Application code directory not found. Deploy the application first.')
+    }
+
+    try {
+      // Fetch latest from remote
+      execSync('git fetch --all', { cwd: appCodePath, encoding: 'utf-8', stdio: 'pipe' })
+
+      // Get all branches
+      const branchOutput = execSync('git branch -a', { cwd: appCodePath, encoding: 'utf-8', stdio: 'pipe' })
+
+      const branches = branchOutput
+        .split('\n')
+        .map(b => b.trim())
+        .filter(b => b && !b.startsWith('*'))
+        .map(b => b.replace(/^remotes\/origin\//, ''))
+        .filter(b => b && !b.includes('HEAD'))
+        .filter((b, i, arr) => arr.indexOf(b) === i) // unique
+
+      return { branches }
+    } catch (error: any) {
+      set.status = 500
+      throw new Error(`Failed to get branches: ${error.message}`)
+    }
+  }
+)
+
+export const switchBranch = createApplicationsService(
+  {
+    params: 'IdParam',
+    body: 'SwitchBranchReq',
+    response: 'SwitchBranchRes',
+    auth: Auth.USER
+  },
+  async ({ params, body, authData, set }) => {
+    if (!authData) {
+      set.status = 401
+      throw new Error('Unauthorized')
+    }
+
+    await connectDB()
+
+    const application = await ApplicationModel.findById(params.id)
+    if (!application) {
+      set.status = 404
+      throw new Error('Application not found')
+    }
+
+    const config = await ConfigurationModel.findOne().lean() as IConfiguration | null
+    const home = config?.home || '/var/webhooks'
+    const currentBranch = application.branch || 'main'
+    const appCodePath = path.join(home, 'code', application.name)
+
+    if (!fs.existsSync(appCodePath)) {
+      set.status = 400
+      throw new Error('Application code directory not found. Deploy the application first.')
+    }
+
+    const newBranch = body.branch
+
+    try {
+      // Fetch, reset and checkout new branch
+      execSync(`git fetch --all`, { cwd: appCodePath, encoding: 'utf-8', stdio: 'pipe' })
+      execSync(`git reset --hard origin/${currentBranch}`, { cwd: appCodePath, encoding: 'utf-8', stdio: 'pipe' })
+      execSync(`git checkout ${newBranch}`, { cwd: appCodePath, encoding: 'utf-8', stdio: 'pipe' })
+
+      // Rewrite env file to prevent versioned env conflicts
+      if (application.env) {
+        const envFilePath = application.envFilePath || '.env'
+        const fullEnvPath = path.join(appCodePath, envFilePath)
+        fs.writeFileSync(fullEnvPath, application.env, 'utf-8')
+      }
+
+      // Update application branch in database
+      application.branch = newBranch
+      await application.save()
+
+      return {
+        message: `Switched to branch ${newBranch}`,
+        branch: newBranch
+      }
+    } catch (error: any) {
+      set.status = 500
+      throw new Error(`Failed to switch branch: ${error.message}`)
+    }
+  }
+)
+
 export const applicationsService = {
   list,
   get,
   create,
   update,
   remove,
-  redeploy
+  redeploy,
+  getBranches,
+  switchBranch
 }

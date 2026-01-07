@@ -31,7 +31,6 @@ export const list = createTemplatesService(
         files: template.files || [],
         nginxConfig: template.nginx || '',
         env: template.env || '',
-        isSystem: template.isSystem || false,
         createdAt: template.createdAt.toISOString(),
         updatedAt: template.updatedAt.toISOString()
       }))
@@ -73,7 +72,6 @@ export const get = createTemplatesService(
         files: template.files || [],
         nginxConfig: template.nginx || '',
         env: template.env || '',
-        isSystem: template.isSystem || false,
         createdAt: template.createdAt.toISOString(),
         updatedAt: template.updatedAt.toISOString()
       }
@@ -111,8 +109,7 @@ export const create = createTemplatesService(
       launch: body.launch || [],
       files: body.files || [],
       nginx: body.nginxConfig || '',
-      env: body.env || '',
-      isSystem: body.isSystem || false
+      env: body.env || ''
     })
 
     return {
@@ -128,7 +125,6 @@ export const create = createTemplatesService(
         files: template.files || [],
         nginxConfig: template.nginx || '',
         env: template.env || '',
-        isSystem: template.isSystem || false,
         createdAt: template.createdAt.toISOString(),
         updatedAt: template.updatedAt.toISOString()
       }
@@ -164,8 +160,7 @@ export const update = createTemplatesService(
           launch: body.launch || [],
           files: body.files || [],
           nginx: body.nginxConfig || '',
-          env: body.env || '',
-          isSystem: body.isSystem || false
+          env: body.env || ''
         }
       },
       { new: true }
@@ -189,7 +184,6 @@ export const update = createTemplatesService(
         files: template.files || [],
         nginxConfig: template.nginx || '',
         env: template.env || '',
-        isSystem: template.isSystem || false,
         createdAt: template.createdAt.toISOString(),
         updatedAt: template.updatedAt.toISOString()
       }
@@ -216,11 +210,6 @@ export const remove = createTemplatesService(
     if (!template) {
       set.status = 404
       throw new Error('Template not found')
-    }
-
-    if (template.isSystem) {
-      set.status = 403
-      throw new Error('Cannot delete system templates')
     }
 
     await TemplateModel.findByIdAndDelete(params.id)

@@ -1,8 +1,8 @@
 import { useState, FormEvent, ChangeEvent, Dispatch, SetStateAction } from 'react'
 
-type FileOperation = 'cp' | 'mv' | 'ln'
+type FileOperation = 'cp' | 'mv' | 'ln' | 'rm'
 
-interface FileTransfer {
+export interface FileTransfer {
   src: string
   dest: string
   op: FileOperation
@@ -23,6 +23,7 @@ interface FormDataType {
   nginxConfig?: string
   env?: string
   envFilePath?: string
+  environment?: string
 }
 
 interface UseRepositoryFormProps {
@@ -42,6 +43,7 @@ interface UseRepositoryFormProps {
     nginxConfig?: string
     env?: string
     envFilePath?: string
+    environment?: string
   }
 }
 
@@ -62,7 +64,8 @@ export function useRepositoryForm({ onSubmit, initialData }: UseRepositoryFormPr
     files: initialData?.files || [],
     nginxConfig: initialData?.nginxConfig || '',
     env: initialData?.env || '',
-    envFilePath: initialData?.envFilePath || '.env'
+    envFilePath: initialData?.envFilePath || '.env',
+    environment: initialData?.environment || 'prod'
   })
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

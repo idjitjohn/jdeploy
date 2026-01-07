@@ -18,22 +18,14 @@ export const get = createConfigurationService(
 
     if (!configuration) {
       configuration = await Configuration.create({
-        paths: {
-          home: '/var/webhooks',
-          code: '/var/webhooks/code',
-          release: '/var/webhooks/release',
-          certificate: '/var/webhooks/certificate',
-          logs: '/var/webhooks/logs',
-          nginxAvailable: '/etc/nginx/sites-available',
-          nginxEnabled: '/etc/nginx/sites-enabled'
-        }
+        home: '/var/webhooks'
       })
     }
 
     return {
       configuration: {
         id: configuration._id.toString(),
-        paths: configuration.paths,
+        home: configuration.home,
         createdAt: configuration.createdAt.toISOString(),
         updatedAt: configuration.updatedAt.toISOString()
       }
@@ -48,9 +40,9 @@ export const update = createConfigurationService(
     auth: Auth.ADMIN
   },
   async ({ body, set }) => {
-    if (!body.paths || Object.keys(body.paths).length === 0) {
+    if (!body.home) {
       set.status = 400
-      throw new Error('Missing paths configuration')
+      throw new Error('Missing home path')
     }
 
     await connectDB()
@@ -59,28 +51,17 @@ export const update = createConfigurationService(
 
     if (!configuration) {
       configuration = await Configuration.create({
-        paths: {
-          home: body.paths.home || '/var/webhooks',
-          code: body.paths.code || '/var/webhooks/code',
-          release: body.paths.release || '/var/webhooks/release',
-          certificate: body.paths.certificate || '/var/webhooks/certificate',
-          logs: body.paths.logs || '/var/webhooks/logs',
-          nginxAvailable: body.paths.nginxAvailable || '/etc/nginx/sites-available',
-          nginxEnabled: body.paths.nginxEnabled || '/etc/nginx/sites-enabled'
-        }
+        home: body.home
       })
     } else {
-      configuration.paths = {
-        ...configuration.paths,
-        ...body.paths
-      }
+      configuration.home = body.home
       await configuration.save()
     }
 
     return {
       configuration: {
         id: configuration._id.toString(),
-        paths: configuration.paths,
+        home: configuration.home,
         createdAt: configuration.createdAt.toISOString(),
         updatedAt: configuration.updatedAt.toISOString()
       }

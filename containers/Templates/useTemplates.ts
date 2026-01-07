@@ -16,7 +16,6 @@ interface Template {
   name: string
   displayName: string
   description: string
-  isSystem?: boolean
   prebuild?: string[]
   build?: string[]
   deployment?: string[]
