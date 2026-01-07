@@ -1,6 +1,7 @@
 import { execSync } from 'child_process'
 import fs from 'fs'
 import path from 'path'
+import DeploymentLog from '@/server/models/DeploymentLog'
 
 // Log writer that appends to file in real-time
 class LogWriter {
@@ -39,7 +40,7 @@ class LogWriter {
 }
 
 // Cleanup old logs, keeping only the latest N files
-export function cleanupOldLogs(repoName: string, keepCount: number = 10): void {
+export async function cleanupOldLogs(repoName: string, keepCount: number = 10): Promise<void> {
   const logsDir = path.join(deploymentConfig.logs, repoName)
   if (!fs.existsSync(logsDir)) return
 
@@ -54,13 +55,23 @@ export function cleanupOldLogs(repoName: string, keepCount: number = 10): void {
 
   // Remove files beyond keepCount
   const toDelete = files.slice(keepCount)
+  const deletedPaths: string[] = []
+
   for (const file of toDelete) {
     try {
       fs.unlinkSync(file.path)
+      deletedPaths.push(file.path)
       console.log(`[Cleanup] Deleted old log: ${file.name}`)
-    } catch (err) {
-      console.error(`[Cleanup] Failed to delete ${file.name}:`, err)
+    } catch (err: any) {
+      if (err.code !== 'ENOENT') {
+        console.error(`[Cleanup] Failed to delete ${file.name}:`, err)
+      }
     }
+  }
+
+  // Remove orphaned DB records
+  if (deletedPaths.length > 0) {
+    await DeploymentLog.deleteMany({ logFile: { $in: deletedPaths } })
   }
 }
 
@@ -307,7 +318,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
   const releasePath = getReleasePath(context.repoName)
 
   // Cleanup old logs BEFORE creating new log file to avoid deleting current log
-  cleanupOldLogs(context.repoName, 10)
+  await cleanupOldLogs(context.repoName, 10)
 
   const log = new LogWriter(context.logPath)
 

@@ -125,8 +125,11 @@ export const clear = createLogsService(
     for (const log of logsToDelete) {
       try {
         if (log.logFile) await fs.unlink(log.logFile)
-      } catch (error) {
-        console.error(`Failed to delete log file: ${log.logFile}`, error)
+      } catch (error: any) {
+        // ignore ENOENT - file already deleted
+        if (error.code !== 'ENOENT') {
+          console.error(`Failed to delete log file: ${log.logFile}`, error)
+        }
       }
     }
 

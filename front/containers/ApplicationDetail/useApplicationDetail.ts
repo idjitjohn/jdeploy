@@ -149,6 +149,7 @@ export function useApplicationDetail(id: string) {
         // Stop polling if no longer running
         if (updatedLog.status !== 'running') {
           stopPolling()
+          setIsRedeploying(false)
           return
         }
       }
@@ -156,9 +157,9 @@ export function useApplicationDetail(id: string) {
       console.error('Failed to refresh logs:', error)
     }
 
-    // Schedule next poll after response
+    // Schedule next poll after 1 second
     if (isPollingRef.current) {
-      pollingTimeoutRef.current = setTimeout(() => pollOnce(logId, appName), 2000)
+      pollingTimeoutRef.current = setTimeout(() => pollOnce(logId, appName), 1000)
     }
   }, [fetchLogContent, stopPolling])
 
@@ -202,20 +203,33 @@ export function useApplicationDetail(id: string) {
     setIsRedeploying(true)
     try {
       showNotification(`Redeploying ${application.name}...`, 'info')
-      await fetch(`/api/applications/${id}/redeploy`, {
+      const response = await fetch(`/api/applications/${id}/redeploy`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       })
-      showNotification(`Deployment started for ${application.name}`, 'success')
-      // Reload logs after a short delay
-      setTimeout(() => {
-        if (application.name) {
-          loadLogsForApp(application.name)
+      const data = await response.json()
+      
+      if (data.log) {
+        // Add new log to list and select it
+        const newLog: DeploymentLog = {
+          id: data.log.id,
+          application: data.log.application,
+          branch: data.log.branch,
+          type: data.log.type,
+          status: data.log.status,
+          triggeredBy: data.log.triggeredBy,
+          startedAt: data.log.startedAt,
+          logFile: data.log.logFile
         }
-      }, 2000)
+        setLogs(prev => [newLog, ...prev])
+        setSelectedLog(newLog)
+        setLogContent('Deployment starting...')
+        // Polling will start automatically via useEffect when selectedLog.status === 'running'
+      }
+      
+      showNotification(`Deployment started for ${application.name}`, 'success')
     } catch (error) {
       showNotification('Redeploy failed: ' + (error as Error).message, 'error')
-    } finally {
       setIsRedeploying(false)
     }
   }
