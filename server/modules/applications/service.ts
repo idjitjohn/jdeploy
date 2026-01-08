@@ -162,15 +162,7 @@ export const create = createApplicationsService(
 
     // Write nginx config file
     if (application.nginx) {
-      await writeNginxConfigFile(application.nginx, {
-        appName: application.name,
-        repoName: application.name,
-        branch: application.branch || 'main',
-        port: application.port,
-        appId: application._id.toString(),
-        subdomain: application.subdomain || '',
-        domain: application.domain
-      })
+      await writeNginxConfigFile(application.nginx, application)
     }
 
     return {
@@ -285,13 +277,7 @@ export const update = createApplicationsService(
       const envFilePath = body.envFilePath || '.env'
       const fullEnvPath = path.join(appCodePath, envFilePath)
       if (fs.existsSync(appCodePath)) {
-        const interpolatedEnv = interpolateVariables(newEnv, {
-          repoName: application.name,
-          branch: application.branch || 'main',
-          port: application.port,
-          appId: application._id.toString(),
-          mongoUri: application.mongoUri || ''
-        })
+        const interpolatedEnv = interpolateVariables(newEnv, application)
         fs.writeFileSync(fullEnvPath, interpolatedEnv, 'utf-8')
       }
     }
@@ -300,15 +286,7 @@ export const update = createApplicationsService(
     const oldNginx = oldApplication.nginx || ''
     const newNginx = body.nginxConfig || ''
     if (newNginx !== oldNginx) {
-      await writeNginxConfigFile(newNginx, {
-        appName: application.name,
-        repoName: application.name,
-        branch: application.branch || 'main',
-        port: application.port,
-        appId: application._id.toString(),
-        subdomain: application.subdomain || '',
-        domain: application.domain
-      })
+      await writeNginxConfigFile(newNginx, application)
     }
 
     return {
@@ -418,28 +396,14 @@ export const redeploy = createApplicationsService(
 
     // Write nginx config file before deployment
     if (repo.nginx) {
-      await writeNginxConfigFile(repo.nginx, {
-        appName: repo.name,
-        repoName: repo.name,
-        branch: repo.branch || 'main',
-        port: repo.port,
-        appId: repo._id.toString(),
-        subdomain: repo.subdomain || '',
-        domain: repo.domain
-      })
+      await writeNginxConfigFile(repo.nginx, repo)
     }
 
     // Write env file before deployment (interpolated)
     if (repo.env && fs.existsSync(appCodePath)) {
       const envFilePath = repo.envFilePath || '.env'
       const fullEnvPath = path.join(appCodePath, envFilePath)
-      const interpolatedEnv = interpolateVariables(repo.env, {
-        repoName: repo.name,
-        branch: repo.branch || 'main',
-        port: repo.port,
-        appId: repo._id.toString(),
-        mongoUri: repo.mongoUri || ''
-      })
+      const interpolatedEnv = interpolateVariables(repo.env, repo)
       fs.writeFileSync(fullEnvPath, interpolatedEnv, 'utf-8')
     }
 
@@ -459,11 +423,9 @@ export const redeploy = createApplicationsService(
     await log.save()
 
     runDeployment({
-      repoName: repo.name,
-      branch,
+      app: repo,
       repoUrl: repo.repoUrl,
       logPath,
-      port: repo.port,
       env,
       envFileContent: repo.env || '',
       envFilePath: repo.envFilePath || '.env',
@@ -471,9 +433,7 @@ export const redeploy = createApplicationsService(
       build: repo.build || [],
       deployment: repo.deployment || [],
       launch: repo.launch || [],
-      files: repo.files || [],
-      appId: repo._id.toString(),
-      mongoUri: repo.mongoUri || ''
+      files: repo.files || []
     })
       .then((result) => {
         if (result?.success) {
@@ -609,13 +569,7 @@ export const switchBranch = createApplicationsService(
       if (application.env) {
         const envFilePath = application.envFilePath || '.env'
         const fullEnvPath = path.join(appCodePath, envFilePath)
-        const interpolatedEnv = interpolateVariables(application.env, {
-          repoName: application.name,
-          branch: application.branch || 'main',
-          port: application.port,
-          appId: application._id.toString(),
-          mongoUri: application.mongoUri || ''
-        })
+        const interpolatedEnv = interpolateVariables(application.env, application)
         fs.writeFileSync(fullEnvPath, interpolatedEnv, 'utf-8')
       }
 

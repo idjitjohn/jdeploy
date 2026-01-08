@@ -1,19 +1,9 @@
 import { getPaths } from '@/server/utils/paths'
-import { interpolateVariables, setDeploymentConfig } from '@/server/lib/deployment'
+import { interpolateVariables, setDeploymentConfig, InterpolationContext } from '@/server/lib/deployment'
 import fs from 'fs'
 import path from 'path'
 
-interface NginxContext {
-  appName: string
-  repoName: string
-  branch: string
-  port?: number
-  appId?: string
-  subdomain?: string
-  domain?: string
-}
-
-export async function writeNginxConfigFile(nginxTemplate: string, context: NginxContext) {
+export async function writeNginxConfigFile(nginxTemplate: string, app: InterpolationContext) {
   if (!nginxTemplate) return
 
   const paths = await getPaths()
@@ -25,15 +15,7 @@ export async function writeNginxConfigFile(nginxTemplate: string, context: Nginx
     fs.mkdirSync(paths.nginx, { recursive: true })
   }
 
-  const interpolatedContent = interpolateVariables(nginxTemplate, {
-    repoName: context.repoName,
-    branch: context.branch,
-    port: context.port,
-    appId: context.appId,
-    subdomain: context.subdomain,
-    domain: context.domain
-  })
-
-  const configFilePath = path.join(paths.nginx, `${context.appName}.conf`)
+  const interpolatedContent = interpolateVariables(nginxTemplate, app)
+  const configFilePath = path.join(paths.nginx, `${app.name}.conf`)
   fs.writeFileSync(configFilePath, interpolatedContent, 'utf-8')
 }

@@ -89,9 +89,7 @@ export interface FileTransfer {
 }
 
 export interface DeploymentContext {
-  appId: string
-  repoName: string
-  branch: string
+  app: InterpolationContext
   repoUrl: string
   logPath: string
   env: Record<string, string>
@@ -102,8 +100,6 @@ export interface DeploymentContext {
   deployment: string[]
   launch: string[]
   files: FileTransfer[]
-  mongoUri?: string
-  port?: number
 }
 
 export interface DeploymentConfig {
@@ -184,26 +180,38 @@ export function initializeApplication(repoName: string, repoUrl: string, branch:
   execSync(cloneCmd, { cwd: codePath, encoding: 'utf-8', stdio: 'pipe' })
 }
 
-export function interpolateVariables(command: string, context: { repoName: string; branch: string; port?: number, appId?: string, subdomain?: string, domain?: string, mongoUri?: string }): string {
-  const codePath = getDeploymentPath(context.repoName)
-  const releasePath = getReleasePath(context.repoName)
-  const certificatePath = path.join(deploymentConfig.certificate, context.repoName)
-  const domainCertPath = context.domain ? path.join(deploymentConfig.certificate, context.domain) : ''
+export interface InterpolationContext {
+  _id?: { toString(): string }
+  name: string
+  branch?: string
+  port?: number
+  subdomain?: string
+  domain?: string
+  mongoUri?: string
+}
 
-  return command
-    .replace(/\$id\$/g, context.appId || '')
+export function interpolateVariables(content: string, app: InterpolationContext): string {
+  const codePath = getDeploymentPath(app.name)
+  const releasePath = getReleasePath(app.name)
+  const certificatePath = path.join(deploymentConfig.certificate, app.name)
+  const domainCertPath = app.domain ? path.join(deploymentConfig.certificate, app.domain) : ''
+  const appId = app._id?.toString() || ''
+  const branch = app.branch || 'main'
+
+  return content
+    .replace(/\$id\$/g, appId)
     .replace(/\$cf\$/g, codePath)
     .replace(/\$rf\$/g, releasePath)
     .replace(/\$certsf\$/g, certificatePath)
     .replace(/\$crtf\$/g, domainCertPath)
-    .replace(/\$logsf\$/g, path.join(deploymentConfig.logs, context.repoName))
-    .replace(/\$branch\$/g, context.branch)
-    .replace(/\$name\$/g, context.repoName)
-    .replace(/\$repoName\$/g, context.repoName)
-    .replace(/\$port\$/g, context.port?.toString() || '')
-    .replace(/\$subdomain\$/g, context.subdomain || '')
-    .replace(/\$domain\$/g, context.domain || '')
-    .replace(/\$mongo\$/g, context.mongoUri || '')
+    .replace(/\$logsf\$/g, path.join(deploymentConfig.logs, app.name))
+    .replace(/\$branch\$/g, branch)
+    .replace(/\$name\$/g, app.name)
+    .replace(/\$repoName\$/g, app.name)
+    .replace(/\$port\$/g, app.port?.toString() || '')
+    .replace(/\$subdomain\$/g, app.subdomain || '')
+    .replace(/\$domain\$/g, app.domain || '')
+    .replace(/\$mongo\$/g, app.mongoUri || '')
 }
 
 export function executeCommand(cmd: string, cwd: string): string {
@@ -281,9 +289,9 @@ export async function prepare(context: DeploymentContext): Promise<{
   const output: string[] = []
   const codePath = deploymentConfig.code
 
-  console.log(`\n🔧 [${context.repoName}] Running preparation in ${codePath}`)
+  console.log(`\n🔧 [${context.app.name}] Running preparation in ${codePath}`)
   try {
-    output.push(`[${new Date().toISOString()}] Running prebuild for ${context.repoName}`)
+    output.push(`[${new Date().toISOString()}] Running prebuild for ${context.app.name}`)
 
     // Ensure code directory exists
     if (!fs.existsSync(codePath)) {
@@ -292,9 +300,9 @@ export async function prepare(context: DeploymentContext): Promise<{
 
     output.push(`[${new Date().toISOString()}] Running prebuild scripts in ${codePath}...`)
     for (const script of context.prebuild) {
-      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
+      const interpolated = interpolateVariables(script, context.app)
       output.push(`> ${interpolated}`)
-      console.log(`[${context.repoName}] Executing prebuild: ${interpolated}`)
+      console.log(`[${context.app.name}] Executing prebuild: ${interpolated}`)
       const result = executeCommand(interpolated, codePath)
       output.push(result)
     }
@@ -304,7 +312,7 @@ export async function prepare(context: DeploymentContext): Promise<{
     const fullOutput = output.join('\n')
     fs.writeFileSync(context.logPath, fullOutput)
 
-    console.log(`✅ [${context.repoName}] Prebuild completed successfully\n`)
+    console.log(`✅ [${context.app.name}] Prebuild completed successfully\n`)
     return {
       success: true,
       output: fullOutput
@@ -316,7 +324,7 @@ export async function prepare(context: DeploymentContext): Promise<{
     const fullOutput = output.join('\n')
     fs.writeFileSync(context.logPath, fullOutput)
 
-    console.error(`❌ [${context.repoName}] Prebuild failed: ${errorMsg}\n`)
+    console.error(`❌ [${context.app.name}] Prebuild failed: ${errorMsg}\n`)
     return {
       success: false,
       output: fullOutput,
@@ -334,9 +342,9 @@ export async function runPrebuild(context: DeploymentContext): Promise<{
   const output: string[] = []
   const codePath = deploymentConfig.code
 
-  console.log(`\n🔧 [${context.repoName}] Running prebuild in ${codePath}`)
+  console.log(`\n🔧 [${context.app.name}] Running prebuild in ${codePath}`)
   try {
-    output.push(`[${new Date().toISOString()}] Running prebuild for ${context.repoName}`)
+    output.push(`[${new Date().toISOString()}] Running prebuild for ${context.app.name}`)
 
     // Ensure code directory exists
     if (!fs.existsSync(codePath)) {
@@ -345,9 +353,9 @@ export async function runPrebuild(context: DeploymentContext): Promise<{
 
     output.push(`[${new Date().toISOString()}] Running prebuild scripts in ${codePath}...`)
     for (const script of context.prebuild) {
-      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
+      const interpolated = interpolateVariables(script, context.app)
       output.push(`> ${interpolated}`)
-      console.log(`[${context.repoName}] Executing prebuild: ${interpolated}`)
+      console.log(`[${context.app.name}] Executing prebuild: ${interpolated}`)
       const result = executeCommand(interpolated, codePath)
       output.push(result)
     }
@@ -357,7 +365,7 @@ export async function runPrebuild(context: DeploymentContext): Promise<{
     const fullOutput = output.join('\n')
     fs.writeFileSync(context.logPath, fullOutput)
 
-    console.log(`✅ [${context.repoName}] Prebuild completed successfully\n`)
+    console.log(`✅ [${context.app.name}] Prebuild completed successfully\n`)
     return {
       success: true,
       output: fullOutput
@@ -369,7 +377,7 @@ export async function runPrebuild(context: DeploymentContext): Promise<{
     const fullOutput = output.join('\n')
     fs.writeFileSync(context.logPath, fullOutput)
 
-    console.error(`❌ [${context.repoName}] Prebuild failed: ${errorMsg}\n`)
+    console.error(`❌ [${context.app.name}] Prebuild failed: ${errorMsg}\n`)
     return {
       success: false,
       output: fullOutput,
@@ -382,19 +390,19 @@ export async function runPrebuild(context: DeploymentContext): Promise<{
 export async function runDeployment(context: DeploymentContext): Promise<{
   success: boolean, output: string, error?: string
 }> {
-  const appCodePath = getDeploymentPath(context.repoName)
-  const releasePath = getReleasePath(context.repoName)
+  const appCodePath = getDeploymentPath(context.app.name)
+  const releasePath = getReleasePath(context.app.name)
 
   // Cleanup old logs BEFORE creating new log file to avoid deleting current log
-  await cleanupOldLogs(context.repoName, 10)
+  await cleanupOldLogs(context.app.name, 10)
 
   // Use current.log during deployment, rename to final path when done
-  const currentLogPath = getCurrentLogPath(context.repoName)
+  const currentLogPath = getCurrentLogPath(context.app.name)
   const log = new LogWriter(currentLogPath)
 
-  console.log(`\n🚀 [${context.repoName}] Starting deployment for branch: ${context.branch}`)
+  console.log(`\n🚀 [${context.app.name}] Starting deployment for branch: ${context.app.branch}`)
   try {
-    log.write(`[${new Date().toISOString()}] Starting deployment for ${context.repoName}/${context.branch}`)
+    log.write(`[${new Date().toISOString()}] Starting deployment for ${context.app.name}/${context.app.branch}`)
 
     // Clone or update repository
     if (!fs.existsSync(appCodePath)) {
@@ -409,9 +417,9 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     log.write(`[${new Date().toISOString()}] Running prebuild scripts in ${appCodePath}...`)
 
     for (const script of context.prebuild) {
-      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
+      const interpolated = interpolateVariables(script, context.app)
       log.write(`> ${interpolated}`)
-      console.log(`[${context.repoName}] Executing prebuild in code folder: ${interpolated}`)
+      console.log(`[${context.app.name}] Executing prebuild in code folder: ${interpolated}`)
       await executeCommandAsync(interpolated, appCodePath, log)
     }
 
@@ -419,11 +427,11 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     if (context.envFileContent) {
       const envFilePath = context.envFilePath || '.env'
       const fullEnvPath = path.join(appCodePath, envFilePath)
-      const interpolatedEnv = interpolateVariables(context.envFileContent, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
+      const interpolatedEnv = interpolateVariables(context.envFileContent, context.app)
       log.write(`[${new Date().toISOString()}] Creating environment file: ${envFilePath}`)
       fs.writeFileSync(fullEnvPath, interpolatedEnv, 'utf-8')
       log.write(`✓ Environment file created at ${envFilePath}`)
-      console.log(`[${context.repoName}] Environment file created: ${fullEnvPath}`)
+      console.log(`[${context.app.name}] Environment file created: ${fullEnvPath}`)
     }
 
     // Create release folder before build commands
@@ -431,7 +439,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
       log.write(`[${new Date().toISOString()}] Creating release folder...`)
       fs.mkdirSync(releasePath, { recursive: true })
       log.write(`✓ Release folder created at ${releasePath}`)
-      console.log(`[${context.repoName}] Release folder created: ${releasePath}`)
+      console.log(`[${context.app.name}] Release folder created: ${releasePath}`)
     } else {
       log.write(`[${new Date().toISOString()}] Release folder already exists`)
     }
@@ -439,9 +447,9 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     // 2. Build - runs in application code folder
     log.write(`[${new Date().toISOString()}] Running build commands in ${appCodePath}...`)
     for (const cmd of context.build) {
-      const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
+      const interpolated = interpolateVariables(cmd, context.app)
       log.write(`> ${interpolated}`)
-      console.log(`[${context.repoName}] Executing build in app code folder: ${interpolated}`)
+      console.log(`[${context.app.name}] Executing build in app code folder: ${interpolated}`)
       await executeCommandAsync(interpolated, appCodePath, log)
     }
 
@@ -449,8 +457,8 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     if (context.files && context.files.length > 0) {
       log.write(`[${new Date().toISOString()}] Processing file transfers...`)
       for (const file of context.files) {
-        const srcPath = interpolateVariables(file.src, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
-        const destPath = interpolateVariables(file.dest, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
+        const srcPath = interpolateVariables(file.src, context.app)
+        const destPath = interpolateVariables(file.dest, context.app)
         let cmd: string
         switch (file.op) {
           case 'rm':
@@ -468,13 +476,13 @@ export async function runDeployment(context: DeploymentContext): Promise<{
             break
         }
         log.write(`> ${cmd}`)
-        console.log(`[${context.repoName}] File transfer: ${cmd}`)
+        console.log(`[${context.app.name}] File transfer: ${cmd}`)
         try {
           await executeCommandAsync(cmd, appCodePath, log)
         } catch (err: any) {
           // Log warning but continue with other file operations
           log.write(`⚠ File operation failed (continuing): ${err.message}`)
-          console.warn(`[${context.repoName}] File operation failed (continuing): ${err.message}`)
+          console.warn(`[${context.app.name}] File operation failed (continuing): ${err.message}`)
         }
       }
       log.write(`✓ File transfers completed`)
@@ -483,18 +491,18 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     // 3. Deployment - runs in application code folder
     log.write(`[${new Date().toISOString()}] Running deployment commands in ${appCodePath}...`)
     for (const cmd of context.deployment) {
-      const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
+      const interpolated = interpolateVariables(cmd, context.app)
       log.write(`> ${interpolated}`)
-      console.log(`[${context.repoName}] Executing deployment in app code folder: ${interpolated}`)
+      console.log(`[${context.app.name}] Executing deployment in app code folder: ${interpolated}`)
       await executeCommandAsync(interpolated, appCodePath, log)
     }
 
     // 4. Launch - runs in release folder
     log.write(`[${new Date().toISOString()}] Running launch commands in ${releasePath}...`)
     for (const script of context.launch) {
-      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
+      const interpolated = interpolateVariables(script, context.app)
       log.write(`> ${interpolated}`)
-      console.log(`[${context.repoName}] Executing launch in release folder: ${interpolated}`)
+      console.log(`[${context.app.name}] Executing launch in release folder: ${interpolated}`)
       await executeCommandAsync(interpolated, releasePath, log)
     }
 
@@ -503,9 +511,9 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     await log.close()
 
     // Rename current.log to final timestamp-based path
-    finalizeLog(context.repoName, context.logPath)
+    finalizeLog(context.app.name, context.logPath)
 
-    console.log(`✅ [${context.repoName}] Deployment completed successfully\n`)
+    console.log(`✅ [${context.app.name}] Deployment completed successfully\n`)
     return {
       success: true,
       output
@@ -517,9 +525,9 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     await log.close()
 
     // Rename current.log to final timestamp-based path
-    finalizeLog(context.repoName, context.logPath)
+    finalizeLog(context.app.name, context.logPath)
 
-    console.error(`❌ [${context.repoName}] Deployment failed: ${errorMsg}\n`)
+    console.error(`❌ [${context.app.name}] Deployment failed: ${errorMsg}\n`)
 
     return {
       success: false,
