@@ -5,20 +5,90 @@ const crypto = require('crypto')
 const readline = require('readline')
 const fs = require('fs')
 const path = require('path')
+const os = require('os')
 
-// Home directory will be set after asking user or reading from DB
-let HOME_DIR = null
+// Config file path in user home
+const CONFIG_FILE = path.join(os.homedir(), '.jdeploy.json')
+
+// Default home directory
+const DEFAULT_HOME = path.join(os.homedir(), 'jdeploy')
+
+// Config object
+let config = null
+
+function generateSecret(length = 32) {
+  return crypto.randomBytes(length).toString('hex')
+}
 
 function generatePassword(length = 24) {
-  return crypto.randomBytes(length).toString('base64').slice(0, length)
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  const bytes = crypto.randomBytes(length)
+  let result = ''
+  for (let i = 0; i < length; i++) {
+    result += chars[bytes[i] % chars.length]
+  }
+  return result
+}
+
+// Encrypt with secret (AES-256-CBC + base64)
+function encrypt(text, secret) {
+  const key = crypto.createHash('sha256').update(secret).digest()
+  const iv = crypto.randomBytes(16)
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)
+  let encrypted = cipher.update(text, 'utf8', 'base64')
+  encrypted += cipher.final('base64')
+  return iv.toString('base64') + ':' + encrypted
+}
+
+// Decrypt with secret
+function decrypt(encrypted, secret) {
+  const [ivBase64, data] = encrypted.split(':')
+  const key = crypto.createHash('sha256').update(secret).digest()
+  const iv = Buffer.from(ivBase64, 'base64')
+  const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
+  let decrypted = decipher.update(data, 'base64', 'utf8')
+  decrypted += decipher.final('utf8')
+  return decrypted
+}
+
+function loadConfig() {
+  if (fs.existsSync(CONFIG_FILE)) {
+    try {
+      config = JSON.parse(fs.readFileSync(CONFIG_FILE, 'utf-8'))
+      return true
+    } catch {
+      return false
+    }
+  }
+  return false
+}
+
+function saveConfig() {
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf-8')
+}
+
+function getMongoPassword() {
+  if (!config || !config.secret || !config.mongo_pass) {
+    return null
+  }
+  try {
+    return decrypt(config.mongo_pass, config.secret)
+  } catch {
+    return null
+  }
+}
+
+function setMongoPassword(password) {
+  if (!config.secret) {
+    config.secret = generateSecret()
+  }
+  config.mongo_pass = encrypt(password, config.secret)
+  saveConfig()
 }
 
 function getAdminConnectionString(password) {
-  return `mongodb://admin:${password}@localhost:27017/admin?authMechanism=DEFAULT&authSource=admin`
-}
-
-function getMongoPassFile() {
-  return path.join(HOME_DIR, 'mongo.admin.pass')
+  const encodedPassword = encodeURIComponent(password)
+  return `mongodb://admin:${encodedPassword}@localhost:27017/admin?authMechanism=DEFAULT&authSource=admin`
 }
 
 const rl = readline.createInterface({
@@ -256,11 +326,8 @@ async function setupMongoAuth(sudoPassword) {
   console.log('\nConfiguring MongoDB authentication...')
 
   try {
-    // Check if we have a stored password
-    let storedPassword = null
-    if (fs.existsSync(getMongoPassFile())) {
-      storedPassword = fs.readFileSync(getMongoPassFile(), 'utf-8').trim()
-    }
+    // Check if we have a stored password in config
+    let storedPassword = getMongoPassword()
 
     // Find mongod.conf location (pass stored password in case security is active)
     const mongodConf = await findMongodConf(storedPassword)
@@ -305,7 +372,7 @@ async function setupMongoAuth(sudoPassword) {
 
       if (valid) {
         // Save valid password
-        fs.writeFileSync(getMongoPassFile(), mongoPassword, 'utf-8')
+        setMongoPassword(mongoPassword)
         console.log('MongoDB admin password verified and saved')
         return true
       }
@@ -334,7 +401,7 @@ async function setupMongoAuth(sudoPassword) {
       }
 
       // Save password
-      fs.writeFileSync(getMongoPassFile(), newPassword, 'utf-8')
+      setMongoPassword(newPassword)
       console.log('MongoDB admin password set and saved')
       console.log(`\nAdmin connection string:\n${getAdminConnectionString(newPassword)}\n`)
 
@@ -367,7 +434,7 @@ async function setupMongoAuth(sudoPassword) {
       }
 
       // Save password
-      fs.writeFileSync(getMongoPassFile(), newPassword, 'utf-8')
+      setMongoPassword(newPassword)
       console.log('MongoDB admin user created and password saved')
       console.log(`\nAdmin connection string:\n${getAdminConnectionString(newPassword)}\n`)
 
@@ -433,7 +500,110 @@ async function setupSudoers(password) {
   }
 }
 
+async function findNginxConf(sudoPassword) {
+  // Try nginx -t to find config path
+  try {
+    const result = await execSudo('nginx -t 2>&1', sudoPassword)
+    const match = result.match(/configuration file ([^\s]+)/)
+    if (match) {
+      return match[1]
+    }
+  } catch (error) {
+    // Try to extract path from error message
+    const match = error.message?.match(/configuration file ([^\s]+)/)
+    if (match) {
+      return match[1]
+    }
+  }
+
+  // Fallback to common paths
+  const commonPaths = [
+    '/etc/nginx/nginx.conf',
+    '/opt/homebrew/etc/nginx/nginx.conf',
+    '/usr/local/etc/nginx/nginx.conf'
+  ]
+  for (const p of commonPaths) {
+    if (fs.existsSync(p)) {
+      return p
+    }
+  }
+
+  return null
+}
+
+async function setupNginxInclude(sudoPassword) {
+  console.log('\nConfiguring Nginx to include app configs...')
+
+  const nginxConf = await findNginxConf(sudoPassword)
+  if (!nginxConf) {
+    console.log('Nginx config not found, skipping...')
+    return true
+  }
+  console.log(`Found Nginx config at: ${nginxConf}`)
+
+  const appNginxDir = path.join(config.home, 'nginx')
+  const includeLine = `include ${appNginxDir}/*.conf;`
+
+  try {
+    // Read current nginx config
+    const content = await execSudo(`cat ${nginxConf}`, sudoPassword)
+
+    // Check if already included
+    if (content.includes(includeLine)) {
+      console.log('Nginx include already configured, skipping...')
+      return true
+    }
+
+    // Find first include line and add our include after it
+    const lines = content.split('\n')
+    let insertIndex = -1
+
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i].trim().startsWith('include ')) {
+        insertIndex = i + 1
+        break
+      }
+    }
+
+    if (insertIndex === -1) {
+      console.log('No include directive found in nginx.conf, skipping...')
+      return true
+    }
+
+    // Insert our include line
+    lines.splice(insertIndex, 0, `    ${includeLine}`)
+    const newContent = lines.join('\n')
+
+    // Write back using temp file
+    const tempFile = `/tmp/nginx.conf.${Date.now()}`
+    fs.writeFileSync(tempFile, newContent, 'utf-8')
+    await execSudo(`cp ${tempFile} ${nginxConf}`, sudoPassword)
+    fs.unlinkSync(tempFile)
+
+    // Test nginx config and reload
+    try {
+      await execSudo('nginx -t', sudoPassword)
+      console.log('Nginx config validated')
+      await execSudo('systemctl restart nginx', sudoPassword)
+      console.log('Nginx reloaded')
+    } catch (error) {
+      console.error('Nginx config test or reload failed:', error.message)
+      return false
+    }
+
+    return true
+  } catch (error) {
+    console.error('Failed to configure Nginx:', error.message)
+    return false
+  }
+}
+
 async function getHomeDirectory() {
+  // First check if config file exists and has home
+  if (config && config.home) {
+    return config.home
+  }
+
   // Try to get from MongoDB configuration
   try {
     const result = execSync('mongosh --quiet --eval "db.getSiblingDB(\'webhook-deployer\').configurations.findOne()?.home"', {
@@ -448,21 +618,36 @@ async function getHomeDirectory() {
   }
 
   // Ask user for home directory
-  const homeDir = await question('Enter webhooks home directory [/var/webhooks]: ')
-  return homeDir.trim() || '/var/webhooks'
+  const homeDir = await question(`Enter webhooks home directory [${DEFAULT_HOME}]: `)
+  return homeDir.trim() || DEFAULT_HOME
 }
 
 async function main() {
   console.log('=== Webhook Deployer Initialization ===\n')
 
-  // Get home directory first
-  HOME_DIR = await getHomeDirectory()
-  console.log(`Using home directory: ${HOME_DIR}\n`)
+  // Load or create config
+  const configExists = loadConfig()
+  if (configExists) {
+    console.log(`Config loaded from ${CONFIG_FILE}`)
+  } else {
+    console.log('No config found, creating new one...')
+    config = {
+      secret: generateSecret(),
+      home: null,
+      mongo_pass: null
+    }
+  }
+
+  // Get home directory
+  const homeDir = await getHomeDirectory()
+  config.home = homeDir
+  saveConfig()
+  console.log(`Using home directory: ${config.home}\n`)
 
   // Ensure home directory exists
-  if (!fs.existsSync(HOME_DIR)) {
-    console.log(`Creating home directory: ${HOME_DIR}`)
-    fs.mkdirSync(HOME_DIR, { recursive: true })
+  if (!fs.existsSync(config.home)) {
+    console.log(`Creating home directory: ${config.home}`)
+    fs.mkdirSync(config.home, { recursive: true })
   }
 
   const password = await askPassword()
@@ -487,6 +672,13 @@ async function main() {
   // Setup MongoDB authentication
   const mongoOk = await setupMongoAuth(password)
   if (!mongoOk) {
+    rl.close()
+    process.exit(1)
+  }
+
+  // Setup Nginx include for app configs
+  const nginxOk = await setupNginxInclude(password)
+  if (!nginxOk) {
     rl.close()
     process.exit(1)
   }

@@ -19,7 +19,7 @@ export async function getPaths(): Promise<ConfigPaths> {
     const Configuration = mongoose.models.Configuration
     lastConfig.home = (await Configuration.findOne().lean() as any)?.home || ''
   }
-  if (!lastConfig.home) throw new Error('Launch the "yarn deploy" to init the app')
+  if (!lastConfig.home) throw new Error('Launch the "yarn deploy" or "bun deploy" to init the app')
   const home = lastConfig.home
 
   return {

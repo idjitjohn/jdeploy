@@ -239,8 +239,6 @@ export function executeCommandAsync(
   logWriter: LogWriter
 ): Promise<string> {
   return new Promise((resolve, reject) => {
-    console.log(`[executeCommandAsync] cwd: ${cwd}, cmd: ${cmd}`)
-
     const cleanEnv = {
       HOME: process.env.HOME || '',
       PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin',
@@ -302,7 +300,6 @@ export async function prepare(context: DeploymentContext): Promise<{
     for (const script of context.prebuild) {
       const interpolated = interpolateVariables(script, context.app)
       output.push(`> ${interpolated}`)
-      console.log(`[${context.app.name}] Executing prebuild: ${interpolated}`)
       const result = executeCommand(interpolated, codePath)
       output.push(result)
     }
@@ -355,7 +352,6 @@ export async function runPrebuild(context: DeploymentContext): Promise<{
     for (const script of context.prebuild) {
       const interpolated = interpolateVariables(script, context.app)
       output.push(`> ${interpolated}`)
-      console.log(`[${context.app.name}] Executing prebuild: ${interpolated}`)
       const result = executeCommand(interpolated, codePath)
       output.push(result)
     }
@@ -419,7 +415,6 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     for (const script of context.prebuild) {
       const interpolated = interpolateVariables(script, context.app)
       log.write(`> ${interpolated}`)
-      console.log(`[${context.app.name}] Executing prebuild in code folder: ${interpolated}`)
       await executeCommandAsync(interpolated, appCodePath, log)
     }
 
@@ -431,7 +426,6 @@ export async function runDeployment(context: DeploymentContext): Promise<{
       log.write(`[${new Date().toISOString()}] Creating environment file: ${envFilePath}`)
       fs.writeFileSync(fullEnvPath, interpolatedEnv, 'utf-8')
       log.write(`✓ Environment file created at ${envFilePath}`)
-      console.log(`[${context.app.name}] Environment file created: ${fullEnvPath}`)
     }
 
     // Create release folder before build commands
@@ -449,7 +443,6 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     for (const cmd of context.build) {
       const interpolated = interpolateVariables(cmd, context.app)
       log.write(`> ${interpolated}`)
-      console.log(`[${context.app.name}] Executing build in app code folder: ${interpolated}`)
       await executeCommandAsync(interpolated, appCodePath, log)
     }
 
@@ -476,7 +469,6 @@ export async function runDeployment(context: DeploymentContext): Promise<{
             break
         }
         log.write(`> ${cmd}`)
-        console.log(`[${context.app.name}] File transfer: ${cmd}`)
         try {
           await executeCommandAsync(cmd, appCodePath, log)
         } catch (err: any) {
@@ -493,7 +485,6 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     for (const cmd of context.deployment) {
       const interpolated = interpolateVariables(cmd, context.app)
       log.write(`> ${interpolated}`)
-      console.log(`[${context.app.name}] Executing deployment in app code folder: ${interpolated}`)
       await executeCommandAsync(interpolated, appCodePath, log)
     }
 
@@ -502,7 +493,6 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     for (const script of context.launch) {
       const interpolated = interpolateVariables(script, context.app)
       log.write(`> ${interpolated}`)
-      console.log(`[${context.app.name}] Executing launch in release folder: ${interpolated}`)
       await executeCommandAsync(interpolated, releasePath, log)
     }
 
@@ -513,7 +503,6 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     // Rename current.log to final timestamp-based path
     finalizeLog(context.app.name, context.logPath)
 
-    console.log(`✅ [${context.app.name}] Deployment completed successfully\n`)
     return {
       success: true,
       output

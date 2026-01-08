@@ -1,21 +1,13 @@
 import { execSync } from 'child_process'
-import fs from 'fs'
-import path from 'path'
 import crypto from 'crypto'
-import { getPaths } from './paths'
+import { getMongoPassword, getConfigFilePath } from './config'
 
-async function getMongoPassFile(): Promise<string> {
-  const paths = await getPaths()
-  return path.join(paths.home, 'mongo.admin.pass')
-}
-
-async function getAdminPassword(): Promise<string | null> {
-  const passFile = await getMongoPassFile()
-  if (!fs.existsSync(passFile)) {
-    console.log('[MongoDB] Password file not found at:', passFile)
-    return null
+function getAdminPassword(): string | null {
+  const password = getMongoPassword()
+  if (!password) {
+    console.log('[MongoDB] Password not found. Run "yarn deploy" or "bun deploy" first. Config:', getConfigFilePath())
   }
-  return fs.readFileSync(passFile, 'utf-8').trim()
+  return password
 }
 
 function generatePassword(length = 24): string {
@@ -53,15 +45,15 @@ export interface AppDatabaseResult {
 // Create a database and user for an application
 export async function createAppDatabase(appName: string): Promise<AppDatabaseResult> {
   console.log(`[MongoDB] Creating database and user for: ${appName}`)
-  
-  const adminPassword = await getAdminPassword()
+
+  const adminPassword = getAdminPassword()
   if (!adminPassword) {
     console.log('[MongoDB] Admin password not found')
     return {
       success: false,
       dbName: appName,
       dbUser: appName,
-      error: 'MongoDB admin password not found. Run "yarn deploy" first.'
+      error: 'MongoDB admin password not found. Run "yarn deploy" or "bun deploy" first.'
     }
   }
 
@@ -94,7 +86,7 @@ export async function createAppDatabase(appName: string): Promise<AppDatabaseRes
     }
 
     const connectionString = buildConnectionString(dbUser, dbPassword, dbName)
-    
+
     console.log(`[MongoDB] Successfully created database '${dbName}' with user '${dbUser}'`)
     console.log(`[MongoDB] Connection string: ${connectionString}`)
 
@@ -119,8 +111,8 @@ export async function createAppDatabase(appName: string): Promise<AppDatabaseRes
 // Archive database (rename to $name-old-TIMESTAMP) and drop user for an application
 export async function archiveAppDatabase(appName: string): Promise<{ success: boolean; archivedAs?: string; error?: string }> {
   console.log(`[MongoDB] Archiving database for: ${appName}`)
-  
-  const adminPassword = await getAdminPassword()
+
+  const adminPassword = getAdminPassword()
   if (!adminPassword) {
     console.log('[MongoDB] Admin password not found')
     return {
@@ -166,7 +158,7 @@ export async function archiveAppDatabase(appName: string): Promise<{ success: bo
       }
     `
     const result = execSync(`mongosh --quiet --eval "${renameScript}"`, { encoding: 'utf-8', stdio: 'pipe' })
-    
+
     if (result.includes('NO_COLLECTIONS')) {
       console.log(`[MongoDB] Database '${dbName}' has no collections, dropping it`)
       const dropScript = `db.getSiblingDB('admin').auth('admin', '${escapedAdminPass}'); db.getSiblingDB('${dbName}').dropDatabase()`
