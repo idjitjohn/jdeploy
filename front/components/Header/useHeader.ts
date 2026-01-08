@@ -1,6 +1,6 @@
 import { useRouter, usePathname } from 'next/navigation'
 import { api } from '@/front/lib/api'
-import { showNotification } from '@/front/lib/utils'
+import { showNotification } from '@/front/components/Notification'
 
 export function useHeader() {
   const router = useRouter()

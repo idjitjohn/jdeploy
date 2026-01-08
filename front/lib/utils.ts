@@ -21,63 +21,6 @@ export function formatBytes(bytes: number): string {
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
 }
 
-export function showNotification(message: string, type: 'info' | 'success' | 'error' = 'info'): void {
-  const notification = document.createElement('div')
-  notification.className = `notification ${type}`
-  notification.textContent = message
-  notification.style.cssText = `
-    position: fixed;
-    top: 2em;
-    right: 2em;
-    padding: 1em 1.5em;
-    background: ${type === 'error' ? '#e74c3c' : type === 'success' ? '#48bb78' : '#3498db'};
-    color: white;
-    border-radius: 0.5em;
-    box-shadow: 0 0.25em 1em rgba(0,0,0,0.2);
-    z-index: 10000;
-    animation: slideIn 0.3s ease;
-  `
-
-  document.body.appendChild(notification)
-
-  setTimeout(() => {
-    notification.style.animation = 'slideOut 0.3s ease'
-    setTimeout(() => notification.remove(), 300)
-  }, 3000)
-}
-
-export function createModal(title: string, content: string): HTMLElement {
-  const modal = document.createElement('div')
-  modal.className = 'modal active'
-  modal.innerHTML = `
-    <div class="modal-overlay"></div>
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3>${title}</h3>
-        <button class="modal-close">&times;</button>
-      </div>
-      <div class="modal-body">
-        ${content}
-      </div>
-    </div>
-  `
-
-  const closeBtn = modal.querySelector('.modal-close') as HTMLElement
-  const overlay = modal.querySelector('.modal-overlay') as HTMLElement
-
-  closeBtn.addEventListener('click', () => {
-    modal.remove()
-  })
-
-  overlay.addEventListener('click', () => {
-    modal.remove()
-  })
-
-  document.body.appendChild(modal)
-
-  return modal
-}
-
 export function escapeHtml(text: string): string {
   const div = document.createElement('div')
   div.textContent = text

@@ -97,7 +97,7 @@ export function reloadProcess(name: string): boolean {
 
 export function deleteProcess(name: string): boolean {
   try {
-    execSync(`pm2 delete ${name}`, { stdio: 'pipe' })
+    execSync(`pm2 delete /^${name}/`, { stdio: 'pipe' })
     return true
   } catch {
     return false

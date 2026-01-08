@@ -141,7 +141,7 @@ export const api = {
   logs: {
     list: (repoName: string, query: Record<string, string> = {}) => {
       const qs = new URLSearchParams(query).toString()
-      return apiRequest(`/api/logs/${repoName}?${qs}`)
+      return apiRequest(`/api/logs/app/${repoName}?${qs}`)
     },
     get: (logId: string) => apiRequest(`/api/logs/deployment/${logId}`)
   },

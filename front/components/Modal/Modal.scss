@@ -15,6 +15,15 @@
     display: flex;
   }
 
+  &.hiding {
+    .md-overlay {
+      animation: fadeOut 0.2s ease forwards;
+    }
+    .md-content {
+      animation: slideDown 0.2s ease forwards;
+    }
+  }
+
   .md-overlay {
     position: absolute;
     top: 0;
@@ -100,4 +109,20 @@
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
 }

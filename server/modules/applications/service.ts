@@ -4,8 +4,8 @@ import connectDB from '@/server/lib/db'
 import ApplicationModel from '@/server/models/Application'
 import DeploymentLogModel from '@/server/models/DeploymentLog'
 import { getPaths } from '@/server/utils/paths'
-import { createAppDatabase, dropAppDatabase } from '@/server/utils/mongo'
-import { runDeployment, getLogPath, setDeploymentConfig, initializeApplication } from '@/server/lib/deployment'
+import { createAppDatabase, archiveAppDatabase } from '@/server/utils/mongo'
+import { runDeployment, getLogPath, setDeploymentConfig, initializeApplication, interpolateVariables } from '@/server/lib/deployment'
 import { writeNginxConfigFile } from './utils'
 import { execSync } from 'child_process'
 import fs from 'fs'
@@ -143,7 +143,7 @@ export const create = createApplicationsService(
     initializeApplication(application.name, application.repoUrl, application.branch || 'main')
 
     // Create isolated database for the application
-    const dbResult = createAppDatabase(application.name)
+    const dbResult = await createAppDatabase(application.name)
     if (dbResult.success && dbResult.connectionString) {
       application.mongoUri = dbResult.connectionString
       await application.save()
@@ -285,7 +285,14 @@ export const update = createApplicationsService(
       const envFilePath = body.envFilePath || '.env'
       const fullEnvPath = path.join(appCodePath, envFilePath)
       if (fs.existsSync(appCodePath)) {
-        fs.writeFileSync(fullEnvPath, newEnv, 'utf-8')
+        const interpolatedEnv = interpolateVariables(newEnv, {
+          repoName: application.name,
+          branch: application.branch || 'main',
+          port: application.port,
+          appId: application._id.toString(),
+          mongoUri: application.mongoUri || ''
+        })
+        fs.writeFileSync(fullEnvPath, interpolatedEnv, 'utf-8')
       }
     }
 
@@ -355,12 +362,16 @@ export const remove = createApplicationsService(
     await ApplicationModel.findByIdAndDelete(params.id)
     await DeploymentLogModel.deleteMany({ application: appName })
 
-    // Drop application database
-    const dbResult = dropAppDatabase(appName)
+    // Archive application database (rename to $name-old-TIMESTAMP)
+    const dbResult = await archiveAppDatabase(appName)
     if (dbResult.success) {
-      console.log(`Database dropped for ${appName}`)
+      if (dbResult.archivedAs) {
+        console.log(`Database archived as '${dbResult.archivedAs}' for ${appName}`)
+      } else {
+        console.log(`Database for ${appName} was empty and dropped`)
+      }
     } else {
-      console.warn(`Failed to drop database for ${appName}: ${dbResult.error}`)
+      console.warn(`Failed to archive database for ${appName}: ${dbResult.error}`)
     }
 
     const paths = await getPaths()
@@ -418,11 +429,18 @@ export const redeploy = createApplicationsService(
       })
     }
 
-    // Write env file before deployment
+    // Write env file before deployment (interpolated)
     if (repo.env && fs.existsSync(appCodePath)) {
       const envFilePath = repo.envFilePath || '.env'
       const fullEnvPath = path.join(appCodePath, envFilePath)
-      fs.writeFileSync(fullEnvPath, repo.env, 'utf-8')
+      const interpolatedEnv = interpolateVariables(repo.env, {
+        repoName: repo.name,
+        branch: repo.branch || 'main',
+        port: repo.port,
+        appId: repo._id.toString(),
+        mongoUri: repo.mongoUri || ''
+      })
+      fs.writeFileSync(fullEnvPath, interpolatedEnv, 'utf-8')
     }
 
     const logPath = getLogPath(repo.name)
@@ -454,7 +472,8 @@ export const redeploy = createApplicationsService(
       deployment: repo.deployment || [],
       launch: repo.launch || [],
       files: repo.files || [],
-      appId: repo._id.toString()
+      appId: repo._id.toString(),
+      mongoUri: repo.mongoUri || ''
     })
       .then((result) => {
         if (result?.success) {
@@ -586,11 +605,18 @@ export const switchBranch = createApplicationsService(
       execSync(`git reset --hard origin/${currentBranch}`, { cwd: appCodePath, encoding: 'utf-8', stdio: 'pipe' })
       execSync(`git checkout ${newBranch}`, { cwd: appCodePath, encoding: 'utf-8', stdio: 'pipe' })
 
-      // Rewrite env file to prevent versioned env conflicts
+      // Rewrite env file to prevent versioned env conflicts (interpolated)
       if (application.env) {
         const envFilePath = application.envFilePath || '.env'
         const fullEnvPath = path.join(appCodePath, envFilePath)
-        fs.writeFileSync(fullEnvPath, application.env, 'utf-8')
+        const interpolatedEnv = interpolateVariables(application.env, {
+          repoName: application.name,
+          branch: application.branch || 'main',
+          port: application.port,
+          appId: application._id.toString(),
+          mongoUri: application.mongoUri || ''
+        })
+        fs.writeFileSync(fullEnvPath, interpolatedEnv, 'utf-8')
       }
 
       // Update application branch in database

@@ -34,7 +34,6 @@ Thumbs.db
 
 # Config files with sensitive data
 deploy.config.json
-mongo.admin.pass
 certificate/
 text-env/
 public/css

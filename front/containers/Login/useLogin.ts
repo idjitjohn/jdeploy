@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/front/lib/api'
-import { showNotification } from '@/front/lib/utils'
+import { showNotification } from '@/front/components/Notification'
 
 export function useLogin() {
   const router = useRouter()

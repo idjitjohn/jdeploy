@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback, useRef, RefObject } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/front/lib/api'
-import { checkAuth, showNotification } from '@/front/lib/utils'
+import { checkAuth } from '@/front/lib/utils'
+import { showNotification } from '@/front/components/Notification'
 
 type FileOperation = 'cp' | 'mv' | 'ln'
 
@@ -145,7 +146,7 @@ export function useApplicationDetail(id: string) {
     if (!isPollingRef.current) return
 
     await fetchLogContent(logId)
-    
+
     // Also refresh logs list to get updated status
     try {
       const data = await api.logs.list(appName, { limit: '20' }) as any
@@ -168,7 +169,7 @@ export function useApplicationDetail(id: string) {
 
     // Schedule next poll after 1 second
     if (isPollingRef.current) {
-      pollingTimeoutRef.current = setTimeout(() => pollOnce(logId, appName), 1000)
+      pollingTimeoutRef.current = setTimeout(() => pollOnce(logId, appName), 200)
     }
   }, [fetchLogContent, stopPolling])
 
@@ -204,7 +205,7 @@ export function useApplicationDetail(id: string) {
 
   const handleRedeploy = async () => {
     if (!application) return
-    
+
     if (!confirm(`Are you sure you want to redeploy "${application.name}"?`)) {
       return
     }
@@ -217,7 +218,7 @@ export function useApplicationDetail(id: string) {
         headers: { 'Content-Type': 'application/json' }
       })
       const data = await response.json()
-      
+
       if (data.log) {
         // Add new log to list and select it
         const newLog: DeploymentLog = {
@@ -235,8 +236,6 @@ export function useApplicationDetail(id: string) {
         setLogContent('Deployment starting...')
         // Polling will start automatically via useEffect when selectedLog.status === 'running'
       }
-      
-      showNotification(`Deployment started for ${application.name}`, 'success')
     } catch (error) {
       showNotification('Redeploy failed: ' + (error as Error).message, 'error')
       setIsRedeploying(false)
@@ -245,7 +244,7 @@ export function useApplicationDetail(id: string) {
 
   const handleDelete = async () => {
     if (!application) return
-    
+
     if (!confirm(`Are you sure you want to delete "${application.name}"? This will remove all files and logs.`)) {
       return
     }
@@ -267,23 +266,24 @@ export function useApplicationDetail(id: string) {
 
   const clearHistory = async () => {
     if (!application?.name) return
-    
+
     if (!confirm('Clear all deployment history except the latest one?')) {
       return
     }
 
     try {
-      const response = await fetch(`/api/logs/${application.name}`, {
+      const response = await fetch(`/api/logs/app/${application.name}`, {
         method: 'DELETE'
       })
       const data = await response.json()
-      
-      if (data.deleted > 0) {
-        showNotification(`Cleared ${data.deleted} old log(s)`, 'success')
-        loadLogsForApp(application.name)
+
+      if (data.deletedCount > 0) {
+        showNotification(`Cleared ${data.deletedCount} old log(s)`, 'success')
       } else {
         showNotification('No old logs to clear', 'info')
       }
+      // Always reload logs list after clearing
+      loadLogsForApp(application.name)
     } catch (error) {
       showNotification('Failed to clear history: ' + (error as Error).message, 'error')
     }

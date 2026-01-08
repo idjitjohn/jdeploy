@@ -1,16 +1,36 @@
 #!/usr/bin/env node
 
 const { execSync, spawn } = require('child_process')
+const crypto = require('crypto')
 const readline = require('readline')
 const fs = require('fs')
 const path = require('path')
 
-const MONGO_PASS_FILE = path.join(__dirname, '..', 'mongo.admin.pass')
+// Home directory will be set after asking user or reading from DB
+let HOME_DIR = null
+
+function generatePassword(length = 24) {
+  return crypto.randomBytes(length).toString('base64').slice(0, length)
+}
+
+function getAdminConnectionString(password) {
+  return `mongodb://admin:${password}@localhost:27017/admin?authMechanism=DEFAULT&authSource=admin`
+}
+
+function getMongoPassFile() {
+  return path.join(HOME_DIR, 'mongo.admin.pass')
+}
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 })
+
+function question(prompt) {
+  return new Promise((resolve) => {
+    rl.question(prompt, resolve)
+  })
+}
 
 function exec(cmd, options = {}) {
   try {
@@ -82,16 +102,72 @@ function execSudo(cmd, password) {
   })
 }
 
-function checkMongoSecurityEnabled(sudoPassword) {
+async function findMongodConf(adminPassword = null) {
+  // Try with auth first if password provided
+  if (adminPassword) {
+    try {
+      const result = execSync(`mongosh --quiet -u admin -p "${adminPassword}" --authenticationDatabase admin --eval "db.serverCmdLineOpts().parsed.config"`, { encoding: 'utf-8', stdio: 'pipe' })
+      const configPath = result.trim()
+      if (configPath && configPath !== 'undefined') {
+        return configPath
+      }
+    } catch {
+      // Auth failed or command failed
+    }
+  }
+
+  // Try without auth (works when security is disabled)
+  try {
+    const result = execSync('mongosh --quiet --eval "db.serverCmdLineOpts().parsed.config"', { encoding: 'utf-8', stdio: 'pipe' })
+    const configPath = result.trim()
+    if (configPath && configPath !== 'undefined') {
+      return configPath
+    }
+  } catch {
+    // Security might be enabled
+  }
+
+  // Fallback to common locations
+  const commonPaths = [
+    '/opt/homebrew/etc/mongod.conf',
+    '/usr/local/etc/mongod.conf',
+    '/etc/mongod.conf',
+    '/etc/mongodb.conf'
+  ]
+  for (const p of commonPaths) {
+    if (fs.existsSync(p)) {
+      return p
+    }
+  }
+
+  return null
+}
+
+function checkMongoSecurityInConfig(mongodConf, sudoPassword) {
   return new Promise(async (resolve) => {
     try {
-      const mongodConf = '/etc/mongod.conf'
       const content = await execSudo(`cat ${mongodConf}`, sudoPassword)
       resolve(content.includes('authorization: enabled') || content.includes('authorization:enabled'))
     } catch {
       resolve(false)
     }
   })
+}
+
+function checkMongoSecurityActive() {
+  // Check if security is actually active at runtime
+  try {
+    execSync('mongosh --quiet --eval "db.serverCmdLineOpts()"', { encoding: 'utf-8', stdio: 'pipe' })
+    // Command succeeded without auth = security not active
+    return false
+  } catch (error) {
+    // If error contains "requires authentication", security is active
+    if (error.message && error.message.includes('requires authentication')) {
+      return true
+    }
+    // Other error, assume not active
+    return false
+  }
 }
 
 function testMongoAdminPassword(mongoPassword) {
@@ -106,37 +182,31 @@ function testMongoAdminPassword(mongoPassword) {
   })
 }
 
-async function disableMongoSecurity(sudoPassword) {
-  const mongodConf = '/etc/mongod.conf'
+async function disableMongoSecurity(mongodConf, sudoPassword) {
   try {
-    // Comment out authorization line
-    await execSudo(`sed -i 's/^\\(\\s*authorization:\\s*enabled\\)/#\\1/' ${mongodConf}`, sudoPassword)
-    await execSudo('systemctl restart mongod', sudoPassword)
-    // Wait for MongoDB to restart
-    await new Promise(r => setTimeout(r, 2000))
-    return true
+    // Comment out authorization line (use .bak for macOS sed compatibility)
+    await execSudo(`sed -i.bak 's/^\\(\\s*authorization:\\s*enabled\\)/#\\1/' ${mongodConf} && rm -f ${mongodConf}.bak`, sudoPassword)
+    return await restartMongoDB(sudoPassword)
   } catch {
     return false
   }
 }
 
-async function enableMongoSecurity(sudoPassword) {
-  const mongodConf = '/etc/mongod.conf'
+async function enableMongoSecurity(mongodConf, sudoPassword) {
   try {
     const content = await execSudo(`cat ${mongodConf}`, sudoPassword)
-    
-    // Check if commented authorization exists
+
+    // Check if commented authorization exists (use .bak for macOS sed compatibility)
     if (content.includes('#  authorization: enabled') || content.includes('#authorization: enabled')) {
-      await execSudo(`sed -i 's/^#\\(\\s*authorization:\\s*enabled\\)/\\1/' ${mongodConf}`, sudoPassword)
+      await execSudo(`sed -i.bak 's/^#\\(\\s*authorization:\\s*enabled\\)/\\1/' ${mongodConf} && rm -f ${mongodConf}.bak`, sudoPassword)
     } else if (content.includes('security:')) {
-      await execSudo(`sed -i '/^security:/a\\  authorization: enabled' ${mongodConf}`, sudoPassword)
+      await execSudo(`sed -i.bak '/^security:/a\\
+  authorization: enabled' ${mongodConf} && rm -f ${mongodConf}.bak`, sudoPassword)
     } else {
       await execSudo(`echo -e '\\nsecurity:\\n  authorization: enabled' >> ${mongodConf}`, sudoPassword)
     }
-    
-    await execSudo('systemctl restart mongod', sudoPassword)
-    await new Promise(r => setTimeout(r, 2000))
-    return true
+
+    return await restartMongoDB(sudoPassword)
   } catch {
     return false
   }
@@ -160,29 +230,65 @@ function setMongoAdminPassword(newPassword) {
   }
 }
 
+async function restartMongoDB(sudoPassword) {
+  console.log('Restarting MongoDB service...')
+  try {
+    // Try brew services first (macOS)
+    try {
+      execSync('brew services restart mongodb-community', { encoding: 'utf-8', stdio: 'pipe' })
+      await new Promise(r => setTimeout(r, 3000))
+      return true
+    } catch {
+      // Not macOS or brew not available
+    }
+
+    // Try systemctl (Linux)
+    await execSudo('systemctl restart mongod', sudoPassword)
+    await new Promise(r => setTimeout(r, 3000))
+    return true
+  } catch (error) {
+    console.error('Failed to restart MongoDB:', error.message)
+    return false
+  }
+}
+
 async function setupMongoAuth(sudoPassword) {
   console.log('\nConfiguring MongoDB authentication...')
 
   try {
-    // Check if mongod.conf exists
-    try {
-      await execSudo('test -f /etc/mongod.conf', sudoPassword)
-    } catch {
+    // Check if we have a stored password
+    let storedPassword = null
+    if (fs.existsSync(getMongoPassFile())) {
+      storedPassword = fs.readFileSync(getMongoPassFile(), 'utf-8').trim()
+    }
+
+    // Find mongod.conf location (pass stored password in case security is active)
+    const mongodConf = await findMongodConf(storedPassword)
+    if (!mongodConf) {
       console.log('MongoDB config not found, skipping...')
       return true
     }
+    console.log(`Found MongoDB config at: ${mongodConf}`)
 
-    const securityEnabled = await checkMongoSecurityEnabled(sudoPassword)
-    
-    // Check if we have a stored password
-    let storedPassword = null
-    if (fs.existsSync(MONGO_PASS_FILE)) {
-      storedPassword = fs.readFileSync(MONGO_PASS_FILE, 'utf-8').trim()
+    const securityInConfig = await checkMongoSecurityInConfig(mongodConf, sudoPassword)
+    const securityActive = checkMongoSecurityActive()
+
+    // If security is in config but not active, restart MongoDB
+    if (securityInConfig && !securityActive) {
+      console.log('Security is configured but not active. MongoDB needs a restart.')
+      const restarted = await restartMongoDB(sudoPassword)
+      if (!restarted) {
+        console.error('Failed to restart MongoDB')
+        return false
+      }
+      console.log('MongoDB restarted successfully')
     }
+
+    const securityEnabled = securityInConfig && (securityActive || checkMongoSecurityActive())
 
     if (securityEnabled) {
       console.log('MongoDB security is enabled')
-      
+
       // If we have stored password, verify it
       if (storedPassword) {
         const valid = await testMongoAdminPassword(storedPassword)
@@ -196,27 +302,31 @@ async function setupMongoAuth(sudoPassword) {
       // Ask for MongoDB admin password
       const mongoPassword = await askPassword('Enter MongoDB admin password: ')
       const valid = await testMongoAdminPassword(mongoPassword)
-      
+
       if (valid) {
         // Save valid password
-        fs.writeFileSync(MONGO_PASS_FILE, mongoPassword, 'utf-8')
+        fs.writeFileSync(getMongoPassFile(), mongoPassword, 'utf-8')
         console.log('MongoDB admin password verified and saved')
         return true
       }
 
       // Password invalid, need to reset
       console.log('Invalid MongoDB password. Resetting admin password...')
-      
+
       // Disable security temporarily
       console.log('Disabling MongoDB security temporarily...')
-      const disabled = await disableMongoSecurity(sudoPassword)
+      const disabled = await disableMongoSecurity(mongodConf, sudoPassword)
       if (!disabled) {
         console.error('Failed to disable MongoDB security')
         return false
       }
 
       // Set new password
-      const newPassword = await askPassword('Enter new MongoDB admin password: ')
+      let newPassword = await askPassword('Enter new MongoDB admin password (leave empty to generate): ')
+      if (!newPassword) {
+        newPassword = generatePassword()
+        console.log('Generated a strong password for you')
+      }
       const passwordSet = setMongoAdminPassword(newPassword)
       if (!passwordSet) {
         console.error('Failed to set MongoDB admin password')
@@ -224,12 +334,13 @@ async function setupMongoAuth(sudoPassword) {
       }
 
       // Save password
-      fs.writeFileSync(MONGO_PASS_FILE, newPassword, 'utf-8')
+      fs.writeFileSync(getMongoPassFile(), newPassword, 'utf-8')
       console.log('MongoDB admin password set and saved')
+      console.log(`\nAdmin connection string:\n${getAdminConnectionString(newPassword)}\n`)
 
       // Re-enable security
       console.log('Re-enabling MongoDB security...')
-      const enabled = await enableMongoSecurity(sudoPassword)
+      const enabled = await enableMongoSecurity(mongodConf, sudoPassword)
       if (!enabled) {
         console.error('Failed to re-enable MongoDB security')
         return false
@@ -240,10 +351,14 @@ async function setupMongoAuth(sudoPassword) {
     } else {
       // Security not enabled, set it up
       console.log('MongoDB security is not enabled')
-      
+
       // Ask for password to set
-      const newPassword = await askPassword('Enter MongoDB admin password to set: ')
-      
+      let newPassword = await askPassword('Enter MongoDB admin password to set (leave empty to generate): ')
+      if (!newPassword) {
+        newPassword = generatePassword()
+        console.log('Generated a strong password for you')
+      }
+
       // Create admin user
       const passwordSet = setMongoAdminPassword(newPassword)
       if (!passwordSet) {
@@ -252,12 +367,13 @@ async function setupMongoAuth(sudoPassword) {
       }
 
       // Save password
-      fs.writeFileSync(MONGO_PASS_FILE, newPassword, 'utf-8')
+      fs.writeFileSync(getMongoPassFile(), newPassword, 'utf-8')
       console.log('MongoDB admin user created and password saved')
+      console.log(`\nAdmin connection string:\n${getAdminConnectionString(newPassword)}\n`)
 
       // Enable security
       console.log('Enabling MongoDB security...')
-      const enabled = await enableMongoSecurity(sudoPassword)
+      const enabled = await enableMongoSecurity(mongodConf, sudoPassword)
       if (!enabled) {
         console.error('Failed to enable MongoDB security')
         return false
@@ -274,7 +390,7 @@ async function setupMongoAuth(sudoPassword) {
 
 async function setupSudoers(password) {
   const username = process.env.USER || exec('whoami').trim()
-  
+
   // Find systemctl path using which
   let systemctlPath = '/bin/systemctl'
   try {
@@ -282,7 +398,7 @@ async function setupSudoers(password) {
   } catch {
     // Fallback to /bin/systemctl if which fails
   }
-  
+
   const sudoersLine = `${username} ALL=(ALL) NOPASSWD: ${systemctlPath} * nginx`
   const sudoersFile = `/etc/sudoers.d/${username}-nginx`
 
@@ -317,17 +433,46 @@ async function setupSudoers(password) {
   }
 }
 
+async function getHomeDirectory() {
+  // Try to get from MongoDB configuration
+  try {
+    const result = execSync('mongosh --quiet --eval "db.getSiblingDB(\'webhook-deployer\').configurations.findOne()?.home"', {
+      encoding: 'utf-8',
+      stdio: 'pipe'
+    }).trim()
+    if (result && result !== 'undefined' && result !== 'null') {
+      return result
+    }
+  } catch {
+    // DB not accessible or config doesn't exist
+  }
+
+  // Ask user for home directory
+  const homeDir = await question('Enter webhooks home directory [/var/webhooks]: ')
+  return homeDir.trim() || '/var/webhooks'
+}
+
 async function main() {
   console.log('=== Webhook Deployer Initialization ===\n')
 
+  // Get home directory first
+  HOME_DIR = await getHomeDirectory()
+  console.log(`Using home directory: ${HOME_DIR}\n`)
+
+  // Ensure home directory exists
+  if (!fs.existsSync(HOME_DIR)) {
+    console.log(`Creating home directory: ${HOME_DIR}`)
+    fs.mkdirSync(HOME_DIR, { recursive: true })
+  }
+
   const password = await askPassword()
-  rl.close()
 
   // Validate sudo password
   console.log('Validating sudo access...')
   const validSudo = await validateSudo(password)
   if (!validSudo) {
     console.error('Invalid sudo password')
+    rl.close()
     process.exit(1)
   }
   console.log('Sudo access validated\n')
@@ -335,15 +480,18 @@ async function main() {
   // Setup sudoers
   const sudoersOk = await setupSudoers(password)
   if (!sudoersOk) {
+    rl.close()
     process.exit(1)
   }
 
   // Setup MongoDB authentication
   const mongoOk = await setupMongoAuth(password)
   if (!mongoOk) {
+    rl.close()
     process.exit(1)
   }
 
+  rl.close()
   console.log('\n=== Initialization complete ===')
 }
 

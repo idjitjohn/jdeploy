@@ -8,7 +8,7 @@ import DomainModel from '@/server/models/Domain'
 import TemplateModel from '@/server/models/Template'
 import bcrypt from 'bcryptjs'
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/webhook-deployer'
+const MONGODB_URI = process.env.MONGODB_URI
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -93,16 +93,16 @@ async function mockTemplates() {
       ],
       deployment: [],
       launch: [
-        'pm2 del "$name$:$id$:$port$" || true',
-        'pm2 start "yarn start -p $port$" --name "$name$:$id$:$port$"',
+        'pm2 del /^$name$:/" || true',
+        'pm2 start "yarn start -p $port$" --name "$name$:$port$"',
         'sudo systemctl restart nginx'
       ],
       files: [
+        { src: '$rf$/.next', dest: '', op: 'rm' },
         { src: '$cf$/package.json', dest: '$rf$', op: 'cp' },
         { src: '$cf$/.next', dest: '$rf$', op: 'mv' },
         { src: '$cf$/.env*', dest: '$rf$', op: 'cp' },
-        { src: '$cf$/node_modules', dest: '$rf$/node_modules', op: 'ln' },
-        { src: '$rf$/.next', dest: '', op: 'rm' }
+        { src: '$cf$/node_modules', dest: '$rf$/node_modules', op: 'ln' }
       ],
       nginx: `ssl_certificate $crtf$/crt;
 ssl_certificate_key $crtf$/key;
@@ -138,8 +138,8 @@ server {
         'sudo systemctl restart nginx'
       ],
       files: [
-        { src: '$cf$/dist', dest: '$rf$', op: 'mv' },
-        { src: '$rf$/dist', dest: '', op: 'rm' }
+        { src: '$rf$/dist', dest: '', op: 'rm' },
+        { src: '$cf$/dist', dest: '$rf$', op: 'mv' }
       ],
       nginx: `ssl_certificate $crtf$/crt;
 ssl_certificate_key $crtf$/key;
@@ -173,16 +173,16 @@ server {
       ],
       deployment: [],
       launch: [
-        'pm2 del "$name$:$id$:$port$" || true',
-        'pm2 start "yarn start" --name "$name$:$id$:$port$"',
+        'pm2 del /^$name$:/ || true',
+        'pm2 start "yarn start" --name "$name$:$port$"',
         'sudo systemctl restart nginx'
       ],
       files: [
+        { src: '$rf$/dist', dest: '', op: 'rm' },
         { src: '$cf$/package.json', dest: '$rf$', op: 'cp' },
         { src: '$cf$/dist', dest: '$rf$', op: 'mv' },
         { src: '$cf$/.env*', dest: '$rf$', op: 'cp' },
-        { src: '$cf$/node_modules', dest: '$rf$/node_modules', op: 'ln' },
-        { src: '$rf$/dist', dest: '', op: 'rm' }
+        { src: '$cf$/node_modules', dest: '$rf$/node_modules', op: 'ln' }
       ],
       nginx: `ssl_certificate $crtf$/crt;
 ssl_certificate_key $crtf$/key;

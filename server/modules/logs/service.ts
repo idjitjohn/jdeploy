@@ -3,6 +3,7 @@ import { logsContext } from './context'
 import { Auth } from '../../plugins/auth.types'
 import { connectDB } from '@/server/lib/db'
 import DeploymentLog from '@/server/models/DeploymentLog'
+import { getCurrentLogPath } from '@/server/lib/deployment'
 import fs from 'fs/promises'
 import { ObjectId, FlattenMaps } from 'mongoose'
 import { DeploymentLogDocument } from '@/server/models/DeploymentLog'
@@ -91,9 +92,18 @@ export const getContent = createLogsService(
     }
 
     try {
-      const content = await fs.readFile(log.logFile || '', 'utf-8')
+      // If deployment is still running, read from current.log
+      let logFilePath = log.logFile || ''
+      if (log.status === 'running') {
+        logFilePath = getCurrentLogPath(log.application)
+      }
+      const content = await fs.readFile(logFilePath, 'utf-8')
       return { content }
     } catch (error) {
+      // Return empty content instead of 404 for running deployments
+      if (log.status === 'running') {
+        return { content: 'Waiting for deployment to start...' }
+      }
       set.status = 404
       throw new Error('Log file not found')
     }

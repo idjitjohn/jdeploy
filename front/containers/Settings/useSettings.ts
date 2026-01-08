@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { api } from '@/front/lib/api'
-import { checkAuth, showNotification } from '@/front/lib/utils'
+import { checkAuth } from '@/front/lib/utils'
+import { showNotification } from '@/front/components/Notification'
 
 interface Paths {
   home: string

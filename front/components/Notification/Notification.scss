@@ -1,0 +1,63 @@
+.NotificationContainer{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: fixed;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  height: 50vh;
+  overflow: hidden;
+}
+.Notification {
+  position: absolute;
+  top: .5em;
+  left: 50%;
+  padding: .25em 1.5em;
+  color: white;
+  border-radius: 0.5em;
+  box-shadow: 0 0.25em 1em rgba(0, 0, 0, 0.2);
+  z-index: 10000;
+  animation: notificationSlideIn 0.3s ease;
+  max-width: 80vw;
+  pointer-events: initial;
+  transform: translate3d(-50%, 0, 0);
+
+  &.info {
+    background: #2b5875;
+  }
+
+  &.success {
+    background: #255c45;
+  }
+
+  &.error {
+    background: #a1554d;
+  }
+
+  &.hiding {
+    animation: notificationSlideOut 0.3s ease forwards;
+  }
+}
+
+@keyframes notificationSlideIn {
+  from {
+    opacity: 0;
+    transform: translate3d(-50%, -200%, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes notificationSlideOut {
+  from {
+    opacity: 1;
+    transform: translate3d(-50%, 0, 0);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(-50%, -200%, 0);
+  }
+}

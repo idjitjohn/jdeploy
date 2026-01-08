@@ -102,6 +102,7 @@ export interface DeploymentContext {
   deployment: string[]
   launch: string[]
   files: FileTransfer[]
+  mongoUri?: string
   port?: number
 }
 
@@ -183,7 +184,7 @@ export function initializeApplication(repoName: string, repoUrl: string, branch:
   execSync(cloneCmd, { cwd: codePath, encoding: 'utf-8', stdio: 'pipe' })
 }
 
-export function interpolateVariables(command: string, context: { repoName: string; branch: string; port?: number, appId?: string, subdomain?: string, domain?: string }): string {
+export function interpolateVariables(command: string, context: { repoName: string; branch: string; port?: number, appId?: string, subdomain?: string, domain?: string, mongoUri?: string }): string {
   const codePath = getDeploymentPath(context.repoName)
   const releasePath = getReleasePath(context.repoName)
   const certificatePath = path.join(deploymentConfig.certificate, context.repoName)
@@ -202,6 +203,7 @@ export function interpolateVariables(command: string, context: { repoName: strin
     .replace(/\$port\$/g, context.port?.toString() || '')
     .replace(/\$subdomain\$/g, context.subdomain || '')
     .replace(/\$domain\$/g, context.domain || '')
+    .replace(/\$mongo\$/g, context.mongoUri || '')
 }
 
 export function executeCommand(cmd: string, cwd: string): string {
@@ -290,7 +292,7 @@ export async function prepare(context: DeploymentContext): Promise<{
 
     output.push(`[${new Date().toISOString()}] Running prebuild scripts in ${codePath}...`)
     for (const script of context.prebuild) {
-      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
+      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
       output.push(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing prebuild: ${interpolated}`)
       const result = executeCommand(interpolated, codePath)
@@ -343,7 +345,7 @@ export async function runPrebuild(context: DeploymentContext): Promise<{
 
     output.push(`[${new Date().toISOString()}] Running prebuild scripts in ${codePath}...`)
     for (const script of context.prebuild) {
-      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
+      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
       output.push(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing prebuild: ${interpolated}`)
       const result = executeCommand(interpolated, codePath)
@@ -407,7 +409,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     log.write(`[${new Date().toISOString()}] Running prebuild scripts in ${appCodePath}...`)
 
     for (const script of context.prebuild) {
-      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
+      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
       log.write(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing prebuild in code folder: ${interpolated}`)
       await executeCommandAsync(interpolated, appCodePath, log)
@@ -417,8 +419,9 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     if (context.envFileContent) {
       const envFilePath = context.envFilePath || '.env'
       const fullEnvPath = path.join(appCodePath, envFilePath)
+      const interpolatedEnv = interpolateVariables(context.envFileContent, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
       log.write(`[${new Date().toISOString()}] Creating environment file: ${envFilePath}`)
-      fs.writeFileSync(fullEnvPath, context.envFileContent, 'utf-8')
+      fs.writeFileSync(fullEnvPath, interpolatedEnv, 'utf-8')
       log.write(`✓ Environment file created at ${envFilePath}`)
       console.log(`[${context.repoName}] Environment file created: ${fullEnvPath}`)
     }
@@ -436,7 +439,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     // 2. Build - runs in application code folder
     log.write(`[${new Date().toISOString()}] Running build commands in ${appCodePath}...`)
     for (const cmd of context.build) {
-      const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
+      const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
       log.write(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing build in app code folder: ${interpolated}`)
       await executeCommandAsync(interpolated, appCodePath, log)
@@ -446,8 +449,8 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     if (context.files && context.files.length > 0) {
       log.write(`[${new Date().toISOString()}] Processing file transfers...`)
       for (const file of context.files) {
-        const srcPath = interpolateVariables(file.src, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
-        const destPath = interpolateVariables(file.dest, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
+        const srcPath = interpolateVariables(file.src, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
+        const destPath = interpolateVariables(file.dest, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
         let cmd: string
         switch (file.op) {
           case 'rm':
@@ -480,7 +483,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     // 3. Deployment - runs in application code folder
     log.write(`[${new Date().toISOString()}] Running deployment commands in ${appCodePath}...`)
     for (const cmd of context.deployment) {
-      const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
+      const interpolated = interpolateVariables(cmd, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
       log.write(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing deployment in app code folder: ${interpolated}`)
       await executeCommandAsync(interpolated, appCodePath, log)
@@ -489,7 +492,7 @@ export async function runDeployment(context: DeploymentContext): Promise<{
     // 4. Launch - runs in release folder
     log.write(`[${new Date().toISOString()}] Running launch commands in ${releasePath}...`)
     for (const script of context.launch) {
-      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId })
+      const interpolated = interpolateVariables(script, { repoName: context.repoName, branch: context.branch, port: context.port, appId: context.appId, mongoUri: context.mongoUri })
       log.write(`> ${interpolated}`)
       console.log(`[${context.repoName}] Executing launch in release folder: ${interpolated}`)
       await executeCommandAsync(interpolated, releasePath, log)
